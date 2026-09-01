@@ -15,24 +15,32 @@
 // assumed, since their vision model lineup has changed names before.
 //
 // Honest-fallback posture throughout: a missing API key, a request
-// failure, or a response that isn't EXACTLY one of the three expected
-// verdicts all fall to manual review — never "let it through". Silently
-// approving unmoderated content because a key wasn't configured, or
-// because the model hedged instead of giving a clean verdict, would be
-// the one failure mode worse than moderation being briefly unavailable.
+// failure, or a response that isn't EXACTLY one of the expected verdicts
+// all fall to manual review — never "let it through". Silently approving
+// unmoderated content because a key wasn't configured, or because the
+// model hedged instead of giving a clean verdict, would be the one
+// failure mode worse than moderation being briefly unavailable.
+//
+// Also rejects AI-generated/synthetic photos — a platform built on real
+// profiles can't have people uploading a fabricated face. This is a
+// genuinely harder classification than "is this racy" (AI-image
+// detection is an imperfect problem even for dedicated tools), so it's
+// held to the same honest-fallback standard: anything short of a clean,
+// confident verdict goes to manual review rather than guessing.
 
 const MODERATION_TIMEOUT_MS = 8000;
 const GROQ_VISION_MODEL = "qwen/qwen3.6-27b";
 
 const MODERATION_PROMPT = `You are a strict content-moderation classifier for a serious dating app's profile photos.
 
-Classify the photo using EXACTLY one of these three words, and nothing else — no explanation, no punctuation, no extra words:
+Classify the photo using EXACTLY one of these four words, and nothing else — no explanation, no punctuation, no extra words:
 
-APPROVE — a normal photo appropriate for a dating profile (clothed, nothing explicit or suggestive)
+APPROVE — a normal real photo appropriate for a dating profile (clothed, nothing explicit or suggestive, not AI-generated)
 REJECT_RACY — swimwear, underwear, shirtless, or otherwise suggestive content
 REJECT_EXPLICIT — nudity or sexually explicit content
+REJECT_AI_GENERATED — the image appears to be AI-generated, synthetic, or a digital rendering rather than a real photograph
 
-Respond with only one of those three exact words.`;
+Respond with only one of those four exact words.`;
 
 export interface PhotoModerationResult {
   status: "approved" | "rejected" | "needs_manual_review";
@@ -40,12 +48,12 @@ export interface PhotoModerationResult {
 }
 
 // A photo only ever auto-clears when the model's response is an EXACT
-// match for one of these three tokens — any hedging, extra text, or
+// match for one of these four tokens — any hedging, extra text, or
 // unexpected output falls to manual review rather than being guessed at.
 export async function moderatePhoto(imageBase64: string): Promise<PhotoModerationResult> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
-    return { status: "needs_manual_review", reason: "moderation non configurée" };
+    return { status: "needs_manual_review", reason: "Moderation isn't configured yet." };
   }
 
   const controller = new AbortController();
@@ -73,7 +81,7 @@ export async function moderatePhoto(imageBase64: string): Promise<PhotoModeratio
     if (!res.ok) {
       const body = await res.text().catch(() => "");
       console.error(`moderatePhoto: Groq vision failed (${res.status}) ${body.slice(0, 300)}`);
-      return { status: "needs_manual_review", reason: "échec de la modération automatique" };
+      return { status: "needs_manual_review", reason: "Automatic moderation failed." };
     }
     const data = await res.json();
     const content: unknown = data?.choices?.[0]?.message?.content;
@@ -83,16 +91,21 @@ export async function moderatePhoto(imageBase64: string): Promise<PhotoModeratio
     if (verdict === "REJECT_RACY") {
       return {
         status: "rejected",
-        reason: "photo trop suggestive pour cette plateforme (maillot de bain, sous-vêtements, torse nu)",
+        reason: "This photo is too suggestive for this platform (swimwear, underwear, shirtless).",
       };
     }
-    if (verdict === "REJECT_EXPLICIT") return { status: "rejected", reason: "contenu explicite détecté" };
+    if (verdict === "REJECT_EXPLICIT") {
+      return { status: "rejected", reason: "Explicit content detected." };
+    }
+    if (verdict === "REJECT_AI_GENERATED") {
+      return { status: "rejected", reason: "This photo looks AI-generated — only real photos are accepted." };
+    }
 
     console.error(`moderatePhoto: unexpected Groq verdict: ${JSON.stringify(content).slice(0, 300)}`);
-    return { status: "needs_manual_review", reason: "réponse de modération ambiguë" };
+    return { status: "needs_manual_review", reason: "Moderation response was ambiguous." };
   } catch (err) {
     console.error("moderatePhoto: request threw", err);
-    return { status: "needs_manual_review", reason: "délai dépassé" };
+    return { status: "needs_manual_review", reason: "Moderation timed out." };
   } finally {
     clearTimeout(timeout);
   }

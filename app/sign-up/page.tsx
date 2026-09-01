@@ -6,16 +6,12 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
-import type { RelationshipIntent, UserProfile } from "@/lib/types";
+import { MIN_PROFILE_PHOTOS, type UserProfile } from "@/lib/types";
 import { PhotoUploader } from "@/components/PhotoUploader";
 
 type Stage = "loading" | "signed-out" | "onboarding" | "pending-review";
 
 const GENDER_OPTIONS = ["woman", "man", "other"];
-const INTENT_OPTIONS: { value: RelationshipIntent; label: string }[] = [
-  { value: "long_term", label: "A long-term relationship" },
-  { value: "not_sure", label: "Not sure yet" },
-];
 
 function isAtLeast18(birthdate: string): boolean {
   const dob = new Date(birthdate);
@@ -38,7 +34,6 @@ export default function SignUp() {
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
   const [bio, setBio] = useState("");
-  const [intent, setIntent] = useState<RelationshipIntent>("long_term");
 
   useEffect(() => {
     return watchAuthState(async (nextUser) => {
@@ -83,7 +78,6 @@ export default function SignUp() {
         city: city.trim(),
         country: country.trim(),
         bio: bio.trim(),
-        intent,
         photos: [],
         status: "pending_review",
         createdAt: new Date().toISOString(),
@@ -222,23 +216,6 @@ export default function SignUp() {
               />
             </label>
 
-            <fieldset className="flex flex-col gap-1.5 text-sm">
-              <legend className="mb-0.5">What are you looking for?</legend>
-              <div className="flex flex-col gap-2">
-                {INTENT_OPTIONS.map((option) => (
-                  <label key={option.value} className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="intent"
-                      checked={intent === option.value}
-                      onChange={() => setIntent(option.value)}
-                    />
-                    {option.label}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-
             {error && <p className="text-sm text-red-600">{error}</p>}
 
             <button
@@ -262,6 +239,9 @@ export default function SignUp() {
             </div>
             <div className="flex flex-col gap-2">
               <h2 className="text-sm font-medium text-neutral-700">Photos</h2>
+              <p className="text-sm text-neutral-500">
+                At least {MIN_PROFILE_PHOTOS} real photos are required — no AI-generated images.
+              </p>
               <PhotoUploader user={user} />
             </div>
           </div>

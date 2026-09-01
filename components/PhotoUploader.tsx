@@ -4,7 +4,7 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import { collection, onSnapshot, orderBy, query } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db } from "@/lib/firebase";
-import { MAX_PROFILE_PHOTOS } from "@/lib/types";
+import { MAX_PROFILE_PHOTOS, MIN_PROFILE_PHOTOS } from "@/lib/types";
 
 interface PhotoSubmission {
   id: string;
@@ -93,6 +93,11 @@ export function PhotoUploader({ user }: { user: User }) {
 
   return (
     <div className="flex flex-col gap-4">
+      <p className="text-sm font-medium text-neutral-700">
+        {approvedCount} of {MIN_PROFILE_PHOTOS} required photos approved
+        {approvedCount < MIN_PROFILE_PHOTOS ? "" : " — you're set"}
+      </p>
+
       <div className="flex flex-wrap gap-3">
         {submissions.map((submission) => (
           <div key={submission.id} className="flex w-28 flex-col items-center gap-1.5">

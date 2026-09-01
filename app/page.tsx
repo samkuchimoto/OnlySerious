@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { BRAND_CONFIG } from "@/config/brand";
 
@@ -28,29 +29,38 @@ const DIFFERENTIATORS = [
 export default function Home() {
   return (
     <main className="flex-1 bg-white text-neutral-900">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-8 sm:px-10">
-        <span className="text-lg font-semibold tracking-tight">{BRAND_CONFIG.appTitle}</span>
-        <Link
-          href="/sign-up"
-          className="rounded-full border border-neutral-900 px-5 py-2 text-sm font-medium transition-colors hover:bg-neutral-900 hover:text-white"
-        >
-          Get started
-        </Link>
-      </header>
+      <section className="relative flex min-h-[85vh] flex-col overflow-hidden">
+        <Image src="/images/hero-couple.png" alt="" fill priority className="object-cover" />
+        {/* Two stacked overlays: a mild wash across the whole photo so the
+            nav stays legible without flattening the image, plus an extra
+            bottom-weighted gradient concentrated where the headline sits. */}
+        <div className="absolute inset-0 bg-black/25" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
 
-      <section className="mx-auto max-w-4xl px-6 pb-20 pt-16 text-center sm:px-10 sm:pt-24">
-        <h1 className="text-5xl font-medium leading-[1.05] tracking-tight sm:text-7xl">
-          {BRAND_CONFIG.heroHeadline}
-        </h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg text-neutral-500 sm:text-xl">{BRAND_CONFIG.heroSubheadline}</p>
-        <div className="mt-10 flex flex-col items-center gap-3">
+        <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-8 sm:px-10">
+          <span className="text-lg font-semibold tracking-tight text-white">{BRAND_CONFIG.appTitle}</span>
           <Link
             href="/sign-up"
-            className="rounded-full bg-neutral-900 px-9 py-4 text-base font-medium text-white transition-transform hover:scale-[1.02]"
+            className="rounded-full border border-white/70 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-white hover:text-neutral-900"
           >
-            Create your profile
+            Get started
           </Link>
-          <p className="text-sm text-neutral-400">Free to join · {BRAND_CONFIG.tagline}</p>
+        </header>
+
+        <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-1 flex-col justify-end px-6 pb-16 text-center sm:px-10 sm:pb-24">
+          <h1 className="text-5xl font-medium leading-[1.05] tracking-tight text-white sm:text-7xl">
+            {BRAND_CONFIG.heroHeadline}
+          </h1>
+          <p className="mx-auto mt-6 max-w-xl text-lg text-white/85 sm:text-xl">{BRAND_CONFIG.heroSubheadline}</p>
+          <div className="mt-10 flex flex-col items-center gap-3">
+            <Link
+              href="/sign-up"
+              className="rounded-full bg-white px-9 py-4 text-base font-medium text-neutral-900 transition-transform hover:scale-[1.02]"
+            >
+              Create your profile
+            </Link>
+            <p className="text-sm text-white/70">Free to join · {BRAND_CONFIG.tagline}</p>
+          </div>
         </div>
       </section>
 

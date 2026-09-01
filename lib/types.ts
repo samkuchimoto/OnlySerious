@@ -4,9 +4,13 @@
 // Everyone gets the same access, same price, same rules, regardless of
 // who they are or where they're from.
 
-export type RelationshipIntent = "long_term" | "not_sure";
-
 export const MAX_PROFILE_PHOTOS = 6;
+// Every profile on this platform is here for a long-term relationship —
+// that's the platform's own scope, not a per-profile choice, so there's
+// no "intent" field to ask about at sign-up. What a person actually
+// checks first is photos and age, so photos are mandatory: at least this
+// many approved before a profile is considered complete.
+export const MIN_PROFILE_PHOTOS = 3;
 
 export interface UserProfile {
   id: string; // Firebase Auth uid
@@ -17,7 +21,6 @@ export interface UserProfile {
   city: string;
   country: string;
   bio: string;
-  intent: RelationshipIntent;
   photos: ProfilePhoto[];
   status: "pending_review" | "active" | "suspended";
   createdAt: string;
