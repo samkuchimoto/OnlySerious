@@ -2,14 +2,14 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import { MIN_PROFILE_PHOTOS, type UserProfile } from "@/lib/types";
 import { PhotoUploader } from "@/components/PhotoUploader";
 
-type Stage = "loading" | "signed-out" | "onboarding" | "pending-review";
+type Stage = "loading" | "signed-out" | "onboarding" | "editing" | "pending-review";
 
 const GENDER_OPTIONS = ["woman", "man", "other"];
 
@@ -34,6 +34,7 @@ export default function SignUp() {
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
   const [bio, setBio] = useState("");
+  const [existingProfile, setExistingProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     return watchAuthState(async (nextUser) => {
@@ -43,7 +44,12 @@ export default function SignUp() {
         return;
       }
       const existing = await getDoc(doc(db, "users", nextUser.uid));
-      setStage(existing.exists() ? "pending-review" : "onboarding");
+      if (existing.exists()) {
+        setExistingProfile(existing.data() as UserProfile);
+        setStage("pending-review");
+      } else {
+        setStage("onboarding");
+      }
     });
   }, []);
 
@@ -51,6 +57,19 @@ export default function SignUp() {
     setInterestedIn((prev) =>
       prev.includes(option) ? prev.filter((value) => value !== option) : [...prev, option],
     );
+  }
+
+  function startEditing() {
+    if (!existingProfile) return;
+    setDisplayName(existingProfile.displayName);
+    setBirthdate(existingProfile.birthdate);
+    setGender(existingProfile.gender);
+    setInterestedIn(existingProfile.interestedIn);
+    setCity(existingProfile.city);
+    setCountry(existingProfile.country);
+    setBio(existingProfile.bio);
+    setError(null);
+    setStage("editing");
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -67,23 +86,36 @@ export default function SignUp() {
       return;
     }
 
+    const editableFields = {
+      displayName: displayName.trim(),
+      birthdate,
+      gender,
+      interestedIn,
+      city: city.trim(),
+      country: country.trim(),
+      bio: bio.trim(),
+    };
+
     setSubmitting(true);
     try {
-      const profile: UserProfile = {
-        id: user.uid,
-        displayName: displayName.trim(),
-        birthdate,
-        gender,
-        interestedIn,
-        city: city.trim(),
-        country: country.trim(),
-        bio: bio.trim(),
-        photos: [],
-        status: "pending_review",
-        createdAt: new Date().toISOString(),
-        subscriptionStatus: "free",
-      };
-      await setDoc(doc(db, "users", user.uid), profile);
+      if (stage === "editing" && existingProfile) {
+        // update(), not setDoc() — only touches these fields, so it can
+        // never trip the Firestore rule guarding status/subscriptionStatus/
+        // photos, which this payload doesn't even mention.
+        await updateDoc(doc(db, "users", user.uid), editableFields);
+        setExistingProfile({ ...existingProfile, ...editableFields });
+      } else {
+        const profile: UserProfile = {
+          id: user.uid,
+          ...editableFields,
+          photos: [],
+          status: "pending_review",
+          createdAt: new Date().toISOString(),
+          subscriptionStatus: "free",
+        };
+        await setDoc(doc(db, "users", user.uid), profile);
+        setExistingProfile(profile);
+      }
       setStage("pending-review");
     } catch {
       setError("Something went wrong saving your profile. Please try again.");
@@ -124,9 +156,11 @@ export default function SignUp() {
           </div>
         )}
 
-        {stage === "onboarding" && (
+        {(stage === "onboarding" || stage === "editing") && (
           <form onSubmit={handleSubmit} className="flex flex-col gap-6 pt-8">
-            <h1 className="text-3xl font-medium tracking-tight">Tell us about you</h1>
+            <h1 className="text-3xl font-medium tracking-tight">
+              {stage === "editing" ? "Edit your profile" : "Tell us about you"}
+            </h1>
 
             <label className="flex flex-col gap-1.5 text-sm">
               Name
@@ -218,20 +252,42 @@ export default function SignUp() {
 
             {error && <p className="text-sm text-red-600">{error}</p>}
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="mt-2 rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
-            >
-              {submitting ? "Saving…" : "Create profile"}
-            </button>
+            <div className="mt-2 flex items-center gap-4">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
+              >
+                {submitting ? "Saving…" : stage === "editing" ? "Save changes" : "Create profile"}
+              </button>
+              {stage === "editing" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setStage("pending-review");
+                  }}
+                  className="text-sm text-neutral-400 transition-colors hover:text-neutral-900"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
         )}
 
         {stage === "pending-review" && user && (
           <div className="flex flex-col items-start gap-6 pt-8">
             <div className="flex flex-col gap-2">
-              <h1 className="text-3xl font-medium tracking-tight">Your profile is under review</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-medium tracking-tight">Your profile is under review</h1>
+                <button
+                  onClick={startEditing}
+                  className="text-sm text-neutral-400 underline-offset-2 transition-colors hover:text-neutral-900 hover:underline"
+                >
+                  Edit profile
+                </button>
+              </div>
               <p className="max-w-md text-neutral-500">
                 We check every new profile before it goes live — you&apos;ll be notified once yours is
                 approved.
