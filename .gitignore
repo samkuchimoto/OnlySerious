@@ -40,5 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-.vercel
-.env*
+
+# raw image downloads dropped in the repo root for reference — the
+# actual asset lives under public/images/ once it's in use
+/ChatGPT Image*.png
+/Gemini_Generated_Image*

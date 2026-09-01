@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import type { User } from "firebase/auth";
-import { db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
+import { doc, getDoc, onSnapshot, setDoc, updateDoc } from "firebase/firestore";
+import { RecaptchaVerifier, linkWithPhoneNumber, type ConfirmationResult, type User } from "firebase/auth";
+import { auth, db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import { MIN_PROFILE_PHOTOS, type UserProfile } from "@/lib/types";
 import { PhotoUploader } from "@/components/PhotoUploader";
 
-type Stage = "loading" | "signed-out" | "onboarding" | "editing" | "pending-review";
+type Stage = "loading" | "signed-out" | "verify-phone" | "onboarding" | "editing" | "pending-review";
 
 const GENDER_OPTIONS = ["woman", "man", "other"];
 
@@ -36,22 +36,79 @@ export default function SignUp() {
   const [bio, setBio] = useState("");
   const [existingProfile, setExistingProfile] = useState<UserProfile | null>(null);
 
+  const [phoneInput, setPhoneInput] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [phoneSubmitting, setPhoneSubmitting] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+
+  const unsubscribeProfileRef = useRef<(() => void) | undefined>(undefined);
+
+  // Live, not one-time — so an auto-activation triggered by a photo
+  // upload (app/api/photos/route.ts) shows up here without a reload.
+  function watchProfile(uid: string) {
+    unsubscribeProfileRef.current?.();
+    unsubscribeProfileRef.current = onSnapshot(doc(db, "users", uid), (snap) => {
+      if (snap.exists()) setExistingProfile(snap.data() as UserProfile);
+    });
+  }
+
   useEffect(() => {
-    return watchAuthState(async (nextUser) => {
+    const unsubscribeAuth = watchAuthState(async (nextUser) => {
       setUser(nextUser);
+      unsubscribeProfileRef.current?.();
       if (!nextUser) {
         setStage("signed-out");
         return;
       }
       const existing = await getDoc(doc(db, "users", nextUser.uid));
       if (existing.exists()) {
-        setExistingProfile(existing.data() as UserProfile);
         setStage("pending-review");
+        watchProfile(nextUser.uid);
+      } else if (!nextUser.phoneNumber) {
+        // Required of everyone equally — the low-friction traceability
+        // signal every major dating app already uses (SMS OTP), instead
+        // of collecting ID documents from anyone.
+        setStage("verify-phone");
       } else {
         setStage("onboarding");
       }
     });
+
+    return () => {
+      unsubscribeAuth();
+      unsubscribeProfileRef.current?.();
+    };
   }, []);
+
+  async function sendVerificationCode() {
+    if (!user) return;
+    setPhoneError(null);
+    setPhoneSubmitting(true);
+    try {
+      const verifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
+      const result = await linkWithPhoneNumber(user, phoneInput.trim(), verifier);
+      setConfirmationResult(result);
+    } catch {
+      setPhoneError("Couldn't send a code to that number. Check it includes your country code (e.g. +66…).");
+    } finally {
+      setPhoneSubmitting(false);
+    }
+  }
+
+  async function confirmVerificationCode() {
+    if (!confirmationResult) return;
+    setPhoneError(null);
+    setPhoneSubmitting(true);
+    try {
+      await confirmationResult.confirm(verificationCode.trim());
+      setStage("onboarding");
+    } catch {
+      setPhoneError("That code didn't match. Please try again.");
+    } finally {
+      setPhoneSubmitting(false);
+    }
+  }
 
   function toggleInterestedIn(option: string) {
     setInterestedIn((prev) =>
@@ -108,6 +165,7 @@ export default function SignUp() {
         const profile: UserProfile = {
           id: user.uid,
           ...editableFields,
+          phoneNumber: user.phoneNumber ?? "",
           photos: [],
           status: "pending_review",
           createdAt: new Date().toISOString(),
@@ -115,6 +173,7 @@ export default function SignUp() {
         };
         await setDoc(doc(db, "users", user.uid), profile);
         setExistingProfile(profile);
+        watchProfile(user.uid);
       }
       setStage("pending-review");
     } catch {
@@ -153,6 +212,66 @@ export default function SignUp() {
             >
               Continue with Google
             </button>
+          </div>
+        )}
+
+        {stage === "verify-phone" && (
+          <div className="flex flex-col items-start gap-6 pt-8">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-3xl font-medium tracking-tight">Verify your phone number</h1>
+              <p className="max-w-md text-neutral-500">
+                Required for every profile — it&apos;s how we can trace an account back to a real person
+                if something ever goes wrong, without collecting ID documents from anyone.
+              </p>
+            </div>
+
+            {!confirmationResult ? (
+              <div className="flex flex-col gap-3">
+                <label className="flex flex-col gap-1.5 text-sm">
+                  Phone number
+                  <input
+                    type="tel"
+                    placeholder="+66 81 234 5678"
+                    value={phoneInput}
+                    onChange={(e) => setPhoneInput(e.target.value)}
+                    className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
+                  />
+                </label>
+                <p className="text-xs text-neutral-400">Include your country code.</p>
+                {phoneError && <p className="text-sm text-red-600">{phoneError}</p>}
+                <button
+                  onClick={sendVerificationCode}
+                  disabled={phoneSubmitting || !phoneInput.trim()}
+                  className="w-fit rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
+                >
+                  {phoneSubmitting ? "Sending…" : "Send code"}
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <label className="flex flex-col gap-1.5 text-sm">
+                  Verification code
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                    className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
+                  />
+                </label>
+                {phoneError && <p className="text-sm text-red-600">{phoneError}</p>}
+                <button
+                  onClick={confirmVerificationCode}
+                  disabled={phoneSubmitting || !verificationCode.trim()}
+                  className="w-fit rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
+                >
+                  {phoneSubmitting ? "Verifying…" : "Confirm code"}
+                </button>
+              </div>
+            )}
+
+            {/* Invisible reCAPTCHA anchor required by Firebase phone auth */}
+            <div id="recaptcha-container" />
           </div>
         )}
 
@@ -280,7 +399,9 @@ export default function SignUp() {
           <div className="flex flex-col items-start gap-6 pt-8">
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-medium tracking-tight">Your profile is under review</h1>
+                <h1 className="text-3xl font-medium tracking-tight">
+                  {existingProfile?.status === "active" ? "Your profile is live" : "Your profile is under review"}
+                </h1>
                 <button
                   onClick={startEditing}
                   className="text-sm text-neutral-400 underline-offset-2 transition-colors hover:text-neutral-900 hover:underline"
@@ -289,8 +410,9 @@ export default function SignUp() {
                 </button>
               </div>
               <p className="max-w-md text-neutral-500">
-                We check every new profile before it goes live — you&apos;ll be notified once yours is
-                approved.
+                {existingProfile?.status === "active"
+                  ? "Other members can now see your profile."
+                  : `Live as soon as you have ${MIN_PROFILE_PHOTOS} approved photos.`}
               </p>
             </div>
             <div className="flex flex-col gap-2">

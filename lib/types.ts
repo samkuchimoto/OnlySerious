@@ -21,6 +21,11 @@ export interface UserProfile {
   city: string;
   country: string;
   bio: string;
+  // Mirrors the number linked to this account's Firebase Auth user via
+  // linkWithPhoneNumber — required of everyone equally (not gender-
+  // specific), as the low-friction traceability signal every major
+  // dating app already uses, instead of collecting ID documents.
+  phoneNumber: string;
   photos: ProfilePhoto[];
   status: "pending_review" | "active" | "suspended";
   createdAt: string;
