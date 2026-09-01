@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { verifyRequestUser, adminDb, adminStorage } from "@/lib/firebaseAdmin";
+import { put } from "@vercel/blob";
+import { verifyRequestUser, adminDb } from "@/lib/firebaseAdmin";
 import { moderatePhoto } from "@/lib/moderation";
 import { MAX_PROFILE_PHOTOS, type ProfilePhoto } from "@/lib/types";
 
@@ -45,11 +46,10 @@ export async function POST(request: Request) {
     result.status === "approved" ? "approved" : result.status === "rejected" ? "rejected" : "pending";
 
   const photoId = randomUUID();
-  const filePath = `users/${uid}/photos/${photoId}.jpg`;
-  const file = adminStorage.bucket().file(filePath);
-  await file.save(Buffer.from(imageBase64, "base64"), { contentType: "image/jpeg" });
-  await file.makePublic();
-  const url = `https://storage.googleapis.com/${adminStorage.bucket().name}/${filePath}`;
+  const { url } = await put(`users/${uid}/photos/${photoId}.jpg`, Buffer.from(imageBase64, "base64"), {
+    access: "public",
+    contentType: "image/jpeg",
+  });
 
   // Full history (including rejected/pending) is kept privately for the
   // owner to see their own submission status — never exposed to other
