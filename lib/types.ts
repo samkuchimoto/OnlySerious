@@ -4,7 +4,7 @@
 // Everyone gets the same access, same price, same rules, regardless of
 // who they are or where they're from.
 
-export type RelationshipIntent = "long_term" | "marriage" | "not_sure";
+export type RelationshipIntent = "long_term" | "not_sure";
 
 export interface UserProfile {
   id: string; // Firebase Auth uid
