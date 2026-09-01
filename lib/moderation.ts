@@ -75,6 +75,11 @@ export async function moderatePhoto(imageBase64: string): Promise<PhotoModeratio
         ],
         max_tokens: 10,
         temperature: 0,
+        // Without this, the model emits a <think>...</think> reasoning
+        // block before its actual answer and a tight max_tokens cuts it
+        // off mid-thought, before the real verdict ever appears —
+        // verified against Groq's own docs (2026-09-01), not guessed.
+        reasoning_effort: "none",
       }),
       signal: controller.signal,
     });
