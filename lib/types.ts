@@ -12,6 +12,13 @@ export const MAX_PROFILE_PHOTOS = 6;
 // many approved before a profile is considered complete.
 export const MIN_PROFILE_PHOTOS = 3;
 
+// Daily like limit — applied by subscriptionStatus, never by gender: a
+// free/paid usage tier is a normal product decision, but justifying it
+// by "which gender needs slowing down" isn't something this platform
+// does anywhere else, so this isn't done here either.
+export const FREE_DAILY_LIKE_LIMIT = 5;
+export const PAID_DAILY_LIKE_LIMIT = 100;
+
 export interface UserProfile {
   id: string; // Firebase Auth uid
   displayName: string;
@@ -32,6 +39,19 @@ export interface UserProfile {
   subscriptionStatus: "free" | "active" | "past_due" | "canceled";
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  // Denormalized daily like counter (app/api/likes/route.ts) — avoids a
+  // composite Firestore index that can't be deployed via CLI right now
+  // (the service account lacks the IAM role; see the Firestore rules
+  // setup step). Resets whenever dailyLikesDate isn't today.
+  dailyLikesUsed?: number;
+  dailyLikesDate?: string; // "YYYY-MM-DD"
+}
+
+export interface Like {
+  id: string;
+  likerId: string;
+  likedId: string;
+  createdAt: string;
 }
 
 export interface ProfilePhoto {

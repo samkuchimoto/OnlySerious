@@ -21,12 +21,17 @@ service cloud.firestore {
     // Fields a user can never set/change on their own profile — these are
     // only ever written by a server route via the Admin SDK.
     function touchesServerOnlyFields() {
-      let lockedFields = ['status', 'subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId', 'photos'];
+      let lockedFields = [
+        'status', 'subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId',
+        'photos', 'dailyLikesUsed', 'dailyLikesDate'
+      ];
       return request.resource.data.diff(resource.data).affectedKeys().hasAny(lockedFields);
     }
 
     match /users/{userId} {
-      allow read: if isOwner(userId) || resource.data.status == 'active';
+      // Signed-in only, now that browse is real — an active profile isn't
+      // meant to be scraped by anyone without an account.
+      allow read: if isOwner(userId) || (isSignedIn() && resource.data.status == 'active');
 
       allow create: if isOwner(userId)
         && request.resource.data.id == userId
@@ -69,6 +74,13 @@ service cloud.firestore {
         && request.resource.data.status == 'open';
       // The review queue is server/admin-only — no client reads.
       allow read, update, delete: if false;
+    }
+
+    match /likes/{likeId} {
+      // The daily-limit check and mutual-match detection both have to be
+      // trusted server-side (app/api/likes/route.ts) — a client could
+      // otherwise just skip its own limit.
+      allow read, write: if false;
     }
   }
 }

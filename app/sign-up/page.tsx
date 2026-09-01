@@ -414,6 +414,11 @@ export default function SignUp() {
                   ? "Other members can now see your profile."
                   : `Live as soon as you have ${MIN_PROFILE_PHOTOS} approved photos.`}
               </p>
+              {existingProfile?.status === "active" && (
+                <Link href="/browse" className="w-fit text-sm font-medium underline underline-offset-2">
+                  Browse profiles
+                </Link>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <h2 className="text-sm font-medium text-neutral-700">Photos</h2>
