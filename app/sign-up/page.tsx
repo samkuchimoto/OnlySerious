@@ -7,6 +7,7 @@ import type { User } from "firebase/auth";
 import { db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import type { RelationshipIntent, UserProfile } from "@/lib/types";
+import { PhotoUploader } from "@/components/PhotoUploader";
 
 type Stage = "loading" | "signed-out" | "onboarding" | "pending-review";
 
@@ -250,13 +251,19 @@ export default function SignUp() {
           </form>
         )}
 
-        {stage === "pending-review" && (
-          <div className="flex flex-col items-start gap-4 pt-8">
-            <h1 className="text-3xl font-medium tracking-tight">Your profile is under review</h1>
-            <p className="max-w-md text-neutral-500">
-              We check every new profile before it goes live — you&apos;ll be notified once yours is
-              approved.
-            </p>
+        {stage === "pending-review" && user && (
+          <div className="flex flex-col items-start gap-6 pt-8">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-3xl font-medium tracking-tight">Your profile is under review</h1>
+              <p className="max-w-md text-neutral-500">
+                We check every new profile before it goes live — you&apos;ll be notified once yours is
+                approved.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <h2 className="text-sm font-medium text-neutral-700">Photos</h2>
+              <PhotoUploader user={user} />
+            </div>
           </div>
         )}
       </section>

@@ -6,6 +6,8 @@
 
 export type RelationshipIntent = "long_term" | "not_sure";
 
+export const MAX_PROFILE_PHOTOS = 6;
+
 export interface UserProfile {
   id: string; // Firebase Auth uid
   displayName: string;

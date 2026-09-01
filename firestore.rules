@@ -37,6 +37,14 @@ service cloud.firestore {
       allow update: if isOwner(userId) && !touchesServerOnlyFields();
 
       allow delete: if isOwner(userId);
+
+      // Full moderation history (including pending/rejected) for the
+      // owner's own eyes only — written exclusively by app/api/photos via
+      // the Admin SDK, right after a real moderatePhoto() call.
+      match /photoSubmissions/{photoId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
     }
 
     match /matches/{matchId} {
