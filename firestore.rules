@@ -1,0 +1,66 @@
+rules_version = '2';
+
+// Collections match lib/types.ts. Client writes are restricted wherever a
+// field's real value depends on server-side moderation or business logic
+// (lib/moderation.ts, match-making, subscription state) — those fields
+// only ever change through an app/api/** route using firebase-admin,
+// which bypasses these rules entirely. A client can never write itself
+// into "active" status, mark its own photo "approved", or send a message
+// with flagged=false to dodge moderation.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Fields a user can never set/change on their own profile — these are
+    // only ever written by a server route via the Admin SDK.
+    function touchesServerOnlyFields() {
+      let lockedFields = ['status', 'subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId', 'photos'];
+      return request.resource.data.diff(resource.data).affectedKeys().hasAny(lockedFields);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || resource.data.status == 'active';
+
+      allow create: if isOwner(userId)
+        && request.resource.data.id == userId
+        && request.resource.data.status == 'pending_review'
+        && request.resource.data.subscriptionStatus == 'free'
+        && request.resource.data.photos.size() == 0;
+
+      allow update: if isOwner(userId) && !touchesServerOnlyFields();
+
+      allow delete: if isOwner(userId);
+    }
+
+    match /matches/{matchId} {
+      // Match creation requires evaluating mutual intent server-side —
+      // never a direct client write.
+      allow read: if isSignedIn() && request.auth.uid in resource.data.userIds;
+      allow write: if false;
+    }
+
+    match /messages/{messageId} {
+      allow read: if isSignedIn()
+        && request.auth.uid in get(/databases/$(database)/documents/matches/$(resource.data.matchId)).data.userIds;
+      // Sending goes through a server route so `flagged` reflects a real
+      // moderateText() call, not a client-asserted value.
+      allow write: if false;
+    }
+
+    match /reports/{reportId} {
+      allow create: if isSignedIn()
+        && request.resource.data.reportedByUserId == request.auth.uid
+        && request.resource.data.reportedUserId != request.auth.uid
+        && request.resource.data.status == 'open';
+      // The review queue is server/admin-only — no client reads.
+      allow read, update, delete: if false;
+    }
+  }
+}
