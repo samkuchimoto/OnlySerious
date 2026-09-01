@@ -6,8 +6,12 @@ import { verifyRequestUser, adminDb } from "@/lib/firebaseAdmin";
 import { moderatePhoto } from "@/lib/moderation";
 import { MAX_PROFILE_PHOTOS, type ProfilePhoto } from "@/lib/types";
 
-// ~8MB decoded image (base64 runs ~4/3 the size of the original bytes).
-const MAX_BASE64_LENGTH = 11_000_000;
+// Vercel Functions cap incoming request bodies at 4.5MB for server
+// uploads — this must stay comfortably under that (base64 text runs ~4/3
+// the size of the decoded image, plus a little JSON wrapper overhead), or
+// the platform rejects the request before this route ever runs, which
+// would show up as an opaque failure instead of a clear one.
+const MAX_BASE64_LENGTH = 5_500_000;
 
 const requestSchema = z.object({
   imageBase64: z.string().min(100).max(MAX_BASE64_LENGTH),
