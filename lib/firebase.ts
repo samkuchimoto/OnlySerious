@@ -4,8 +4,8 @@
 "use client";
 
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, type Auth, type User } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -16,10 +16,20 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+// The Firebase client SDK only ever runs in the browser (every real call
+// site here is inside a useEffect or an event handler), but Next.js still
+// executes this module during server-side prerendering/SSR. Guard against
+// initializing there — `window` doesn't exist yet, and there's no real
+// config to initialize with anyway during a build.
+function initFirebase(): { auth: Auth; db: Firestore } {
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  return { auth: getAuth(app), db: getFirestore(app) };
+}
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+const clientSdk = typeof window !== "undefined" ? initFirebase() : undefined;
+
+export const auth = clientSdk?.auth as Auth;
+export const db = clientSdk?.db as Firestore;
 
 export async function signInWithGoogle() {
   await signInWithPopup(auth, new GoogleAuthProvider());
