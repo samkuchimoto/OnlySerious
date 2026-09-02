@@ -6,12 +6,20 @@ import { doc, getDoc, onSnapshot, setDoc, updateDoc } from "firebase/firestore";
 import { RecaptchaVerifier, linkWithPhoneNumber, type ConfirmationResult, type User } from "firebase/auth";
 import { auth, db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
-import { MIN_PROFILE_PHOTOS, type UserProfile } from "@/lib/types";
+import { MIN_PROFILE_PHOTOS, PROMPT_QUESTIONS, REQUIRED_PROMPT_COUNT, type ProfilePrompt, type UserProfile } from "@/lib/types";
 import { PhotoUploader, type PhotoSubmission } from "@/components/PhotoUploader";
 
 type Stage = "loading" | "signed-out" | "verify-phone" | "onboarding" | "editing" | "pending-review";
 
 const GENDER_OPTIONS = ["woman", "man", "other"];
+
+function emptyPrompts(): ProfilePrompt[] {
+  return Array.from({ length: REQUIRED_PROMPT_COUNT }, () => ({
+    id: crypto.randomUUID(),
+    question: "",
+    answer: "",
+  }));
+}
 
 function isAtLeast18(birthdate: string): boolean {
   const dob = new Date(birthdate);
@@ -33,7 +41,7 @@ export default function SignUp() {
   const [interestedIn, setInterestedIn] = useState<string[]>([GENDER_OPTIONS[0]]);
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
-  const [bio, setBio] = useState("");
+  const [prompts, setPrompts] = useState<ProfilePrompt[]>(emptyPrompts);
   const [existingProfile, setExistingProfile] = useState<UserProfile | null>(null);
   const [photoSubmissions, setPhotoSubmissions] = useState<PhotoSubmission[]>([]);
 
@@ -117,6 +125,10 @@ export default function SignUp() {
     );
   }
 
+  function updatePrompt(index: number, field: "question" | "answer", value: string) {
+    setPrompts((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
+  }
+
   function startEditing() {
     if (!existingProfile) return;
     setDisplayName(existingProfile.displayName);
@@ -125,7 +137,7 @@ export default function SignUp() {
     setInterestedIn(existingProfile.interestedIn);
     setCity(existingProfile.city);
     setCountry(existingProfile.country);
-    setBio(existingProfile.bio);
+    setPrompts(existingProfile.prompts?.length === REQUIRED_PROMPT_COUNT ? existingProfile.prompts : emptyPrompts());
     setError(null);
     setStage("editing");
   }
@@ -143,6 +155,14 @@ export default function SignUp() {
       setError("Select at least one option for who you're interested in.");
       return;
     }
+    if (prompts.some((p) => !p.question || !p.answer.trim())) {
+      setError("Pick a question and write an answer for all three prompts.");
+      return;
+    }
+    if (new Set(prompts.map((p) => p.question)).size !== prompts.length) {
+      setError("Choose a different question for each prompt.");
+      return;
+    }
 
     const editableFields = {
       displayName: displayName.trim(),
@@ -151,7 +171,7 @@ export default function SignUp() {
       interestedIn,
       city: city.trim(),
       country: country.trim(),
-      bio: bio.trim(),
+      prompts: prompts.map((p) => ({ ...p, answer: p.answer.trim() })),
     };
 
     setSubmitting(true);
@@ -359,16 +379,41 @@ export default function SignUp() {
               </label>
             </div>
 
-            <label className="flex flex-col gap-1.5 text-sm">
-              Bio
-              <textarea
-                required
-                rows={4}
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
-              />
-            </label>
+            <fieldset className="flex flex-col gap-3">
+              <legend className="mb-0.5 text-sm">
+                Pick {REQUIRED_PROMPT_COUNT} prompts and answer them — this is what shows on your profile
+                instead of a plain bio.
+              </legend>
+              {prompts.map((prompt, index) => (
+                <div key={prompt.id} className="flex flex-col gap-2 rounded-lg border border-neutral-300 p-4">
+                  <select
+                    required
+                    value={prompt.question}
+                    onChange={(e) => updatePrompt(index, "question", e.target.value)}
+                    className="rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+                  >
+                    <option value="" disabled>
+                      Choose a prompt…
+                    </option>
+                    {PROMPT_QUESTIONS.filter(
+                      (q) => q === prompt.question || !prompts.some((p) => p.question === q),
+                    ).map((question) => (
+                      <option key={question} value={question}>
+                        {question}
+                      </option>
+                    ))}
+                  </select>
+                  <textarea
+                    required
+                    rows={2}
+                    placeholder="Your answer"
+                    value={prompt.answer}
+                    onChange={(e) => updatePrompt(index, "answer", e.target.value)}
+                    className="rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+                  />
+                </div>
+              ))}
+            </fieldset>
 
             {error && <p className="text-sm text-red-600">{error}</p>}
 

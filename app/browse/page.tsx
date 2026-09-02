@@ -26,6 +26,7 @@ export default function Browse() {
   const [loading, setLoading] = useState(true);
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [likeStatus, setLikeStatus] = useState<Record<string, LikeStatus>>({});
+  const [comments, setComments] = useState<Record<string, string>>({});
   const [remaining, setRemaining] = useState<number | null>(null);
 
   useEffect(() => {
@@ -51,50 +52,57 @@ export default function Browse() {
     });
   }, []);
 
-  async function handleLike(likedUserId: string) {
+  // Contextual like — tied to the featured prompt shown, with an
+  // optional reply, so a match starts with an actual conversation
+  // opener instead of a blind heart-tap (Hinge's real mechanic, per
+  // your request to combine that with ThaiFriendly's browse model).
+  async function handleLike(profile: UserProfile) {
     if (!user) return;
-    setLikeStatus((prev) => ({ ...prev, [likedUserId]: "sending" }));
+    const featuredPrompt = profile.prompts?.[0];
+    setLikeStatus((prev) => ({ ...prev, [profile.id]: "sending" }));
     try {
       const idToken = await user.getIdToken();
       const res = await fetch("/api/likes", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({ likedUserId }),
+        body: JSON.stringify({
+          likedUserId: profile.id,
+          promptId: featuredPrompt?.id,
+          comment: comments[profile.id]?.trim() || undefined,
+        }),
       });
       const body = await res.json().catch(() => ({}));
       if (res.status === 429) {
-        setLikeStatus((prev) => ({ ...prev, [likedUserId]: "limit-reached" }));
+        setLikeStatus((prev) => ({ ...prev, [profile.id]: "limit-reached" }));
         setRemaining(0);
         return;
       }
       if (!res.ok) {
-        setLikeStatus((prev) => ({ ...prev, [likedUserId]: "error" }));
+        setLikeStatus((prev) => ({ ...prev, [profile.id]: "error" }));
         return;
       }
-      setLikeStatus((prev) => ({ ...prev, [likedUserId]: body.matched ? "matched" : "liked" }));
+      setLikeStatus((prev) => ({ ...prev, [profile.id]: body.matched ? "matched" : "liked" }));
       setRemaining(typeof body.remaining === "number" ? body.remaining : null);
     } catch {
-      setLikeStatus((prev) => ({ ...prev, [likedUserId]: "error" }));
+      setLikeStatus((prev) => ({ ...prev, [profile.id]: "error" }));
     }
   }
 
   return (
     <main className="flex min-h-screen flex-col bg-white text-neutral-900">
-      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-8 sm:px-10">
+      <header className="mx-auto flex w-full max-w-2xl items-center justify-between px-6 py-8">
         <Link href="/" className="text-lg font-semibold tracking-tight">
           {BRAND_CONFIG.appTitle}
         </Link>
         <div className="flex items-center gap-5">
-          {remaining !== null && (
-            <span className="text-sm text-neutral-400">{remaining} likes left today</span>
-          )}
+          {remaining !== null && <span className="text-sm text-neutral-400">{remaining} likes left today</span>}
           <Link href="/sign-up" className="text-sm text-neutral-400 transition-colors hover:text-neutral-900">
             My profile
           </Link>
         </div>
       </header>
 
-      <section className="mx-auto w-full max-w-6xl flex-1 px-6 pb-20 sm:px-10">
+      <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
         {loading && <p className="text-sm text-neutral-400">Loading…</p>}
 
         {!loading && !user && (
@@ -129,28 +137,48 @@ export default function Browse() {
                 No one matching your preferences has an active profile yet — check back soon.
               </p>
             ) : (
-              <div className="mt-8 grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-4">
+              <div className="mt-8 flex flex-col gap-10">
                 {profiles.map((profile) => {
                   const status = likeStatus[profile.id] ?? "idle";
                   const photo = profile.photos[0];
+                  const featuredPrompt = profile.prompts?.[0];
+                  const isDone = status === "liked" || status === "matched" || status === "limit-reached";
                   return (
-                    <div key={profile.id} className="flex flex-col gap-2">
-                      <div className="aspect-[3/4] w-full overflow-hidden rounded-xl bg-neutral-100">
+                    <article key={profile.id} className="flex flex-col gap-3">
+                      <div className="aspect-[4/5] w-full overflow-hidden rounded-2xl bg-neutral-100">
                         {photo && (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={photo.url} alt="" className="h-full w-full object-cover" />
                         )}
                       </div>
-                      <div className="flex items-baseline justify-between">
-                        <p className="text-sm font-medium">
-                          {profile.displayName}, {calculateAge(profile.birthdate)}
-                        </p>
-                      </div>
-                      <p className="text-xs text-neutral-400">{profile.city}</p>
+                      <p className="text-lg font-medium">
+                        {profile.displayName}, {calculateAge(profile.birthdate)}
+                        <span className="ml-2 text-sm font-normal text-neutral-400">{profile.city}</span>
+                      </p>
+
+                      {featuredPrompt && (
+                        <div className="rounded-xl border border-neutral-200 p-5">
+                          <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">
+                            {featuredPrompt.question}
+                          </p>
+                          <p className="mt-1.5 text-base">{featuredPrompt.answer}</p>
+                        </div>
+                      )}
+
+                      {!isDone && status !== "error" && (
+                        <input
+                          type="text"
+                          placeholder="Add a comment (optional)"
+                          value={comments[profile.id] ?? ""}
+                          onChange={(e) => setComments((prev) => ({ ...prev, [profile.id]: e.target.value }))}
+                          className="rounded-full border border-neutral-300 px-4 py-2.5 text-sm focus:border-neutral-900 focus:outline-none"
+                        />
+                      )}
+
                       <button
-                        onClick={() => handleLike(profile.id)}
-                        disabled={status === "sending" || status === "liked" || status === "matched" || status === "limit-reached"}
-                        className={`mt-1 rounded-full border px-4 py-2 text-xs font-medium transition-colors disabled:cursor-default ${
+                        onClick={() => handleLike(profile)}
+                        disabled={status === "sending" || isDone}
+                        className={`w-fit rounded-full border px-6 py-2.5 text-sm font-medium transition-colors disabled:cursor-default ${
                           status === "matched"
                             ? "border-neutral-900 bg-neutral-900 text-white"
                             : status === "liked"
@@ -172,7 +200,7 @@ export default function Browse() {
                                   ? "…"
                                   : "Like"}
                       </button>
-                    </div>
+                    </article>
                   );
                 })}
               </div>
