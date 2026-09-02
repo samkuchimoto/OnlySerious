@@ -5,14 +5,18 @@
 // generic commercial-solicitation language usable on a dating platform
 // anywhere, not slang tied to any one country or region.
 //
-// Photo moderation uses Groq's vision model (qwen/qwen3.6-27b) as a
-// classifier — the same vendor/model already proven in production for
-// Ittsui's gesture-photo description feature (app/api/gestures/describe-
-// photo/route.ts in that repo). Deliberately NOT Google Cloud Vision's
-// SafeSearch API: Vision requires a Cloud Billing account (a card on
-// file) even to stay within its free quota, where Groq's free tier needs
-// none — verified directly against Groq's current docs (2026-09-01), not
-// assumed, since their vision model lineup has changed names before.
+// Two vendors, two different jobs — not a fallback pair:
+//   - Groq's vision model (qwen/qwen3.6-27b) is REQUIRED regardless of
+//     Vision's availability, because it's the only one of the two that
+//     can judge "is this photo AI-generated" — Google Cloud Vision's
+//     SafeSearch has no equivalent category at all.
+//   - Google Cloud Vision's SafeSearch, once GOOGLE_CLOUD_VISION_API_KEY
+//     is set, runs as a stricter second opinion specifically for racy/
+//     explicit content (its actual purpose-built job) on top of Groq's
+//     own judgment on the same question — reject if either flags it,
+//     approve only if both clear it. Skipped entirely while unconfigured
+//     (e.g. before Blaze billing is enabled), in which case Groq's own
+//     racy/explicit verdict is the only one there is.
 //
 // Honest-fallback posture throughout: a missing API key, a request
 // failure, or a response that isn't EXACTLY one of the expected verdicts
@@ -20,13 +24,6 @@
 // unmoderated content because a key wasn't configured, or because the
 // model hedged instead of giving a clean verdict, would be the one
 // failure mode worse than moderation being briefly unavailable.
-//
-// Also rejects AI-generated/synthetic photos — a platform built on real
-// profiles can't have people uploading a fabricated face. This is a
-// genuinely harder classification than "is this racy" (AI-image
-// detection is an imperfect problem even for dedicated tools), so it's
-// held to the same honest-fallback standard: anything short of a clean,
-// confident verdict goes to manual review rather than guessing.
 
 const MODERATION_TIMEOUT_MS = 8000;
 const GROQ_VISION_MODEL = "qwen/qwen3.6-27b";
@@ -47,10 +44,75 @@ export interface PhotoModerationResult {
   reason?: string;
 }
 
+type Likelihood = "UNKNOWN" | "VERY_UNLIKELY" | "UNLIKELY" | "POSSIBLE" | "LIKELY" | "VERY_LIKELY";
+const REJECT_AT: Likelihood[] = ["LIKELY", "VERY_LIKELY"];
+
+// Real, verified call against Vision's REST API (images:annotate,
+// SAFE_SEARCH_DETECTION feature) — checked directly against Google's
+// current docs before writing this, not guessed. "racy" is Google's own
+// category for suggestive-but-not-explicit content (swimwear, underwear,
+// shirtless), which is exactly the policy line this app draws stricter
+// than most dating apps; "adult" covers explicit nudity/pornography.
+async function checkVisionSafeSearch(imageBase64: string, apiKey: string): Promise<PhotoModerationResult> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), MODERATION_TIMEOUT_MS);
+  try {
+    const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        requests: [{ image: { content: imageBase64 }, features: [{ type: "SAFE_SEARCH_DETECTION" }] }],
+      }),
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => "");
+      console.error(`checkVisionSafeSearch: Vision API failed (${res.status}) ${body.slice(0, 300)}`);
+      return { status: "needs_manual_review", reason: "Automatic moderation failed." };
+    }
+    const data = await res.json();
+    const annotation = data?.responses?.[0]?.safeSearchAnnotation;
+    if (!annotation) {
+      console.error(`checkVisionSafeSearch: unexpected Vision response shape: ${JSON.stringify(data).slice(0, 300)}`);
+      return { status: "needs_manual_review", reason: "Moderation response was ambiguous." };
+    }
+    if (REJECT_AT.includes(annotation.adult)) {
+      return { status: "rejected", reason: "Explicit content detected." };
+    }
+    if (REJECT_AT.includes(annotation.racy)) {
+      return {
+        status: "rejected",
+        reason: "This photo is too suggestive for this platform (swimwear, underwear, shirtless).",
+      };
+    }
+    return { status: "approved" };
+  } catch (err) {
+    console.error("checkVisionSafeSearch: request threw", err);
+    return { status: "needs_manual_review", reason: "Moderation timed out." };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// The only place a photo's real moderationStatus is decided. Groq always
+// runs first (see file header for why); Vision, when configured, then
+// gets the final say on racy/explicit content specifically — Groq's own
+// "approved" on that dimension isn't enough once a stricter check is
+// available to actually run.
+export async function moderatePhoto(imageBase64: string): Promise<PhotoModerationResult> {
+  const groqResult = await moderatePhotoWithGroq(imageBase64);
+  if (groqResult.status !== "approved") return groqResult;
+
+  const visionApiKey = process.env.GOOGLE_CLOUD_VISION_API_KEY;
+  if (!visionApiKey) return groqResult;
+
+  return checkVisionSafeSearch(imageBase64, visionApiKey);
+}
+
 // A photo only ever auto-clears when the model's response is an EXACT
 // match for one of these four tokens — any hedging, extra text, or
 // unexpected output falls to manual review rather than being guessed at.
-export async function moderatePhoto(imageBase64: string): Promise<PhotoModerationResult> {
+async function moderatePhotoWithGroq(imageBase64: string): Promise<PhotoModerationResult> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return { status: "needs_manual_review", reason: "Moderation isn't configured yet." };
