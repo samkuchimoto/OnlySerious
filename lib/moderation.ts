@@ -109,73 +109,94 @@ export async function moderatePhoto(imageBase64: string): Promise<PhotoModeratio
   return checkVisionSafeSearch(imageBase64, visionApiKey);
 }
 
+const GROQ_MAX_ATTEMPTS = 3;
+const GROQ_RATE_LIMIT_RETRY_MS = 1500;
+
 // A photo only ever auto-clears when the model's response is an EXACT
 // match for one of these four tokens — any hedging, extra text, or
 // unexpected output falls to manual review rather than being guessed at.
+//
+// Retries on 429 specifically: real usage showed a person uploading 2-3
+// photos back-to-back (exactly the normal flow for the 3-photo minimum)
+// burns through Groq's free-tier per-minute token budget, and a single
+// rate-limited request has nothing wrong with the photo itself — it's a
+// transient capacity issue, not an ambiguous verdict, so it deserves a
+// real second attempt rather than immediately falling to manual review.
 async function moderatePhotoWithGroq(imageBase64: string): Promise<PhotoModerationResult> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     return { status: "needs_manual_review", reason: "Moderation isn't configured yet." };
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), MODERATION_TIMEOUT_MS);
-  try {
-    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: GROQ_VISION_MODEL,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: MODERATION_PROMPT },
-              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
-            ],
-          },
-        ],
-        max_tokens: 10,
-        temperature: 0,
-        // Without this, the model emits a <think>...</think> reasoning
-        // block before its actual answer and a tight max_tokens cuts it
-        // off mid-thought, before the real verdict ever appears —
-        // verified against Groq's own docs (2026-09-01), not guessed.
-        reasoning_effort: "none",
-      }),
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      console.error(`moderatePhoto: Groq vision failed (${res.status}) ${body.slice(0, 300)}`);
-      return { status: "needs_manual_review", reason: "Automatic moderation failed." };
-    }
-    const data = await res.json();
-    const content: unknown = data?.choices?.[0]?.message?.content;
-    const verdict = typeof content === "string" ? content.trim().toUpperCase() : "";
+  for (let attempt = 1; attempt <= GROQ_MAX_ATTEMPTS; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), MODERATION_TIMEOUT_MS);
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: GROQ_VISION_MODEL,
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: MODERATION_PROMPT },
+                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
+              ],
+            },
+          ],
+          max_tokens: 10,
+          temperature: 0,
+          // Without this, the model emits a <think>...</think> reasoning
+          // block before its actual answer and a tight max_tokens cuts it
+          // off mid-thought, before the real verdict ever appears —
+          // verified against Groq's own docs (2026-09-01), not guessed.
+          reasoning_effort: "none",
+        }),
+        signal: controller.signal,
+      });
 
-    if (verdict === "APPROVE") return { status: "approved" };
-    if (verdict === "REJECT_RACY") {
-      return {
-        status: "rejected",
-        reason: "This photo is too suggestive for this platform (swimwear, underwear, shirtless).",
-      };
-    }
-    if (verdict === "REJECT_EXPLICIT") {
-      return { status: "rejected", reason: "Explicit content detected." };
-    }
-    if (verdict === "REJECT_AI_GENERATED") {
-      return { status: "rejected", reason: "This photo looks AI-generated — only real photos are accepted." };
-    }
+      if (res.status === 429 && attempt < GROQ_MAX_ATTEMPTS) {
+        await new Promise((resolve) => setTimeout(resolve, GROQ_RATE_LIMIT_RETRY_MS));
+        continue;
+      }
+      if (!res.ok) {
+        const body = await res.text().catch(() => "");
+        console.error(`moderatePhoto: Groq vision failed (${res.status}) ${body.slice(0, 300)}`);
+        return { status: "needs_manual_review", reason: "Automatic moderation failed." };
+      }
+      const data = await res.json();
+      const content: unknown = data?.choices?.[0]?.message?.content;
+      const verdict = typeof content === "string" ? content.trim().toUpperCase() : "";
 
-    console.error(`moderatePhoto: unexpected Groq verdict: ${JSON.stringify(content).slice(0, 300)}`);
-    return { status: "needs_manual_review", reason: "Moderation response was ambiguous." };
-  } catch (err) {
-    console.error("moderatePhoto: request threw", err);
-    return { status: "needs_manual_review", reason: "Moderation timed out." };
-  } finally {
-    clearTimeout(timeout);
+      if (verdict === "APPROVE") return { status: "approved" };
+      if (verdict === "REJECT_RACY") {
+        return {
+          status: "rejected",
+          reason: "This photo is too suggestive for this platform (swimwear, underwear, shirtless).",
+        };
+      }
+      if (verdict === "REJECT_EXPLICIT") {
+        return { status: "rejected", reason: "Explicit content detected." };
+      }
+      if (verdict === "REJECT_AI_GENERATED") {
+        return { status: "rejected", reason: "This photo looks AI-generated — only real photos are accepted." };
+      }
+
+      console.error(`moderatePhoto: unexpected Groq verdict: ${JSON.stringify(content).slice(0, 300)}`);
+      return { status: "needs_manual_review", reason: "Moderation response was ambiguous." };
+    } catch (err) {
+      console.error("moderatePhoto: request threw", err);
+      return { status: "needs_manual_review", reason: "Moderation timed out." };
+    } finally {
+      clearTimeout(timeout);
+    }
   }
+
+  // Unreachable in practice (the loop always returns), but keeps
+  // TypeScript happy about the function's declared return type.
+  return { status: "needs_manual_review", reason: "Automatic moderation failed." };
 }
 
 // Generic, country-agnostic commercial-solicitation language — the same

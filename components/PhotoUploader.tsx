@@ -6,7 +6,7 @@ import type { User } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { MAX_PROFILE_PHOTOS, MIN_PROFILE_PHOTOS } from "@/lib/types";
 
-interface PhotoSubmission {
+export interface PhotoSubmission {
   id: string;
   url: string;
   moderationStatus: "pending" | "approved" | "rejected";
@@ -50,17 +50,48 @@ function StatusBadge({ status, reason }: { status: PhotoSubmission["moderationSt
   return <span className="text-xs text-neutral-500">Awaiting review</span>;
 }
 
-export function PhotoUploader({ user }: { user: User }) {
+export function PhotoUploader({
+  user,
+  onSubmissionsChange,
+}: {
+  user: User;
+  onSubmissionsChange?: (submissions: PhotoSubmission[]) => void;
+}) {
   const [submissions, setSubmissions] = useState<PhotoSubmission[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const q = query(collection(db, "users", user.uid, "photoSubmissions"), orderBy("createdAt", "asc"));
     return onSnapshot(q, (snapshot) => {
-      setSubmissions(snapshot.docs.map((d) => d.data() as PhotoSubmission));
+      const next = snapshot.docs.map((d) => d.data() as PhotoSubmission);
+      setSubmissions(next);
+      onSubmissionsChange?.(next);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.uid]);
+
+  async function handleRetry(photoId: string) {
+    setError(null);
+    setRetryingId(photoId);
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/photos/retry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ photoId }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error ?? "Retry failed. Please try again.");
+      }
+    } catch {
+      setError("Retry failed. Please try again.");
+    } finally {
+      setRetryingId(null);
+    }
+  }
 
   const approvedCount = submissions.filter((s) => s.moderationStatus === "approved").length;
   const atLimit = approvedCount >= MAX_PROFILE_PHOTOS;
@@ -110,6 +141,16 @@ export function PhotoUploader({ user }: { user: User }) {
               }`}
             />
             <StatusBadge status={submission.moderationStatus} reason={submission.reason} />
+            {submission.moderationStatus === "pending" && (
+              <button
+                type="button"
+                onClick={() => handleRetry(submission.id)}
+                disabled={retryingId === submission.id}
+                className="text-xs font-medium underline underline-offset-2 disabled:opacity-50"
+              >
+                {retryingId === submission.id ? "Checking…" : "Check again"}
+              </button>
+            )}
           </div>
         ))}
       </div>

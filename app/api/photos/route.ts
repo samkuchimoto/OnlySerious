@@ -4,7 +4,8 @@ import { z } from "zod";
 import { put } from "@vercel/blob";
 import { verifyRequestUser, adminDb } from "@/lib/firebaseAdmin";
 import { moderatePhoto } from "@/lib/moderation";
-import { MAX_PROFILE_PHOTOS, MIN_PROFILE_PHOTOS, type ProfilePhoto } from "@/lib/types";
+import { publishApprovedPhoto } from "@/lib/photoActivation";
+import { MAX_PROFILE_PHOTOS, type ProfilePhoto } from "@/lib/types";
 
 // Vercel Functions cap incoming request bodies at 4.5MB for server
 // uploads — this must stay comfortably under that (base64 text runs ~4/3
@@ -67,15 +68,7 @@ export async function POST(request: Request) {
   });
 
   if (moderationStatus === "approved") {
-    const approvedPhoto: ProfilePhoto = { id: photoId, url, moderationStatus: "approved" };
-    const updatedPhotos = [...existingPhotos, approvedPhoto];
-    const update: Record<string, unknown> = { photos: updatedPhotos };
-    // Auto-activate once the one thing this pipeline actually checks is
-    // satisfied — never touches a profile a human has already suspended.
-    if (updatedPhotos.length >= MIN_PROFILE_PHOTOS && userSnap.data()?.status === "pending_review") {
-      update.status = "active";
-    }
-    await userRef.update(update);
+    await publishApprovedPhoto(uid, { id: photoId, url, moderationStatus: "approved" });
   }
 
   return NextResponse.json({

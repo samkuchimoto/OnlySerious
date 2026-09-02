@@ -7,7 +7,7 @@ import { RecaptchaVerifier, linkWithPhoneNumber, type ConfirmationResult, type U
 import { auth, db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import { MIN_PROFILE_PHOTOS, type UserProfile } from "@/lib/types";
-import { PhotoUploader } from "@/components/PhotoUploader";
+import { PhotoUploader, type PhotoSubmission } from "@/components/PhotoUploader";
 
 type Stage = "loading" | "signed-out" | "verify-phone" | "onboarding" | "editing" | "pending-review";
 
@@ -35,6 +35,7 @@ export default function SignUp() {
   const [country, setCountry] = useState("");
   const [bio, setBio] = useState("");
   const [existingProfile, setExistingProfile] = useState<UserProfile | null>(null);
+  const [photoSubmissions, setPhotoSubmissions] = useState<PhotoSubmission[]>([]);
 
   const [phoneInput, setPhoneInput] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
@@ -414,19 +415,22 @@ export default function SignUp() {
                   ? "Other members can now see your profile."
                   : `Live as soon as you have ${MIN_PROFILE_PHOTOS} approved photos.`}
               </p>
-              {existingProfile?.status === "active" && (
-                <Link href="/browse" className="w-fit text-sm font-medium underline underline-offset-2">
-                  Browse profiles
-                </Link>
-              )}
             </div>
             <div className="flex flex-col gap-2">
               <h2 className="text-sm font-medium text-neutral-700">Photos</h2>
               <p className="text-sm text-neutral-500">
                 At least {MIN_PROFILE_PHOTOS} real photos are required — no AI-generated images.
               </p>
-              <PhotoUploader user={user} />
+              <PhotoUploader user={user} onSubmissionsChange={setPhotoSubmissions} />
             </div>
+            {photoSubmissions.length >= MIN_PROFILE_PHOTOS && (
+              <Link
+                href="/browse"
+                className="rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+              >
+                Continue to browse
+              </Link>
+            )}
           </div>
         )}
       </section>
