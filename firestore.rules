@@ -77,10 +77,28 @@ service cloud.firestore {
     }
 
     match /likes/{likeId} {
-      // The daily-limit check and mutual-match detection both have to be
-      // trusted server-side (app/api/likes/route.ts) — a client could
-      // otherwise just skip its own limit.
-      allow read, write: if false;
+      // Writes stay server-only (the daily-limit check and mutual-match
+      // detection both have to be trusted — a client could otherwise
+      // just skip its own limit). Reads are allowed for "who liked me",
+      // strictly limited to likes addressed to the reader.
+      allow read: if isSignedIn() && resource.data.likedId == request.auth.uid;
+      allow write: if false;
+    }
+
+    match /blocks/{blockId} {
+      // Deterministic id ({blockerId}_{blockedId}) makes a duplicate
+      // block a no-op overwrite rather than a second document. Readable
+      // by either side, since both a blocker (to filter their own
+      // browse) and the blocked person (so they're excluded from
+      // showing up to the blocker too) need to know it exists.
+      allow read: if isSignedIn()
+        && (resource.data.blockerId == request.auth.uid || resource.data.blockedId == request.auth.uid);
+      allow create: if isSignedIn()
+        && request.resource.data.blockerId == request.auth.uid
+        && request.resource.data.blockedId != request.auth.uid
+        && blockId == request.resource.data.blockerId + '_' + request.resource.data.blockedId;
+      allow delete: if isSignedIn() && resource.data.blockerId == request.auth.uid;
+      allow update: if false;
     }
   }
 }

@@ -6,6 +6,7 @@ import { collection, doc, getDoc, getDocs, query, where } from "firebase/firesto
 import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 import type { UserProfile } from "@/lib/types";
 
 function calculateAge(birthdate: string): number {
@@ -41,10 +42,23 @@ export default function Browse() {
       const own = ownSnap.exists() ? (ownSnap.data() as UserProfile) : null;
       setOwnProfile(own);
 
+      // Both directions: people I've blocked, and people who've blocked
+      // me — neither should see the other in browse.
+      const [blockedByMe, blockedMe] = await Promise.all([
+        getDocs(query(collection(db, "blocks"), where("blockerId", "==", nextUser.uid))),
+        getDocs(query(collection(db, "blocks"), where("blockedId", "==", nextUser.uid))),
+      ]);
+      const excludedIds = new Set([
+        ...blockedByMe.docs.map((d) => d.data().blockedId as string),
+        ...blockedMe.docs.map((d) => d.data().blockerId as string),
+      ]);
+
       const activeSnap = await getDocs(query(collection(db, "users"), where("status", "==", "active")));
       const active = activeSnap.docs
         .map((d) => d.data() as UserProfile)
         .filter((p) => p.id !== nextUser.uid)
+        .filter((p) => !p.paused)
+        .filter((p) => !excludedIds.has(p.id))
         .filter((p) => !own?.interestedIn?.length || own.interestedIn.includes(p.gender));
 
       setProfiles(active);
@@ -94,10 +108,19 @@ export default function Browse() {
         <Link href="/" className="text-lg font-semibold tracking-tight">
           {BRAND_CONFIG.appTitle}
         </Link>
-        <div className="flex items-center gap-5">
-          {remaining !== null && <span className="text-sm text-neutral-400">{remaining} likes left today</span>}
-          <Link href="/sign-up" className="text-sm text-neutral-400 transition-colors hover:text-neutral-900">
+        <div className="flex items-center gap-5 text-sm text-neutral-400">
+          {remaining !== null && <span>{remaining} likes left today</span>}
+          <Link href="/matches" className="transition-colors hover:text-neutral-900">
+            Matches
+          </Link>
+          <Link href="/liked-me" className="transition-colors hover:text-neutral-900">
+            Likes
+          </Link>
+          <Link href="/sign-up" className="transition-colors hover:text-neutral-900">
             My profile
+          </Link>
+          <Link href="/settings" className="transition-colors hover:text-neutral-900">
+            Settings
           </Link>
         </div>
       </header>
@@ -145,16 +168,17 @@ export default function Browse() {
                   const isDone = status === "liked" || status === "matched" || status === "limit-reached";
                   return (
                     <article key={profile.id} className="flex flex-col gap-3">
-                      <div className="aspect-[4/5] w-full overflow-hidden rounded-2xl bg-neutral-100">
+                      <Link href={`/profile/${profile.id}`} className="aspect-[4/5] w-full overflow-hidden rounded-2xl bg-neutral-100">
                         {photo && (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={photo.url} alt="" className="h-full w-full object-cover" />
                         )}
-                      </div>
-                      <p className="text-lg font-medium">
+                      </Link>
+                      <Link href={`/profile/${profile.id}`} className="flex items-center gap-2 text-lg font-medium">
                         {profile.displayName}, {calculateAge(profile.birthdate)}
-                        <span className="ml-2 text-sm font-normal text-neutral-400">{profile.city}</span>
-                      </p>
+                        <span className="text-sm font-normal text-neutral-400">{profile.city}</span>
+                        <VerifiedBadge approvedPhotoCount={profile.photos.length} />
+                      </Link>
 
                       {featuredPrompt && (
                         <div className="rounded-xl border border-neutral-200 p-5">

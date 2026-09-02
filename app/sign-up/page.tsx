@@ -211,12 +211,27 @@ export default function SignUp() {
           {BRAND_CONFIG.appTitle}
         </Link>
         {user && (
-          <button
-            onClick={() => signOutUser()}
-            className="text-sm text-neutral-400 transition-colors hover:text-neutral-900"
-          >
-            Sign out
-          </button>
+          <div className="flex items-center gap-4 text-sm text-neutral-400">
+            {stage === "pending-review" && (
+              <>
+                <Link href="/browse" className="transition-colors hover:text-neutral-900">
+                  Browse
+                </Link>
+                <Link href="/matches" className="transition-colors hover:text-neutral-900">
+                  Matches
+                </Link>
+                <Link href="/liked-me" className="transition-colors hover:text-neutral-900">
+                  Likes
+                </Link>
+                <Link href="/settings" className="transition-colors hover:text-neutral-900">
+                  Settings
+                </Link>
+              </>
+            )}
+            <button onClick={() => signOutUser()} className="transition-colors hover:text-neutral-900">
+              Sign out
+            </button>
+          </div>
         )}
       </header>
 
@@ -460,6 +475,25 @@ export default function SignUp() {
                   ? "Other members can now see your profile."
                   : `Live as soon as you have ${MIN_PROFILE_PHOTOS} approved photos.`}
               </p>
+              {existingProfile?.status !== "active" && (() => {
+                // Reaching this screen already means phone verification +
+                // profile info are done — the only real variable left is
+                // photo progress, which this weights accordingly. A real
+                // number, not a decorative one.
+                const approvedCount = photoSubmissions.filter((s) => s.moderationStatus === "approved").length;
+                const percent = Math.min(
+                  100,
+                  Math.round(66 + (34 * Math.min(approvedCount, MIN_PROFILE_PHOTOS)) / MIN_PROFILE_PHOTOS),
+                );
+                return (
+                  <div className="flex w-full max-w-xs items-center gap-2">
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-100">
+                      <div className="h-full bg-neutral-900 transition-all" style={{ width: `${percent}%` }} />
+                    </div>
+                    <span className="text-xs text-neutral-400">{percent}%</span>
+                  </div>
+                );
+              })()}
             </div>
             <div className="flex flex-col gap-2">
               <h2 className="text-sm font-medium text-neutral-700">Photos</h2>

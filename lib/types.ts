@@ -61,6 +61,10 @@ export interface UserProfile {
   phoneNumber: string;
   photos: ProfilePhoto[];
   status: "pending_review" | "active" | "suspended";
+  // Self-service pause, distinct from a moderator suspending the
+  // account — a paused profile is hidden from browse the same way, but
+  // the person controls it themselves and can undo it.
+  paused?: boolean;
   createdAt: string;
   subscriptionStatus: "free" | "active" | "past_due" | "canceled";
   stripeCustomerId?: string;
@@ -122,4 +126,11 @@ export interface Report {
   context: string; // free text, e.g. a copied message or note
   createdAt: string;
   status: "open" | "reviewed" | "actioned" | "dismissed";
+}
+
+export interface Block {
+  id: string; // `${blockerId}_${blockedId}`, deterministic — no duplicates possible
+  blockerId: string;
+  blockedId: string;
+  createdAt: string;
 }
