@@ -112,21 +112,29 @@ export async function moderatePhoto(imageBase64: string): Promise<PhotoModeratio
 const GROQ_MAX_ATTEMPTS = 3;
 const GROQ_RATE_LIMIT_RETRY_MS = 1500;
 
-// A photo only ever auto-clears when the model's response is an EXACT
-// match for one of these four tokens — any hedging, extra text, or
-// unexpected output falls to manual review rather than being guessed at.
+interface GroqImageContent {
+  type: "image_url";
+  image_url: { url: string };
+}
+
+// Shared low-level caller for both photo moderation and selfie
+// verification below. Returns the raw text content, or null on any
+// failure (missing key, network error, non-2xx after retries) — callers
+// decide what "null" means for their own honest-fallback default.
 //
 // Retries on 429 specifically: real usage showed a person uploading 2-3
 // photos back-to-back (exactly the normal flow for the 3-photo minimum)
 // burns through Groq's free-tier per-minute token budget, and a single
-// rate-limited request has nothing wrong with the photo itself — it's a
+// rate-limited request has nothing wrong with the input — it's a
 // transient capacity issue, not an ambiguous verdict, so it deserves a
-// real second attempt rather than immediately falling to manual review.
-async function moderatePhotoWithGroq(imageBase64: string): Promise<PhotoModerationResult> {
+// real second attempt rather than immediately falling back.
+async function callGroqVision(
+  prompt: string,
+  images: GroqImageContent[],
+  maxTokens: number,
+): Promise<string | null> {
   const apiKey = process.env.GROQ_API_KEY;
-  if (!apiKey) {
-    return { status: "needs_manual_review", reason: "Moderation isn't configured yet." };
-  }
+  if (!apiKey) return null;
 
   for (let attempt = 1; attempt <= GROQ_MAX_ATTEMPTS; attempt++) {
     const controller = new AbortController();
@@ -137,16 +145,8 @@ async function moderatePhotoWithGroq(imageBase64: string): Promise<PhotoModerati
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           model: GROQ_VISION_MODEL,
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: MODERATION_PROMPT },
-                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
-              ],
-            },
-          ],
-          max_tokens: 10,
+          messages: [{ role: "user", content: [{ type: "text", text: prompt }, ...images] }],
+          max_tokens: maxTokens,
           temperature: 0,
           // Without this, the model emits a <think>...</think> reasoning
           // block before its actual answer and a tight max_tokens cuts it
@@ -163,40 +163,88 @@ async function moderatePhotoWithGroq(imageBase64: string): Promise<PhotoModerati
       }
       if (!res.ok) {
         const body = await res.text().catch(() => "");
-        console.error(`moderatePhoto: Groq vision failed (${res.status}) ${body.slice(0, 300)}`);
-        return { status: "needs_manual_review", reason: "Automatic moderation failed." };
+        console.error(`callGroqVision: Groq failed (${res.status}) ${body.slice(0, 300)}`);
+        return null;
       }
       const data = await res.json();
       const content: unknown = data?.choices?.[0]?.message?.content;
-      const verdict = typeof content === "string" ? content.trim().toUpperCase() : "";
-
-      if (verdict === "APPROVE") return { status: "approved" };
-      if (verdict === "REJECT_RACY") {
-        return {
-          status: "rejected",
-          reason: "This photo is too suggestive for this platform (swimwear, underwear, shirtless).",
-        };
-      }
-      if (verdict === "REJECT_EXPLICIT") {
-        return { status: "rejected", reason: "Explicit content detected." };
-      }
-      if (verdict === "REJECT_AI_GENERATED") {
-        return { status: "rejected", reason: "This photo looks AI-generated — only real photos are accepted." };
-      }
-
-      console.error(`moderatePhoto: unexpected Groq verdict: ${JSON.stringify(content).slice(0, 300)}`);
-      return { status: "needs_manual_review", reason: "Moderation response was ambiguous." };
+      return typeof content === "string" ? content.trim() : null;
     } catch (err) {
-      console.error("moderatePhoto: request threw", err);
-      return { status: "needs_manual_review", reason: "Moderation timed out." };
+      console.error("callGroqVision: request threw", err);
+      return null;
     } finally {
       clearTimeout(timeout);
     }
   }
+  return null;
+}
 
-  // Unreachable in practice (the loop always returns), but keeps
-  // TypeScript happy about the function's declared return type.
-  return { status: "needs_manual_review", reason: "Automatic moderation failed." };
+async function moderatePhotoWithGroq(imageBase64: string): Promise<PhotoModerationResult> {
+  const content = await callGroqVision(
+    MODERATION_PROMPT,
+    [{ type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }],
+    10,
+  );
+  if (content === null) {
+    return { status: "needs_manual_review", reason: "Automatic moderation failed." };
+  }
+  const verdict = content.toUpperCase();
+
+  if (verdict === "APPROVE") return { status: "approved" };
+  if (verdict === "REJECT_RACY") {
+    return {
+      status: "rejected",
+      reason: "This photo is too suggestive for this platform (swimwear, underwear, shirtless).",
+    };
+  }
+  if (verdict === "REJECT_EXPLICIT") {
+    return { status: "rejected", reason: "Explicit content detected." };
+  }
+  if (verdict === "REJECT_AI_GENERATED") {
+    return { status: "rejected", reason: "This photo looks AI-generated — only real photos are accepted." };
+  }
+
+  console.error(`moderatePhoto: unexpected Groq verdict: ${JSON.stringify(content).slice(0, 300)}`);
+  return { status: "needs_manual_review", reason: "Moderation response was ambiguous." };
+}
+
+const SELFIE_VERIFICATION_PROMPT = `You are comparing two photos for an identity verification feature on a dating app. The first image is a live selfie just captured by the account holder. The second image is an existing, already-approved profile photo from the same account.
+
+Respond with EXACTLY one of these three words, and nothing else:
+
+SAME — clearly the same person in both images
+DIFFERENT — clearly different people
+UNCERTAIN — can't tell confidently (poor lighting, angle, partially obscured face, etc.)
+
+Respond with only one of those three exact words.`;
+
+export interface SelfieVerificationResult {
+  verified: boolean;
+  reason?: string;
+}
+
+// Only a confident SAME verdict verifies the account — same honest-
+// fallback posture as photo moderation. This is a trust badge, not a
+// security gate, but "probably the same person" isn't good enough for
+// something that tells other members it's been checked.
+export async function verifySelfie(selfieBase64: string, approvedPhotoUrl: string): Promise<SelfieVerificationResult> {
+  const content = await callGroqVision(
+    SELFIE_VERIFICATION_PROMPT,
+    [
+      { type: "image_url", image_url: { url: `data:image/jpeg;base64,${selfieBase64}` } },
+      { type: "image_url", image_url: { url: approvedPhotoUrl } },
+    ],
+    10,
+  );
+  if (content === null) {
+    return { verified: false, reason: "Verification failed. Please try again." };
+  }
+  const verdict = content.toUpperCase();
+  if (verdict === "SAME") return { verified: true };
+  if (verdict === "DIFFERENT") {
+    return { verified: false, reason: "This selfie doesn't appear to match your profile photos." };
+  }
+  return { verified: false, reason: "Couldn't verify confidently — try better lighting, facing the camera directly." };
 }
 
 // Generic, country-agnostic commercial-solicitation language — the same

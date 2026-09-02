@@ -7,6 +7,8 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
+import { SelfieVerification } from "@/components/SelfieVerification";
+import { NotificationSettings } from "@/components/NotificationSettings";
 import type { UserProfile } from "@/lib/types";
 
 export default function Settings() {
@@ -113,6 +115,20 @@ export default function Settings() {
                 >
                   {pausing ? "…" : profile.paused ? "Unpause profile" : "Pause profile"}
                 </button>
+              </div>
+            )}
+
+            {user && (
+              <div className="flex flex-col gap-3 border-b border-neutral-100 pb-8">
+                <h2 className="text-sm font-medium text-neutral-700">Notifications</h2>
+                <NotificationSettings user={user} />
+              </div>
+            )}
+
+            {user && profile && (
+              <div className="flex flex-col gap-3 border-b border-neutral-100 pb-8">
+                <h2 className="text-sm font-medium text-neutral-700">Verification</h2>
+                <SelfieVerification user={user} alreadyVerified={!!profile.selfieVerified} />
               </div>
             )}
 

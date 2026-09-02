@@ -23,7 +23,7 @@ service cloud.firestore {
     function touchesServerOnlyFields() {
       let lockedFields = [
         'status', 'subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId',
-        'photos', 'dailyLikesUsed', 'dailyLikesDate'
+        'photos', 'dailyLikesUsed', 'dailyLikesDate', 'selfieVerified'
       ];
       return request.resource.data.diff(resource.data).affectedKeys().hasAny(lockedFields);
     }

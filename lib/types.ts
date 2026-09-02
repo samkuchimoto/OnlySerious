@@ -75,6 +75,16 @@ export interface UserProfile {
   // setup step). Resets whenever dailyLikesDate isn't today.
   dailyLikesUsed?: number;
   dailyLikesDate?: string; // "YYYY-MM-DD"
+  // Set only by app/api/verify-selfie/route.ts after a real Groq vision
+  // comparison against an approved profile photo returns a confident
+  // match — never client-settable, and never set on an uncertain result
+  // (see that route's honest-fallback reasoning).
+  selfieVerified?: boolean;
+  // Web Push registration tokens (Firebase Cloud Messaging), one per
+  // browser/device that's enabled notifications. A token going stale
+  // (uninstalled, permissions revoked) just means a future send to it
+  // fails silently — see app/api/**'s notifyUser() usage.
+  fcmTokens?: string[];
 }
 
 export interface Like {

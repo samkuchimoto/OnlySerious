@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyRequestUser, adminDb } from "@/lib/firebaseAdmin";
 import { moderateText } from "@/lib/moderation";
+import { notifyUser } from "@/lib/notify";
 import { FREE_DAILY_LIKE_LIMIT, PAID_DAILY_LIKE_LIMIT, type Match, type UserProfile } from "@/lib/types";
 
 const requestSchema = z.object({
@@ -84,6 +85,12 @@ export async function POST(request: Request) {
       const match: Match = { id: matchId, userIds: [uid, likedUserId].sort() as [string, string], createdAt: new Date().toISOString() };
       await matchRef.set(match);
     }
+  }
+
+  if (matched) {
+    await notifyUser(likedUserId, "It's a match!", `You and ${profile.displayName} liked each other.`);
+  } else {
+    await notifyUser(likedUserId, "New like", `${profile.displayName} liked your profile.`);
   }
 
   return NextResponse.json({ liked: true, matched, remaining: limit - (usedBeforeToday + 1) });

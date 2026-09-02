@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyRequestUser, adminDb } from "@/lib/firebaseAdmin";
 import { moderateText } from "@/lib/moderation";
-import type { Match, Message } from "@/lib/types";
+import { notifyUser } from "@/lib/notify";
+import type { Match, Message, UserProfile } from "@/lib/types";
 
 const requestSchema = z.object({
   matchId: z.string().min(1),
@@ -47,6 +48,13 @@ export async function POST(request: Request) {
     flagged,
   };
   await adminDb.collection("messages").doc(messageId).set(message);
+
+  const otherId = match.userIds.find((id) => id !== uid);
+  if (otherId) {
+    const senderSnap = await adminDb.collection("users").doc(uid).get();
+    const senderName = (senderSnap.data() as UserProfile | undefined)?.displayName ?? "Someone";
+    await notifyUser(otherId, senderName, text.length > 80 ? `${text.slice(0, 80)}…` : text);
+  }
 
   return NextResponse.json({ sent: true, flagged });
 }

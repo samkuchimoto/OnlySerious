@@ -8,6 +8,7 @@
 import { initializeApp, getApps, cert, type App } from "firebase-admin/app";
 import { getFirestore, type Firestore } from "firebase-admin/firestore";
 import { getAuth, type Auth } from "firebase-admin/auth";
+import { getMessaging, type Messaging } from "firebase-admin/messaging";
 
 function getAdminApp(): App {
   if (getApps().length) return getApps()[0];
@@ -32,6 +33,7 @@ function lazy<T extends object>(factory: () => T): T {
 
 export const adminDb: Firestore = lazy(() => getFirestore(getAdminApp()));
 export const adminAuth: Auth = lazy(() => getAuth(getAdminApp()));
+export const adminMessaging: Messaging = lazy(() => getMessaging(getAdminApp()));
 
 export async function verifyRequestUser(request: Request): Promise<string | null> {
   const authHeader = request.headers.get("authorization");
