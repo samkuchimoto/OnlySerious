@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { getActivityStatus, isNewMember } from "@/lib/activity";
 import type { UserProfile } from "@/lib/types";
 
 // Decorative only — reflects who the viewer said they're interested in,
@@ -52,6 +53,11 @@ export default function Browse() {
       const ownSnap = await getDoc(doc(db, "users", nextUser.uid));
       const own = ownSnap.exists() ? (ownSnap.data() as UserProfile) : null;
       setOwnProfile(own);
+
+      // Real "last active" signal, not a live presence system — see
+      // lib/activity.ts. Fire-and-forget: this page's own render doesn't
+      // depend on it succeeding.
+      if (own) updateDoc(doc(db, "users", nextUser.uid), { lastActiveAt: new Date().toISOString() }).catch(() => {});
 
       // Both directions for blocks: people I've blocked, and people who've
       // blocked me — neither should see the other in browse. Hides are
@@ -202,15 +208,26 @@ export default function Browse() {
                   const photo = profile.photos[0];
                   const featuredPrompt = profile.prompts?.[0];
                   const isDone = status === "liked" || status === "matched" || status === "limit-reached";
+                  const activity = getActivityStatus(profile.lastActiveAt);
+                  const isNew = isNewMember(profile.createdAt);
                   return (
                     <article key={profile.id} className="flex flex-col gap-3">
-                      <Link href={`/profile/${profile.id}`} className="aspect-[4/5] w-full overflow-hidden rounded-2xl bg-neutral-100">
+                      <Link
+                        href={`/profile/${profile.id}`}
+                        className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-neutral-100"
+                      >
                         {photo && (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={photo.url} alt="" className="h-full w-full object-cover" />
                         )}
+                        {isNew && (
+                          <span className="absolute bottom-3 right-3 rounded-md bg-blue-600 px-2 py-0.5 text-xs font-bold text-white">
+                            NEW
+                          </span>
+                        )}
                       </Link>
                       <Link href={`/profile/${profile.id}`} className="flex flex-wrap items-center gap-2 text-lg font-medium">
+                        {activity?.isOnline && <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" aria-hidden />}
                         {profile.displayName}, {calculateAge(profile.birthdate)}
                         <span className="text-sm font-normal text-neutral-400">{profile.city}</span>
                         <VerifiedBadge approvedPhotoCount={profile.photos.length} selfieVerified={profile.selfieVerified} />
@@ -220,6 +237,7 @@ export default function Browse() {
                           </span>
                         )}
                       </Link>
+                      {activity && !activity.isOnline && <p className="-mt-2 text-xs text-neutral-400">{activity.label}</p>}
 
                       {featuredPrompt && (
                         <div className="rounded-xl border border-neutral-200 p-5">

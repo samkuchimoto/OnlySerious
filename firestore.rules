@@ -50,6 +50,15 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         allow write: if false;
       }
+
+      // Private per-viewer notes about other profiles (ThaiFriendly's
+      // "your private notes for {name}" pattern) — keyed by the *viewed*
+      // profile's id under the *viewer's* own user doc, so this is
+      // naturally owner-only and never visible to the person the note is
+      // about.
+      match /notes/{aboutUserId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     match /matches/{matchId} {

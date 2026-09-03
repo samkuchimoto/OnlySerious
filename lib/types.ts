@@ -102,6 +102,10 @@ export interface UserProfile {
   // (uninstalled, permissions revoked) just means a future send to it
   // fails silently — see app/api/**'s notifyUser() usage.
   fcmTokens?: string[];
+  // Set on every app/browse page load (see its useEffect) — a real,
+  // if coarse, signal rather than a live presence system. See
+  // lib/activity.ts for how this becomes "Online now" / "Active 2d ago".
+  lastActiveAt?: string;
 }
 
 export interface Like {

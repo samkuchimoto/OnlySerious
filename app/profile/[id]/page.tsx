@@ -8,6 +8,8 @@ import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { PrivateNote } from "@/components/PrivateNote";
+import { getActivityStatus } from "@/lib/activity";
 import type { UserProfile } from "@/lib/types";
 
 function calculateAge(birthdate: string): number {
@@ -201,8 +203,24 @@ export default function ProfileDetail() {
                     {profile.datingIntention}
                   </span>
                 )}
+                {(() => {
+                  const activity = getActivityStatus(profile.lastActiveAt);
+                  if (!activity) return null;
+                  return (
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        activity.isOnline ? "bg-green-50 text-green-700" : "bg-neutral-100 text-neutral-500"
+                      }`}
+                    >
+                      {activity.isOnline && <span className="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden />}
+                      {activity.label}
+                    </span>
+                  );
+                })()}
               </div>
             </div>
+
+            {user && profile.id !== user.uid && <PrivateNote user={user} aboutUserId={profile.id} />}
 
             {profile.photos.map((photo, index) => (
               <div key={photo.id} className="flex flex-col gap-5">
