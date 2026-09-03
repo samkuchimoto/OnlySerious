@@ -22,6 +22,16 @@ function emptyPrompts(): ProfilePrompt[] {
   }));
 }
 
+// Temporarily off: real testing evidence (auth/account-exists-with-
+// different-credential surfaced by confirmVerificationCode's error
+// message below) shows the phone gate rejects a number that's already
+// verified on a different account — which repeated testing with one
+// real number keeps triggering, blocking sign-up entirely. Flip back to
+// true once that's live-verified as fixed. Every downstream stage
+// already tolerates an empty phoneNumber (handleSubmit below,
+// lib/types.ts), so this is safe to toggle either way.
+const REQUIRE_PHONE_VERIFICATION = false;
+
 function isAtLeast18(birthdate: string): boolean {
   const dob = new Date(birthdate);
   if (Number.isNaN(dob.getTime())) return false;
@@ -76,7 +86,7 @@ export default function SignUp() {
       if (existing.exists()) {
         setStage("pending-review");
         watchProfile(nextUser.uid);
-      } else if (!nextUser.phoneNumber) {
+      } else if (REQUIRE_PHONE_VERIFICATION && !nextUser.phoneNumber) {
         // Required of everyone equally — the low-friction traceability
         // signal every major dating app already uses (SMS OTP), instead
         // of collecting ID documents from anyone.
@@ -134,7 +144,14 @@ export default function SignUp() {
     } catch (err) {
       const code = err instanceof FirebaseError ? err.code : "unknown";
       console.error("confirmVerificationCode failed:", err);
-      setPhoneError(`That code didn't match (${code}). Please try again.`);
+      // Real symptom seen in testing: this fires (not a code mismatch)
+      // when the number is already verified on a different account —
+      // e.g. the same real number reused across two Google sign-ins.
+      setPhoneError(
+        code === "auth/account-exists-with-different-credential" || code === "auth/credential-already-in-use"
+          ? "That phone number is already verified on a different account. Sign in with that account instead, or use a different number."
+          : `That code didn't match (${code}). Please try again.`,
+      );
     } finally {
       setPhoneSubmitting(false);
     }
