@@ -20,6 +20,7 @@ export default function LikedMe() {
   const [loading, setLoading] = useState(true);
   const [likes, setLikes] = useState<LikeWithLiker[]>([]);
   const [backStatus, setBackStatus] = useState<Record<string, BackStatus>>({});
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     return watchAuthState(async (nextUser) => {
@@ -28,17 +29,24 @@ export default function LikedMe() {
         setLoading(false);
         return;
       }
-      const likeSnap = await getDocs(query(collection(db, "likes"), where("likedId", "==", nextUser.uid)));
-      const withLikers = await Promise.all(
-        likeSnap.docs.map(async (d) => {
-          const like = d.data() as Like;
-          const likerSnap = await getDoc(doc(db, "users", like.likerId));
-          if (!likerSnap.exists()) return null;
-          return { like, liker: likerSnap.data() as UserProfile };
-        }),
-      );
-      setLikes(withLikers.filter((l): l is LikeWithLiker => l !== null));
-      setLoading(false);
+      setLoadError(false);
+      try {
+        const likeSnap = await getDocs(query(collection(db, "likes"), where("likedId", "==", nextUser.uid)));
+        const withLikers = await Promise.all(
+          likeSnap.docs.map(async (d) => {
+            const like = d.data() as Like;
+            const likerSnap = await getDoc(doc(db, "users", like.likerId));
+            if (!likerSnap.exists()) return null;
+            return { like, liker: likerSnap.data() as UserProfile };
+          }),
+        );
+        setLikes(withLikers.filter((l): l is LikeWithLiker => l !== null));
+      } catch (err) {
+        console.error("liked-me load failed:", err);
+        setLoadError(true);
+      } finally {
+        setLoading(false);
+      }
     });
   }, []);
 
@@ -82,7 +90,16 @@ export default function LikedMe() {
             Sign in to see who liked you
           </Link>
         )}
-        {!loading && user && likes.length === 0 && (
+        {!loading && user && loadError && (
+          <p className="mt-4 text-sm text-red-600">
+            Couldn&apos;t load your likes.{" "}
+            <button onClick={() => window.location.reload()} className="underline underline-offset-2">
+              Retry
+            </button>
+          </p>
+        )}
+
+        {!loading && user && !loadError && likes.length === 0 && (
           <p className="mt-4 text-sm text-neutral-500">No likes yet — check back soon.</p>
         )}
 

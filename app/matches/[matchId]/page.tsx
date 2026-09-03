@@ -29,20 +29,25 @@ export default function MatchChat() {
         setLoading(false);
         return;
       }
-      const matchSnap = await getDoc(doc(db, "matches", matchId));
-      if (!matchSnap.exists() || !(matchSnap.data() as Match).userIds.includes(nextUser.uid)) {
-        setNotAllowed(true);
+      try {
+        const matchSnap = await getDoc(doc(db, "matches", matchId));
+        if (!matchSnap.exists() || !(matchSnap.data() as Match).userIds.includes(nextUser.uid)) {
+          setNotAllowed(true);
+          return;
+        }
+        const matchData = matchSnap.data() as Match;
+        setMatch(matchData);
+        const otherId = matchData.userIds.find((id) => id !== nextUser.uid);
+        if (otherId) {
+          const otherSnap = await getDoc(doc(db, "users", otherId));
+          if (otherSnap.exists()) setOther(otherSnap.data() as UserProfile);
+        }
+      } catch (err) {
+        console.error("match chat load failed:", err);
+        setError("Couldn't load this conversation. Try refreshing.");
+      } finally {
         setLoading(false);
-        return;
       }
-      const matchData = matchSnap.data() as Match;
-      setMatch(matchData);
-      const otherId = matchData.userIds.find((id) => id !== nextUser.uid);
-      if (otherId) {
-        const otherSnap = await getDoc(doc(db, "users", otherId));
-        if (otherSnap.exists()) setOther(otherSnap.data() as UserProfile);
-      }
-      setLoading(false);
     });
   }, [matchId]);
 
@@ -111,6 +116,14 @@ export default function MatchChat() {
           </Link>
         )}
         {!loading && notAllowed && <p className="text-sm text-neutral-500">This conversation isn&apos;t available.</p>}
+        {!loading && user && !notAllowed && !match && error && (
+          <p className="text-sm text-red-600">
+            {error}{" "}
+            <button onClick={() => window.location.reload()} className="underline underline-offset-2">
+              Retry
+            </button>
+          </p>
+        )}
 
         {!loading && match && (
           <>

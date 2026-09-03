@@ -65,11 +65,22 @@ export function PhotoUploader({
 
   useEffect(() => {
     const q = query(collection(db, "users", user.uid, "photoSubmissions"), orderBy("createdAt", "asc"));
-    return onSnapshot(q, (snapshot) => {
-      const next = snapshot.docs.map((d) => d.data() as PhotoSubmission);
-      setSubmissions(next);
-      onSubmissionsChange?.(next);
-    });
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const next = snapshot.docs.map((d) => d.data() as PhotoSubmission);
+        setSubmissions(next);
+        onSubmissionsChange?.(next);
+      },
+      (err) => {
+        // Without this, a listener failure here leaves the photo grid
+        // silently stuck on whatever it last showed — no visible sign
+        // anything's wrong (see app/matches/[matchId]'s messages listener
+        // for the same class of bug found live).
+        console.error("photoSubmissions listener failed:", err);
+        setError("Couldn't load your photos. Try refreshing the page.");
+      },
+    );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user.uid]);
 

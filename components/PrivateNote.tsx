@@ -5,7 +5,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db } from "@/lib/firebase";
 
-type SaveStatus = "idle" | "saving" | "saved";
+type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 // ThaiFriendly's "your private notes for {name}" pattern — stored under
 // the viewer's own user doc (users/{viewerId}/notes/{aboutUserId}), so
@@ -14,27 +14,43 @@ type SaveStatus = "idle" | "saving" | "saved";
 export function PrivateNote({ user, aboutUserId }: { user: User; aboutUserId: string }) {
   const [text, setText] = useState("");
   const [loaded, setLoaded] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [status, setStatus] = useState<SaveStatus>("idle");
 
   useEffect(() => {
     async function load() {
-      const snap = await getDoc(doc(db, "users", user.uid, "notes", aboutUserId));
-      if (snap.exists()) setText((snap.data().text as string) ?? "");
-      setLoaded(true);
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid, "notes", aboutUserId));
+        if (snap.exists()) setText((snap.data().text as string) ?? "");
+      } catch (err) {
+        // Without this, a failed read leaves the whole component
+        // permanently invisible (loaded never flips true) rather than
+        // just showing an empty/broken notes box.
+        console.error("private note load failed:", err);
+        setLoadFailed(true);
+      } finally {
+        setLoaded(true);
+      }
     }
     load();
   }, [user.uid, aboutUserId]);
 
   async function save() {
     setStatus("saving");
-    await setDoc(doc(db, "users", user.uid, "notes", aboutUserId), {
-      text,
-      updatedAt: new Date().toISOString(),
-    });
-    setStatus("saved");
+    try {
+      await setDoc(doc(db, "users", user.uid, "notes", aboutUserId), {
+        text,
+        updatedAt: new Date().toISOString(),
+      });
+      setStatus("saved");
+    } catch (err) {
+      console.error("private note save failed:", err);
+      setStatus("error");
+    }
   }
 
   if (!loaded) return null;
+  if (loadFailed) return null;
 
   return (
     <div className="flex flex-col gap-2 rounded-xl border border-dashed border-neutral-300 p-4">
@@ -51,6 +67,7 @@ export function PrivateNote({ user, aboutUserId }: { user: User; aboutUserId: st
         className="rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
       />
       {status === "saved" && <p className="text-xs text-neutral-400">Saved.</p>}
+      {status === "error" && <p className="text-xs text-red-600">Couldn&apos;t save — try again.</p>}
     </div>
   );
 }

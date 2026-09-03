@@ -118,9 +118,20 @@ export default function SignUp() {
   // upload (app/api/photos/route.ts) shows up here without a reload.
   function watchProfile(uid: string) {
     unsubscribeProfileRef.current?.();
-    unsubscribeProfileRef.current = onSnapshot(doc(db, "users", uid), (snap) => {
-      if (snap.exists()) setExistingProfile(snap.data() as UserProfile);
-    });
+    unsubscribeProfileRef.current = onSnapshot(
+      doc(db, "users", uid),
+      (snap) => {
+        if (snap.exists()) setExistingProfile(snap.data() as UserProfile);
+      },
+      (err) => {
+        // A silent failure here would strand someone on "under review"
+        // forever with no visible reason, even after their photos are
+        // actually approved — see the messages listener fix for the same
+        // failure class caught live earlier.
+        console.error("profile listener failed:", err);
+        setError("Couldn't load your profile status. Try refreshing the page.");
+      },
+    );
   }
 
   useEffect(() => {

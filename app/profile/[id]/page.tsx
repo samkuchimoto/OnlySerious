@@ -40,9 +40,18 @@ export default function ProfileDetail() {
   useEffect(() => {
     return watchAuthState(async (nextUser) => {
       setUser(nextUser);
-      const snap = await getDoc(doc(db, "users", id));
-      if (snap.exists()) setProfile(snap.data() as UserProfile);
-      setLoading(false);
+      try {
+        const snap = await getDoc(doc(db, "users", id));
+        if (snap.exists()) setProfile(snap.data() as UserProfile);
+      } catch (err) {
+        // Falls into the existing "!loading && !profile" -> "This profile
+        // isn't available" branch below — not perfectly worded for a
+        // transient failure vs. a real 404, but critically it still
+        // reaches setLoading(false) instead of hanging forever.
+        console.error("profile detail load failed:", err);
+      } finally {
+        setLoading(false);
+      }
     });
   }, [id]);
 

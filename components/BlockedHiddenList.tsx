@@ -21,33 +21,40 @@ export function BlockedHiddenList({ user }: { user: User }) {
   const [blocked, setBlocked] = useState<Entry[]>([]);
   const [hidden, setHidden] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
-      const [blockSnap, hideSnap] = await Promise.all([
-        getDocs(query(collection(db, "blocks"), where("blockerId", "==", user.uid))),
-        getDocs(query(collection(db, "hides"), where("hiderId", "==", user.uid))),
-      ]);
+      try {
+        const [blockSnap, hideSnap] = await Promise.all([
+          getDocs(query(collection(db, "blocks"), where("blockerId", "==", user.uid))),
+          getDocs(query(collection(db, "hides"), where("hiderId", "==", user.uid))),
+        ]);
 
-      async function withNames(docs: typeof blockSnap.docs, otherIdField: "blockedId" | "hiddenId") {
-        return Promise.all(
-          docs.map(async (d) => {
-            const otherId = d.data()[otherIdField] as string;
-            const profileSnap = await getDoc(doc(db, "users", otherId));
-            const name = profileSnap.exists() ? (profileSnap.data() as UserProfile).displayName : null;
-            return { docId: d.id, otherId, name };
-          }),
-        );
+        async function withNames(docs: typeof blockSnap.docs, otherIdField: "blockedId" | "hiddenId") {
+          return Promise.all(
+            docs.map(async (d) => {
+              const otherId = d.data()[otherIdField] as string;
+              const profileSnap = await getDoc(doc(db, "users", otherId));
+              const name = profileSnap.exists() ? (profileSnap.data() as UserProfile).displayName : null;
+              return { docId: d.id, otherId, name };
+            }),
+          );
+        }
+
+        const [blockedEntries, hiddenEntries] = await Promise.all([
+          withNames(blockSnap.docs, "blockedId"),
+          withNames(hideSnap.docs, "hiddenId"),
+        ]);
+        setBlocked(blockedEntries);
+        setHidden(hiddenEntries);
+      } catch (err) {
+        console.error("blocked/hidden list load failed:", err);
+        setLoadError(true);
+      } finally {
+        setLoading(false);
       }
-
-      const [blockedEntries, hiddenEntries] = await Promise.all([
-        withNames(blockSnap.docs, "blockedId"),
-        withNames(hideSnap.docs, "hiddenId"),
-      ]);
-      setBlocked(blockedEntries);
-      setHidden(hiddenEntries);
-      setLoading(false);
     }
     load();
   }, [user.uid]);
@@ -61,6 +68,7 @@ export function BlockedHiddenList({ user }: { user: User }) {
   }
 
   if (loading) return <p className="text-sm text-neutral-400">Loading…</p>;
+  if (loadError) return <p className="text-sm text-red-600">Couldn&apos;t load this list. Try refreshing.</p>;
   if (blocked.length === 0 && hidden.length === 0) {
     return <p className="text-sm text-neutral-500">You haven&apos;t blocked or hidden anyone.</p>;
   }

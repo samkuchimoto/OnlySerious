@@ -29,9 +29,15 @@ export default function Settings() {
         setLoading(false);
         return;
       }
-      const snap = await getDoc(doc(db, "users", nextUser.uid));
-      if (snap.exists()) setProfile(snap.data() as UserProfile);
-      setLoading(false);
+      try {
+        const snap = await getDoc(doc(db, "users", nextUser.uid));
+        if (snap.exists()) setProfile(snap.data() as UserProfile);
+      } catch (err) {
+        console.error("settings load failed:", err);
+        setError("Couldn't load your settings. Try refreshing the page.");
+      } finally {
+        setLoading(false);
+      }
     });
   }, []);
 
@@ -80,6 +86,7 @@ export default function Settings() {
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
         <h1 className="pt-8 text-3xl font-medium tracking-tight">Settings</h1>
+        {!loading && !profile && error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
         {loading && <p className="mt-4 text-sm text-neutral-400">Loading…</p>}
 

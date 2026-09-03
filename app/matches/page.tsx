@@ -18,6 +18,7 @@ export default function Matches() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [matches, setMatches] = useState<MatchWithOther[]>([]);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     return watchAuthState(async (nextUser) => {
@@ -26,19 +27,28 @@ export default function Matches() {
         setLoading(false);
         return;
       }
-      const matchSnap = await getDocs(query(collection(db, "matches"), where("userIds", "array-contains", nextUser.uid)));
-      const withOthers = await Promise.all(
-        matchSnap.docs.map(async (d) => {
-          const match = d.data() as Match;
-          const otherId = match.userIds.find((id) => id !== nextUser.uid);
-          if (!otherId) return null;
-          const otherSnap = await getDoc(doc(db, "users", otherId));
-          if (!otherSnap.exists()) return null;
-          return { match, other: otherSnap.data() as UserProfile };
-        }),
-      );
-      setMatches(withOthers.filter((m): m is MatchWithOther => m !== null));
-      setLoading(false);
+      setLoadError(false);
+      try {
+        const matchSnap = await getDocs(query(collection(db, "matches"), where("userIds", "array-contains", nextUser.uid)));
+        const withOthers = await Promise.all(
+          matchSnap.docs.map(async (d) => {
+            const match = d.data() as Match;
+            const otherId = match.userIds.find((id) => id !== nextUser.uid);
+            if (!otherId) return null;
+            const otherSnap = await getDoc(doc(db, "users", otherId));
+            if (!otherSnap.exists()) return null;
+            return { match, other: otherSnap.data() as UserProfile };
+          }),
+        );
+        setMatches(withOthers.filter((m): m is MatchWithOther => m !== null));
+      } catch (err) {
+        // Otherwise a failed read here shows "No matches yet" instead of
+        // an actual error — indistinguishable from genuinely having none.
+        console.error("matches load failed:", err);
+        setLoadError(true);
+      } finally {
+        setLoading(false);
+      }
     });
   }, []);
 
@@ -72,7 +82,16 @@ export default function Matches() {
           </Link>
         )}
 
-        {!loading && user && matches.length === 0 && (
+        {!loading && user && loadError && (
+          <p className="mt-4 text-sm text-red-600">
+            Couldn&apos;t load your matches.{" "}
+            <button onClick={() => window.location.reload()} className="underline underline-offset-2">
+              Retry
+            </button>
+          </p>
+        )}
+
+        {!loading && user && !loadError && matches.length === 0 && (
           <div className="mt-6 flex flex-col gap-4">
             <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
               <Image src="/images/hero-couple-rooftop.png" alt="" fill className="object-cover" />

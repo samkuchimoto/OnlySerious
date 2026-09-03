@@ -40,6 +40,7 @@ export default function Browse() {
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [likeStatus, setLikeStatus] = useState<Record<string, LikeStatus>>({});
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     return watchAuthState(async (nextUser) => {
@@ -49,45 +50,56 @@ export default function Browse() {
         return;
       }
 
-      const ownSnap = await getDoc(doc(db, "users", nextUser.uid));
-      const own = ownSnap.exists() ? (ownSnap.data() as UserProfile) : null;
-      setOwnProfile(own);
+      setLoadError(false);
+      try {
+        const ownSnap = await getDoc(doc(db, "users", nextUser.uid));
+        const own = ownSnap.exists() ? (ownSnap.data() as UserProfile) : null;
+        setOwnProfile(own);
 
-      // Real "last active" signal, not a live presence system — see
-      // lib/activity.ts. Fire-and-forget: this page's own render doesn't
-      // depend on it succeeding.
-      if (own) updateDoc(doc(db, "users", nextUser.uid), { lastActiveAt: new Date().toISOString() }).catch(() => {});
+        // Real "last active" signal, not a live presence system — see
+        // lib/activity.ts. Fire-and-forget: this page's own render doesn't
+        // depend on it succeeding.
+        if (own) updateDoc(doc(db, "users", nextUser.uid), { lastActiveAt: new Date().toISOString() }).catch(() => {});
 
-      // Both directions for blocks: people I've blocked, and people who've
-      // blocked me — neither should see the other in browse. Hides are
-      // one-directional by design (see lib/types.ts's Hide comment) — only
-      // the hider's own results are filtered. Already-liked profiles are
-      // excluded too, so a reload doesn't re-show someone as freshly
-      // likeable (see app/api/likes' deterministic-id fix for the data
-      // side of the same bug).
-      const [blockedByMe, blockedMe, hiddenByMe, likedByMe] = await Promise.all([
-        getDocs(query(collection(db, "blocks"), where("blockerId", "==", nextUser.uid))),
-        getDocs(query(collection(db, "blocks"), where("blockedId", "==", nextUser.uid))),
-        getDocs(query(collection(db, "hides"), where("hiderId", "==", nextUser.uid))),
-        getDocs(query(collection(db, "likes"), where("likerId", "==", nextUser.uid))),
-      ]);
-      const excludedIds = new Set([
-        ...blockedByMe.docs.map((d) => d.data().blockedId as string),
-        ...blockedMe.docs.map((d) => d.data().blockerId as string),
-        ...hiddenByMe.docs.map((d) => d.data().hiddenId as string),
-        ...likedByMe.docs.map((d) => d.data().likedId as string),
-      ]);
+        // Both directions for blocks: people I've blocked, and people who've
+        // blocked me — neither should see the other in browse. Hides are
+        // one-directional by design (see lib/types.ts's Hide comment) — only
+        // the hider's own results are filtered. Already-liked profiles are
+        // excluded too, so a reload doesn't re-show someone as freshly
+        // likeable (see app/api/likes' deterministic-id fix for the data
+        // side of the same bug).
+        const [blockedByMe, blockedMe, hiddenByMe, likedByMe] = await Promise.all([
+          getDocs(query(collection(db, "blocks"), where("blockerId", "==", nextUser.uid))),
+          getDocs(query(collection(db, "blocks"), where("blockedId", "==", nextUser.uid))),
+          getDocs(query(collection(db, "hides"), where("hiderId", "==", nextUser.uid))),
+          getDocs(query(collection(db, "likes"), where("likerId", "==", nextUser.uid))),
+        ]);
+        const excludedIds = new Set([
+          ...blockedByMe.docs.map((d) => d.data().blockedId as string),
+          ...blockedMe.docs.map((d) => d.data().blockerId as string),
+          ...hiddenByMe.docs.map((d) => d.data().hiddenId as string),
+          ...likedByMe.docs.map((d) => d.data().likedId as string),
+        ]);
 
-      const activeSnap = await getDocs(query(collection(db, "users"), where("status", "==", "active")));
-      const active = activeSnap.docs
-        .map((d) => d.data() as UserProfile)
-        .filter((p) => p.id !== nextUser.uid)
-        .filter((p) => !p.paused)
-        .filter((p) => !excludedIds.has(p.id))
-        .filter((p) => !own?.interestedIn?.length || own.interestedIn.includes(p.gender));
+        const activeSnap = await getDocs(query(collection(db, "users"), where("status", "==", "active")));
+        const active = activeSnap.docs
+          .map((d) => d.data() as UserProfile)
+          .filter((p) => p.id !== nextUser.uid)
+          .filter((p) => !p.paused)
+          .filter((p) => !excludedIds.has(p.id))
+          .filter((p) => !own?.interestedIn?.length || own.interestedIn.includes(p.gender));
 
-      setProfiles(active);
-      setLoading(false);
+        setProfiles(active);
+      } catch (err) {
+        // Without this, any single failed read above (a transient
+        // Firestore blip, a rules hiccup) leaves the page stuck on
+        // "Loading…" forever — setLoading(false) below never runs and
+        // there's no way out short of knowing to hard-refresh.
+        console.error("browse load failed:", err);
+        setLoadError(true);
+      } finally {
+        setLoading(false);
+      }
     });
   }, []);
 
@@ -173,7 +185,20 @@ export default function Browse() {
           </div>
         )}
 
-        {!loading && user && !ownProfile && (
+        {!loading && user && loadError && (
+          <div className="flex flex-col items-start gap-4 pt-8">
+            <h1 className="text-3xl font-medium tracking-tight">Couldn&apos;t load Browse</h1>
+            <p className="max-w-md text-neutral-500">Something went wrong loading profiles. Please try again.</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {!loading && user && !loadError && !ownProfile && (
           <div className="flex flex-col items-start gap-4 pt-8">
             <h1 className="text-3xl font-medium tracking-tight">Finish your profile first</h1>
             <Link
@@ -185,7 +210,7 @@ export default function Browse() {
           </div>
         )}
 
-        {!loading && user && ownProfile && (
+        {!loading && user && !loadError && ownProfile && (
           <>
             {heroImageFor(ownProfile.interestedIn) && (
               <div className="relative mt-8 aspect-[16/7] w-full overflow-hidden rounded-2xl">
