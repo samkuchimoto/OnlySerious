@@ -10,7 +10,7 @@ export default function Privacy() {
 
       <h2>What we collect</h2>
       <p>
-        Your name, birthdate, gender, city/country, phone number, the photos and prompt answers you add to
+        Your name, birthdate, gender, city/country, phone number, the photos, headline, and bio you add to
         your profile, and the messages you send to matches. Photos are also sent to two third-party
         moderation services (Groq and, when configured, Google Cloud Vision) purely to check them for
         prohibited content before they&apos;re shown to anyone — see {BRAND_CONFIG.appTitle}&apos;s photo
@@ -19,7 +19,7 @@ export default function Privacy() {
 
       <h2>Who can see it</h2>
       <p>
-        Your name, age, city, photos, and prompt answers are visible to other signed-in members once your
+        Your name, age, city, photos, headline, and bio are visible to other signed-in members once your
         profile is live. Your phone number and email are never shown to other members — they exist so we can
         verify you&apos;re a real person and, if it&apos;s ever genuinely necessary, trace an account back to
         one.

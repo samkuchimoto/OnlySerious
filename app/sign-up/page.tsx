@@ -7,7 +7,7 @@ import { RecaptchaVerifier, linkWithPhoneNumber, type ConfirmationResult, type U
 import { FirebaseError } from "firebase/app";
 import { auth, db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
-import { MIN_PROFILE_PHOTOS, PROMPT_QUESTIONS, REQUIRED_PROMPT_COUNT, type ProfilePrompt, type UserProfile } from "@/lib/types";
+import { MAX_BIO_LENGTH, MAX_HEADLINE_LENGTH, MIN_PROFILE_PHOTOS, type UserProfile } from "@/lib/types";
 import { PhotoUploader, type PhotoSubmission } from "@/components/PhotoUploader";
 import { WaitlistForm } from "@/components/WaitlistForm";
 import { PushPrimer } from "@/components/PushPrimer";
@@ -25,14 +25,6 @@ function calculateAge(birthdate: string): number {
     now.getMonth() > dob.getMonth() || (now.getMonth() === dob.getMonth() && now.getDate() >= dob.getDate());
   if (!hadBirthdayThisYear) age -= 1;
   return age;
-}
-
-function emptyPrompts(): ProfilePrompt[] {
-  return Array.from({ length: REQUIRED_PROMPT_COUNT }, () => ({
-    id: crypto.randomUUID(),
-    question: "",
-    answer: "",
-  }));
 }
 
 // Temporarily off: real testing evidence (auth/account-exists-with-
@@ -101,7 +93,8 @@ export default function SignUp() {
   const [interestedIn, setInterestedIn] = useState<string[]>([GENDER_OPTIONS[0]]);
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
-  const [prompts, setPrompts] = useState<ProfilePrompt[]>(emptyPrompts);
+  const [headline, setHeadline] = useState("");
+  const [bio, setBio] = useState("");
   const [existingProfile, setExistingProfile] = useState<UserProfile | null>(null);
   const [photoSubmissions, setPhotoSubmissions] = useState<PhotoSubmission[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -229,10 +222,6 @@ export default function SignUp() {
     );
   }
 
-  function updatePrompt(index: number, field: "question" | "answer", value: string) {
-    setPrompts((prev) => prev.map((p, i) => (i === index ? { ...p, [field]: value } : p)));
-  }
-
   function startEditing() {
     if (!existingProfile) return;
     setDisplayName(existingProfile.displayName);
@@ -241,7 +230,8 @@ export default function SignUp() {
     setInterestedIn(existingProfile.interestedIn);
     setCity(existingProfile.city);
     setCountry(existingProfile.country);
-    setPrompts(existingProfile.prompts?.length === REQUIRED_PROMPT_COUNT ? existingProfile.prompts : emptyPrompts());
+    setHeadline(existingProfile.headline ?? "");
+    setBio(existingProfile.bio ?? "");
     setError(null);
     setStage("editing");
   }
@@ -259,12 +249,8 @@ export default function SignUp() {
       setError("Select at least one option for who you're interested in.");
       return;
     }
-    if (prompts.some((p) => !p.question || !p.answer.trim())) {
-      setError("Pick a question and write an answer for all three prompts.");
-      return;
-    }
-    if (new Set(prompts.map((p) => p.question)).size !== prompts.length) {
-      setError("Choose a different question for each prompt.");
+    if (!headline.trim() || !bio.trim()) {
+      setError("Add a headline and a short bio.");
       return;
     }
 
@@ -275,7 +261,8 @@ export default function SignUp() {
       interestedIn,
       city: city.trim(),
       country: country.trim(),
-      prompts: prompts.map((p) => ({ ...p, answer: p.answer.trim() })),
+      headline: headline.trim(),
+      bio: bio.trim(),
     };
 
     setSubmitting(true);
@@ -552,41 +539,30 @@ export default function SignUp() {
               </label>
             </div>
 
-            <fieldset className="flex flex-col gap-3">
-              <legend className="mb-0.5 text-sm">
-                Pick {REQUIRED_PROMPT_COUNT} prompts and answer them — this is what shows on your profile
-                instead of a plain bio.
-              </legend>
-              {prompts.map((prompt, index) => (
-                <div key={prompt.id} className="flex flex-col gap-2 rounded-lg border border-neutral-300 p-4">
-                  <select
-                    required
-                    value={prompt.question}
-                    onChange={(e) => updatePrompt(index, "question", e.target.value)}
-                    className="rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
-                  >
-                    <option value="" disabled>
-                      Choose a prompt…
-                    </option>
-                    {PROMPT_QUESTIONS.filter(
-                      (q) => q === prompt.question || !prompts.some((p) => p.question === q),
-                    ).map((question) => (
-                      <option key={question} value={question}>
-                        {question}
-                      </option>
-                    ))}
-                  </select>
-                  <textarea
-                    required
-                    rows={2}
-                    placeholder="Your answer"
-                    value={prompt.answer}
-                    onChange={(e) => updatePrompt(index, "answer", e.target.value)}
-                    className="rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
-                  />
-                </div>
-              ))}
-            </fieldset>
+            <label className="flex flex-col gap-1.5 text-sm">
+              Headline
+              <input
+                required
+                maxLength={MAX_HEADLINE_LENGTH}
+                placeholder="One line other members see first"
+                value={headline}
+                onChange={(e) => setHeadline(e.target.value)}
+                className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1.5 text-sm">
+              Bio
+              <textarea
+                required
+                rows={4}
+                maxLength={MAX_BIO_LENGTH}
+                placeholder="A bit about you and what you're looking for"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
+              />
+            </label>
 
             {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -683,14 +659,8 @@ export default function SignUp() {
                         selfieVerified={existingProfile.selfieVerified}
                       />
                     </div>
-                    {existingProfile.prompts?.[0]?.answer && (
-                      <div className="rounded-xl border border-neutral-200 p-4">
-                        <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">
-                          {existingProfile.prompts[0].question}
-                        </p>
-                        <p className="mt-1 text-sm">{existingProfile.prompts[0].answer}</p>
-                      </div>
-                    )}
+                    {existingProfile.headline && <p className="text-base font-medium">{existingProfile.headline}</p>}
+                    {existingProfile.bio && <p className="text-sm text-neutral-600">{existingProfile.bio}</p>}
                     <p className="text-xs text-neutral-400">
                       This is exactly what other members see once your profile is live.
                     </p>

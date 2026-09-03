@@ -89,7 +89,6 @@ export default function LikedMe() {
         {!loading && likes.length > 0 && (
           <div className="mt-8 flex flex-col gap-6">
             {likes.map(({ like, liker }) => {
-              const prompt = liker.prompts?.find((p) => p.id === like.promptId);
               const status = backStatus[liker.id] ?? "idle";
               return (
                 <div key={like.id} className="flex flex-col gap-3 rounded-xl border border-neutral-200 p-5">
@@ -100,16 +99,13 @@ export default function LikedMe() {
                         <img src={liker.photos[0].url} alt="" className="h-full w-full object-cover" />
                       )}
                     </Link>
-                    <Link href={`/profile/${liker.id}`} className="text-sm font-medium">
-                      {liker.displayName}
-                    </Link>
+                    <div className="flex flex-col">
+                      <Link href={`/profile/${liker.id}`} className="text-sm font-medium">
+                        {liker.displayName}
+                      </Link>
+                      {liker.headline && <span className="text-xs text-neutral-500">{liker.headline}</span>}
+                    </div>
                   </div>
-                  {prompt && (
-                    <p className="text-sm text-neutral-600">
-                      Liked &ldquo;{prompt.question}&rdquo;
-                      {like.comment && <span className="italic"> — &ldquo;{like.comment}&rdquo;</span>}
-                    </p>
-                  )}
                   <button
                     onClick={() => likeBack(liker.id)}
                     disabled={status === "sending" || status === "matched"}

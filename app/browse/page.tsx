@@ -39,7 +39,6 @@ export default function Browse() {
   const [loading, setLoading] = useState(true);
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [likeStatus, setLikeStatus] = useState<Record<string, LikeStatus>>({});
-  const [comments, setComments] = useState<Record<string, string>>({});
   const [remaining, setRemaining] = useState<number | null>(null);
 
   useEffect(() => {
@@ -87,24 +86,18 @@ export default function Browse() {
     });
   }, []);
 
-  // Contextual like — tied to the featured prompt shown, with an
-  // optional reply, so a match starts with an actual conversation
-  // opener instead of a blind heart-tap (Hinge's real mechanic, per
-  // your request to combine that with ThaiFriendly's browse model).
+  // Plain like — no per-prompt targeting or comment (ThaiFriendly's
+  // model, per direct feedback: simpler than Hinge's "like a specific
+  // card + optional reply" mechanic).
   async function handleLike(profile: UserProfile) {
     if (!user) return;
-    const featuredPrompt = profile.prompts?.[0];
     setLikeStatus((prev) => ({ ...prev, [profile.id]: "sending" }));
     try {
       const idToken = await user.getIdToken();
       const res = await fetch("/api/likes", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
-        body: JSON.stringify({
-          likedUserId: profile.id,
-          promptId: featuredPrompt?.id,
-          comment: comments[profile.id]?.trim() || undefined,
-        }),
+        body: JSON.stringify({ likedUserId: profile.id }),
       });
       const body = await res.json().catch(() => ({}));
       if (res.status === 429) {
@@ -206,7 +199,6 @@ export default function Browse() {
                 {profiles.map((profile) => {
                   const status = likeStatus[profile.id] ?? "idle";
                   const photo = profile.photos[0];
-                  const featuredPrompt = profile.prompts?.[0];
                   const isDone = status === "liked" || status === "matched" || status === "limit-reached";
                   const activity = getActivityStatus(profile.lastActiveAt);
                   const isNew = isNewMember(profile.createdAt);
@@ -234,24 +226,8 @@ export default function Browse() {
                       </Link>
                       {activity && !activity.isOnline && <p className="-mt-2 text-xs text-neutral-400">{activity.label}</p>}
 
-                      {featuredPrompt && (
-                        <div className="rounded-xl border border-neutral-200 p-5">
-                          <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">
-                            {featuredPrompt.question}
-                          </p>
-                          <p className="mt-1.5 text-base">{featuredPrompt.answer}</p>
-                        </div>
-                      )}
-
-                      {!isDone && status !== "error" && (
-                        <input
-                          type="text"
-                          placeholder="Add a comment (optional)"
-                          value={comments[profile.id] ?? ""}
-                          onChange={(e) => setComments((prev) => ({ ...prev, [profile.id]: e.target.value }))}
-                          className="rounded-full border border-neutral-300 px-4 py-2.5 text-sm focus:border-neutral-900 focus:outline-none"
-                        />
-                      )}
+                      {profile.headline && <p className="text-base font-medium">{profile.headline}</p>}
+                      {profile.bio && <p className="text-sm text-neutral-600">{profile.bio}</p>}
 
                       <div className="flex items-center gap-4">
                         <button

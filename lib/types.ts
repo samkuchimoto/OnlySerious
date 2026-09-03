@@ -19,31 +19,13 @@ export const MIN_PROFILE_PHOTOS = 3;
 export const FREE_DAILY_LIKE_LIMIT = 5;
 export const PAID_DAILY_LIKE_LIMIT = 100;
 
-// Curated for a long-term-relationship platform specifically — not
-// generic icebreaker humor. A person picks 3 and writes a real answer,
-// replacing a single free-text bio; each becomes its own card other
-// members can like directly (see Like.promptId below), giving a real
-// conversation starter instead of a blind heart-tap.
-export const PROMPT_QUESTIONS = [
-  "The way to my heart is",
-  "A life goal of mine is",
-  "I'm looking for someone who",
-  "I know it's right when",
-  "A non-negotiable for me is",
-  "Home, to me, feels like",
-  "The kind of partner I want to be is",
-  "My friends would describe me as",
-  "Something I'm serious about is",
-  "In five years, I hope to",
-] as const;
-
-export const REQUIRED_PROMPT_COUNT = 3;
-
-export interface ProfilePrompt {
-  id: string;
-  question: string;
-  answer: string;
-}
+// ThaiFriendly's model, not Hinge's — a short one-line headline (what
+// shows first on a Browse card) plus a plain free-text bio, instead of
+// picking curated prompts and writing witty answers to them. Direct
+// feedback: crafting a clever English prompt answer is real friction for
+// non-native English speakers, which is exactly the audience here.
+export const MAX_HEADLINE_LENGTH = 80;
+export const MAX_BIO_LENGTH = 500;
 
 export interface UserProfile {
   id: string; // Firebase Auth uid
@@ -53,7 +35,8 @@ export interface UserProfile {
   interestedIn: string[];
   city: string;
   country: string;
-  prompts: ProfilePrompt[];
+  headline: string;
+  bio: string;
   // Mirrors the number linked to this account's Firebase Auth user via
   // linkWithPhoneNumber — required of everyone equally (not gender-
   // specific), as the low-friction traceability signal every major
@@ -96,12 +79,6 @@ export interface Like {
   likerId: string;
   likedId: string;
   createdAt: string;
-  // Which prompt the like was on, and an optional short reply to it —
-  // mirrors Hinge's real mechanic (liking a specific card, not a blind
-  // swipe) so a match starts with an actual conversation opener rather
-  // than a silent match with nothing to say.
-  promptId?: string;
-  comment?: string;
 }
 
 export interface ProfilePhoto {
