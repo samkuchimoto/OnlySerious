@@ -116,5 +116,18 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.blockerId == request.auth.uid;
       allow update: if false;
     }
+
+    match /hides/{hideId} {
+      // Lighter-weight than blocks/{blockId} above — same deterministic-
+      // id shape, but reads are hider-only (the hidden person never sees
+      // this, unlike a block which both sides can see).
+      allow read: if isSignedIn() && resource.data.hiderId == request.auth.uid;
+      allow create: if isSignedIn()
+        && request.resource.data.hiderId == request.auth.uid
+        && request.resource.data.hiddenId != request.auth.uid
+        && hideId == request.resource.data.hiderId + '_' + request.resource.data.hiddenId;
+      allow delete: if isSignedIn() && resource.data.hiderId == request.auth.uid;
+      allow update: if false;
+    }
   }
 }

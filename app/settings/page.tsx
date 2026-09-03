@@ -9,6 +9,7 @@ import { db, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import { SelfieVerification } from "@/components/SelfieVerification";
 import { NotificationSettings } from "@/components/NotificationSettings";
+import { BlockedHiddenList } from "@/components/BlockedHiddenList";
 import type { UserProfile } from "@/lib/types";
 
 export default function Settings() {
@@ -149,6 +150,13 @@ export default function Settings() {
                 </Link>
               </div>
             </div>
+
+            {user && (
+              <div className="flex flex-col gap-3 border-b border-neutral-100 pb-8">
+                <h2 className="text-sm font-medium text-neutral-700">Blocked &amp; hidden</h2>
+                <BlockedHiddenList user={user} />
+              </div>
+            )}
 
             <div className="flex flex-col gap-3">
               <h2 className="text-sm font-medium text-red-600">Delete account</h2>

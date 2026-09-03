@@ -128,6 +128,11 @@ export function PhotoUploader({
         {approvedCount} of {MIN_PROFILE_PHOTOS} required photos approved
         {approvedCount < MIN_PROFILE_PHOTOS ? "" : " — you're set"}
       </p>
+      {approvedCount < MAX_PROFILE_PHOTOS && (
+        <p className="-mt-2 text-xs text-neutral-400">
+          Profiles with more photos get more messages — we recommend at least {MAX_PROFILE_PHOTOS}.
+        </p>
+      )}
 
       <div className="flex flex-wrap gap-3">
         {submissions.map((submission) => (

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
@@ -53,15 +53,19 @@ export default function Browse() {
       const own = ownSnap.exists() ? (ownSnap.data() as UserProfile) : null;
       setOwnProfile(own);
 
-      // Both directions: people I've blocked, and people who've blocked
-      // me — neither should see the other in browse.
-      const [blockedByMe, blockedMe] = await Promise.all([
+      // Both directions for blocks: people I've blocked, and people who've
+      // blocked me — neither should see the other in browse. Hides are
+      // one-directional by design (see lib/types.ts's Hide comment) — only
+      // the hider's own results are filtered.
+      const [blockedByMe, blockedMe, hiddenByMe] = await Promise.all([
         getDocs(query(collection(db, "blocks"), where("blockerId", "==", nextUser.uid))),
         getDocs(query(collection(db, "blocks"), where("blockedId", "==", nextUser.uid))),
+        getDocs(query(collection(db, "hides"), where("hiderId", "==", nextUser.uid))),
       ]);
       const excludedIds = new Set([
         ...blockedByMe.docs.map((d) => d.data().blockedId as string),
         ...blockedMe.docs.map((d) => d.data().blockerId as string),
+        ...hiddenByMe.docs.map((d) => d.data().hiddenId as string),
       ]);
 
       const activeSnap = await getDocs(query(collection(db, "users"), where("status", "==", "active")));
@@ -111,6 +115,20 @@ export default function Browse() {
     } catch {
       setLikeStatus((prev) => ({ ...prev, [profile.id]: "error" }));
     }
+  }
+
+  // One-tap, no confirmation — a deliberately lighter alternative to
+  // Block (see lib/types.ts's Hide comment) available right from the
+  // grid, not just the profile-detail menu.
+  async function handleHide(profileId: string) {
+    if (!user) return;
+    await setDoc(doc(db, "hides", `${user.uid}_${profileId}`), {
+      id: `${user.uid}_${profileId}`,
+      hiderId: user.uid,
+      hiddenId: profileId,
+      createdAt: new Date().toISOString(),
+    });
+    setProfiles((prev) => prev.filter((p) => p.id !== profileId));
   }
 
   return (
@@ -192,10 +210,15 @@ export default function Browse() {
                           <img src={photo.url} alt="" className="h-full w-full object-cover" />
                         )}
                       </Link>
-                      <Link href={`/profile/${profile.id}`} className="flex items-center gap-2 text-lg font-medium">
+                      <Link href={`/profile/${profile.id}`} className="flex flex-wrap items-center gap-2 text-lg font-medium">
                         {profile.displayName}, {calculateAge(profile.birthdate)}
                         <span className="text-sm font-normal text-neutral-400">{profile.city}</span>
-                        <VerifiedBadge approvedPhotoCount={profile.photos.length} />
+                        <VerifiedBadge approvedPhotoCount={profile.photos.length} selfieVerified={profile.selfieVerified} />
+                        {profile.datingIntention && (
+                          <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-600">
+                            {profile.datingIntention}
+                          </span>
+                        )}
                       </Link>
 
                       {featuredPrompt && (
@@ -217,31 +240,41 @@ export default function Browse() {
                         />
                       )}
 
-                      <button
-                        onClick={() => handleLike(profile)}
-                        disabled={status === "sending" || isDone}
-                        className={`w-fit rounded-full border px-6 py-2.5 text-sm font-medium transition-colors disabled:cursor-default ${
-                          status === "matched"
-                            ? "border-neutral-900 bg-neutral-900 text-white"
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => handleLike(profile)}
+                          disabled={status === "sending" || isDone}
+                          className={`w-fit rounded-full border px-6 py-2.5 text-sm font-medium transition-colors disabled:cursor-default ${
+                            status === "matched"
+                              ? "border-neutral-900 bg-neutral-900 text-white"
+                              : status === "liked"
+                                ? "border-neutral-300 text-neutral-400"
+                                : status === "limit-reached"
+                                  ? "border-neutral-200 text-neutral-300"
+                                  : "border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white"
+                          }`}
+                        >
+                          {status === "matched"
+                            ? "It's a match!"
                             : status === "liked"
-                              ? "border-neutral-300 text-neutral-400"
+                              ? "Liked"
                               : status === "limit-reached"
-                                ? "border-neutral-200 text-neutral-300"
-                                : "border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white"
-                        }`}
-                      >
-                        {status === "matched"
-                          ? "It's a match!"
-                          : status === "liked"
-                            ? "Liked"
-                            : status === "limit-reached"
-                              ? "Daily limit reached"
-                              : status === "error"
-                                ? "Try again"
-                                : status === "sending"
-                                  ? "…"
-                                  : "Like"}
-                      </button>
+                                ? "Daily limit reached"
+                                : status === "error"
+                                  ? "Try again"
+                                  : status === "sending"
+                                    ? "…"
+                                    : "Like"}
+                        </button>
+                        {!isDone && (
+                          <button
+                            onClick={() => handleHide(profile.id)}
+                            className="text-sm text-neutral-400 transition-colors hover:text-neutral-700"
+                          >
+                            Not interested
+                          </button>
+                        )}
+                      </div>
                     </article>
                   );
                 })}

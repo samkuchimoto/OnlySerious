@@ -7,13 +7,32 @@ import { RecaptchaVerifier, linkWithPhoneNumber, type ConfirmationResult, type U
 import { FirebaseError } from "firebase/app";
 import { auth, db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
-import { MIN_PROFILE_PHOTOS, PROMPT_QUESTIONS, REQUIRED_PROMPT_COUNT, type ProfilePrompt, type UserProfile } from "@/lib/types";
+import {
+  DATING_INTENTION_OPTIONS,
+  MIN_PROFILE_PHOTOS,
+  PROMPT_QUESTIONS,
+  REQUIRED_PROMPT_COUNT,
+  type ProfilePrompt,
+  type UserProfile,
+} from "@/lib/types";
 import { PhotoUploader, type PhotoSubmission } from "@/components/PhotoUploader";
 import { WaitlistForm } from "@/components/WaitlistForm";
+import { PushPrimer } from "@/components/PushPrimer";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 type Stage = "loading" | "signed-out" | "gender-gate" | "verify-phone" | "onboarding" | "editing" | "pending-review";
 
 const GENDER_OPTIONS = ["woman", "man", "other"];
+
+function calculateAge(birthdate: string): number {
+  const dob = new Date(birthdate);
+  const now = new Date();
+  let age = now.getFullYear() - dob.getFullYear();
+  const hadBirthdayThisYear =
+    now.getMonth() > dob.getMonth() || (now.getMonth() === dob.getMonth() && now.getDate() >= dob.getDate());
+  if (!hadBirthdayThisYear) age -= 1;
+  return age;
+}
 
 function emptyPrompts(): ProfilePrompt[] {
   return Array.from({ length: REQUIRED_PROMPT_COUNT }, () => ({
@@ -41,6 +60,27 @@ const REQUIRE_PHONE_VERIFICATION = false;
 // anywhere else, per lib/types.ts's own "no field encodes... " policy.
 const WOMEN_ONLY_PRELAUNCH = true;
 
+// Thin progress bar across the sign-up funnel (Hinge's pattern: a bare
+// bar, no step count/percentage label). Built from the same feature
+// flags above so it never drifts out of sync with which stages are
+// actually reachable.
+const FORM_STAGES: Stage[] = [
+  ...(WOMEN_ONLY_PRELAUNCH ? (["gender-gate"] as const) : []),
+  ...(REQUIRE_PHONE_VERIFICATION ? (["verify-phone"] as const) : []),
+  "onboarding",
+];
+
+function OnboardingProgressBar({ stage }: { stage: Stage }) {
+  const index = FORM_STAGES.indexOf(stage);
+  if (index === -1) return null;
+  const percent = ((index + 1) / FORM_STAGES.length) * 100;
+  return (
+    <div className="h-[3px] w-full bg-neutral-100">
+      <div className="h-full bg-neutral-900 transition-all" style={{ width: `${percent}%` }} />
+    </div>
+  );
+}
+
 function isAtLeast18(birthdate: string): boolean {
   const dob = new Date(birthdate);
   if (Number.isNaN(dob.getTime())) return false;
@@ -61,9 +101,11 @@ export default function SignUp() {
   const [interestedIn, setInterestedIn] = useState<string[]>([GENDER_OPTIONS[0]]);
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
+  const [datingIntention, setDatingIntention] = useState("");
   const [prompts, setPrompts] = useState<ProfilePrompt[]>(emptyPrompts);
   const [existingProfile, setExistingProfile] = useState<UserProfile | null>(null);
   const [photoSubmissions, setPhotoSubmissions] = useState<PhotoSubmission[]>([]);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const [genderGateBlocked, setGenderGateBlocked] = useState(false);
 
@@ -199,6 +241,7 @@ export default function SignUp() {
     setInterestedIn(existingProfile.interestedIn);
     setCity(existingProfile.city);
     setCountry(existingProfile.country);
+    setDatingIntention(existingProfile.datingIntention ?? "");
     setPrompts(existingProfile.prompts?.length === REQUIRED_PROMPT_COUNT ? existingProfile.prompts : emptyPrompts());
     setError(null);
     setStage("editing");
@@ -217,6 +260,10 @@ export default function SignUp() {
       setError("Select at least one option for who you're interested in.");
       return;
     }
+    if (!datingIntention) {
+      setError("Let others know what you're looking for.");
+      return;
+    }
     if (prompts.some((p) => !p.question || !p.answer.trim())) {
       setError("Pick a question and write an answer for all three prompts.");
       return;
@@ -233,6 +280,7 @@ export default function SignUp() {
       interestedIn,
       city: city.trim(),
       country: country.trim(),
+      datingIntention,
       prompts: prompts.map((p) => ({ ...p, answer: p.answer.trim() })),
     };
 
@@ -296,6 +344,8 @@ export default function SignUp() {
           </div>
         )}
       </header>
+
+      <OnboardingProgressBar stage={stage} />
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
         {stage === "loading" && <p className="text-sm text-neutral-400">Loading…</p>}
@@ -487,6 +537,26 @@ export default function SignUp() {
               </div>
             </fieldset>
 
+            <fieldset className="flex flex-col gap-1.5 text-sm">
+              <legend className="mb-0.5">What are you looking for?</legend>
+              <div className="flex flex-wrap gap-2">
+                {DATING_INTENTION_OPTIONS.map((option) => (
+                  <button
+                    type="button"
+                    key={option}
+                    onClick={() => setDatingIntention(option)}
+                    className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                      datingIntention === option
+                        ? "border-neutral-900 bg-neutral-900 text-white"
+                        : "border-neutral-300 text-neutral-600"
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
             <div className="flex gap-4">
               <label className="flex flex-1 flex-col gap-1.5 text-sm">
                 City
@@ -609,6 +679,57 @@ export default function SignUp() {
                 );
               })()}
             </div>
+
+            <PushPrimer user={user} alreadyEnabled={!!existingProfile?.fcmTokens?.length} />
+
+            {existingProfile && (
+              <div className="flex w-full flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPreviewOpen((v) => !v)}
+                  className="w-fit text-sm text-neutral-500 underline underline-offset-2 hover:text-neutral-900"
+                >
+                  {previewOpen ? "Hide preview" : "Preview how others will see you"}
+                </button>
+                {previewOpen && (
+                  <div className="flex flex-col gap-3 rounded-2xl border border-neutral-200 p-5">
+                    <div className="aspect-[4/5] w-full max-w-xs overflow-hidden rounded-xl bg-neutral-100">
+                      {existingProfile.photos[0] && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={existingProfile.photos[0].url} alt="" className="h-full w-full object-cover" />
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-lg font-medium">
+                        {existingProfile.displayName || "Your name"}, {calculateAge(existingProfile.birthdate)}
+                      </span>
+                      <span className="text-sm text-neutral-400">{existingProfile.city}</span>
+                      <VerifiedBadge
+                        approvedPhotoCount={existingProfile.photos.length}
+                        selfieVerified={existingProfile.selfieVerified}
+                      />
+                    </div>
+                    {existingProfile.datingIntention && (
+                      <span className="w-fit rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-600">
+                        {existingProfile.datingIntention}
+                      </span>
+                    )}
+                    {existingProfile.prompts?.[0]?.answer && (
+                      <div className="rounded-xl border border-neutral-200 p-4">
+                        <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">
+                          {existingProfile.prompts[0].question}
+                        </p>
+                        <p className="mt-1 text-sm">{existingProfile.prompts[0].answer}</p>
+                      </div>
+                    )}
+                    <p className="text-xs text-neutral-400">
+                      This is exactly what other members see once your profile is live.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="flex flex-col gap-2">
               <h2 className="text-sm font-medium text-neutral-700">Photos</h2>
               <p className="text-sm text-neutral-500">

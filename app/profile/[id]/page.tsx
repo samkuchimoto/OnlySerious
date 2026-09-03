@@ -86,6 +86,22 @@ export default function ProfileDetail() {
     router.push("/browse");
   }
 
+  // Deliberately no confirmation step and no report-style reason picker —
+  // the entire point is a one-tap, low-friction "don't show me this
+  // person again" that's lighter than Block, so it doesn't add the same
+  // friction it's meant to be an alternative to.
+  async function handleHide() {
+    if (!user || !profile) return;
+    setMenuOpen(false);
+    await setDoc(doc(db, "hides", `${user.uid}_${profile.id}`), {
+      id: `${user.uid}_${profile.id}`,
+      hiderId: user.uid,
+      hiddenId: profile.id,
+      createdAt: new Date().toISOString(),
+    });
+    router.push("/browse");
+  }
+
   async function handleReport(reason: string) {
     if (!user || !profile) return;
     const reportId = crypto.randomUUID();
@@ -119,6 +135,9 @@ export default function ProfileDetail() {
             </button>
             {menuOpen && (
               <div className="absolute right-0 z-10 mt-1 w-40 rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
+                <button onClick={handleHide} className="block w-full px-4 py-2 text-left text-sm hover:bg-neutral-50">
+                  Not interested
+                </button>
                 <button
                   onClick={() => {
                     setMenuOpen(false);
@@ -170,9 +189,19 @@ export default function ProfileDetail() {
                 <h1 className="text-2xl font-medium tracking-tight">
                   {profile.displayName}, {calculateAge(profile.birthdate)}
                 </h1>
-                <VerifiedBadge approvedPhotoCount={profile.photos.length} />
+                <VerifiedBadge approvedPhotoCount={profile.photos.length} selfieVerified={profile.selfieVerified} />
               </div>
-              <p className="text-sm text-neutral-400">{profile.city}</p>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-sm text-neutral-400">
+                  {profile.city}
+                  {profile.country ? `, ${profile.country}` : ""}
+                </span>
+                {profile.datingIntention && (
+                  <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-600">
+                    {profile.datingIntention}
+                  </span>
+                )}
+              </div>
             </div>
 
             {profile.photos.map((photo, index) => (
