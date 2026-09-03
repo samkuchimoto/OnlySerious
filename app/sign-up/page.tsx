@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { doc, getDoc, onSnapshot, setDoc, updateDoc } from "firebase/firestore";
 import { RecaptchaVerifier, linkWithPhoneNumber, type ConfirmationResult, type User } from "firebase/auth";
+import { FirebaseError } from "firebase/app";
 import { auth, db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import { MIN_PROFILE_PHOTOS, PROMPT_QUESTIONS, REQUIRED_PROMPT_COUNT, type ProfilePrompt, type UserProfile } from "@/lib/types";
@@ -108,8 +109,16 @@ export default function SignUp() {
       recaptchaVerifierRef.current = verifier;
       const result = await linkWithPhoneNumber(user, phoneInput.trim(), verifier);
       setConfirmationResult(result);
-    } catch {
-      setPhoneError("Couldn't send a code to that number. Check it includes your country code (e.g. +66…).");
+    } catch (err) {
+      // Surfaced instead of swallowed — the previous generic message made
+      // every failure mode (bad number, captcha/domain failure, quota,
+      // phone-already-linked, network) look identical, which is why the
+      // reCAPTCHA-reuse fix could look wrong or right with no way to tell.
+      const code = err instanceof FirebaseError ? err.code : "unknown";
+      console.error("sendVerificationCode failed:", err);
+      setPhoneError(
+        `Couldn't send a code to that number (${code}). Check it includes your country code (e.g. +66…).`,
+      );
     } finally {
       setPhoneSubmitting(false);
     }
@@ -122,8 +131,10 @@ export default function SignUp() {
     try {
       await confirmationResult.confirm(verificationCode.trim());
       setStage("onboarding");
-    } catch {
-      setPhoneError("That code didn't match. Please try again.");
+    } catch (err) {
+      const code = err instanceof FirebaseError ? err.code : "unknown";
+      console.error("confirmVerificationCode failed:", err);
+      setPhoneError(`That code didn't match (${code}). Please try again.`);
     } finally {
       setPhoneSubmitting(false);
     }
