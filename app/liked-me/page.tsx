@@ -64,7 +64,7 @@ export default function LikedMe() {
 
   return (
     <main className="flex min-h-screen flex-col bg-white text-neutral-900">
-      <header className="mx-auto flex w-full max-w-2xl items-center justify-between px-6 py-8">
+      <header className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-y-2 px-6 py-8">
         <Link href="/browse" className="text-lg font-semibold tracking-tight">
           {BRAND_CONFIG.appTitle}
         </Link>

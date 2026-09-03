@@ -4,11 +4,11 @@ import { BRAND_CONFIG } from "@/config/brand";
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
   return (
     <main className="flex min-h-screen flex-col bg-white text-neutral-900">
-      <header className="mx-auto flex w-full max-w-2xl items-center justify-between px-6 py-8">
+      <header className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-y-2 px-6 py-8">
         <Link href="/" className="text-lg font-semibold tracking-tight">
           {BRAND_CONFIG.appTitle}
         </Link>
-        <div className="flex items-center gap-4 text-sm text-neutral-400">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-400">
           <Link href="/terms" className="transition-colors hover:text-neutral-900">
             Terms
           </Link>
