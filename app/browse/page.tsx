@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import type { User } from "firebase/auth";
@@ -8,6 +9,16 @@ import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import type { UserProfile } from "@/lib/types";
+
+// Decorative only — reflects who the viewer said they're interested in,
+// never tied to any real or fake profile. "Other"/unset falls back to
+// no banner rather than guessing.
+function heroImageFor(interestedIn: string[] | undefined): string | null {
+  if (!interestedIn?.length) return null;
+  if (interestedIn.includes("woman")) return "/images/hero-woman.png";
+  if (interestedIn.includes("man")) return "/images/hero-man.png";
+  return null;
+}
 
 function calculateAge(birthdate: string): number {
   const dob = new Date(birthdate);
@@ -154,6 +165,13 @@ export default function Browse() {
 
         {!loading && user && ownProfile && (
           <>
+            {heroImageFor(ownProfile.interestedIn) && (
+              <div className="relative mt-8 aspect-[16/7] w-full overflow-hidden rounded-2xl">
+                <Image src={heroImageFor(ownProfile.interestedIn) as string} alt="" fill className="object-cover" priority />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                <p className="absolute bottom-4 left-5 text-lg font-medium text-white">Someone serious is out there.</p>
+              </div>
+            )}
             <h1 className="pt-8 text-3xl font-medium tracking-tight">Browse</h1>
             {profiles.length === 0 ? (
               <p className="mt-4 text-sm text-neutral-500">

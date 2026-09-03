@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import type { User } from "firebase/auth";
@@ -72,9 +73,15 @@ export default function Matches() {
         )}
 
         {!loading && user && matches.length === 0 && (
-          <p className="mt-4 text-sm text-neutral-500">
-            No matches yet — a mutual like turns into a match automatically.
-          </p>
+          <div className="mt-6 flex flex-col gap-4">
+            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
+              <Image src="/images/hero-couple-rooftop.png" alt="" fill className="object-cover" />
+              <div className="absolute inset-0 bg-black/10" />
+            </div>
+            <p className="text-sm text-neutral-500">
+              No matches yet — a mutual like turns into a match automatically.
+            </p>
+          </div>
         )}
 
         {!loading && matches.length > 0 && (
