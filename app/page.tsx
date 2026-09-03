@@ -88,8 +88,8 @@ export default function Home() {
         <div className="mx-auto max-w-xl rounded-2xl border border-neutral-200 bg-white p-8 text-center shadow-sm sm:p-10">
           <h2 className="text-2xl font-medium tracking-tight sm:text-3xl">Get early access</h2>
           <p className="mt-3 text-sm text-neutral-500">
-            Verified intent, not just photos. A strict photo policy. Zero tolerance for solicitation. Leave
-            your email and we&apos;ll send you the link the moment OSThai launches on Google Play.
+            Want OSThai the moment it&apos;s on Google Play? Leave your email and we&apos;ll send you the
+            link.
           </p>
           <div className="mt-6">
             <WaitlistForm align="center" />
