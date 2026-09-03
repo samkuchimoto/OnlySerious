@@ -144,3 +144,13 @@ export interface Block {
   blockedId: string;
   createdAt: string;
 }
+
+// Prelaunch email capture — homepage + the sign-up gate shown while
+// registration is women-first (config/brand.ts doesn't own this; it's a
+// launch-sequencing decision, not market branding). Written directly
+// from the client (firestore.rules validates shape), never read back.
+export interface WaitlistEntry {
+  id: string;
+  email: string;
+  createdAt: string;
+}

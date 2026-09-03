@@ -85,6 +85,22 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    match /waitlist/{entryId} {
+      // Prelaunch email capture (homepage + the sign-up gate shown to men
+      // while registration is women-first) — most visitors here aren't
+      // signed in, so validation lives entirely in this rule rather than
+      // trusting a server route: exactly these two fields, a real-looking
+      // email, a real client timestamp. No read access is granted (or
+      // needed) since nothing client-side ever displays this list back;
+      // duplicate emails are a non-issue for a list that just gets
+      // emailed once at launch.
+      allow create: if request.resource.data.keys().hasOnly(['email', 'createdAt'])
+        && request.resource.data.email is string
+        && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+[.][^@\\s]+$')
+        && request.resource.data.createdAt is string;
+      allow read, update, delete: if false;
+    }
+
     match /blocks/{blockId} {
       // Deterministic id ({blockerId}_{blockedId}) makes a duplicate
       // block a no-op overwrite rather than a second document. Readable

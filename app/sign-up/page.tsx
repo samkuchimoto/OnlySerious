@@ -9,8 +9,9 @@ import { auth, db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/f
 import { BRAND_CONFIG } from "@/config/brand";
 import { MIN_PROFILE_PHOTOS, PROMPT_QUESTIONS, REQUIRED_PROMPT_COUNT, type ProfilePrompt, type UserProfile } from "@/lib/types";
 import { PhotoUploader, type PhotoSubmission } from "@/components/PhotoUploader";
+import { WaitlistForm } from "@/components/WaitlistForm";
 
-type Stage = "loading" | "signed-out" | "verify-phone" | "onboarding" | "editing" | "pending-review";
+type Stage = "loading" | "signed-out" | "gender-gate" | "verify-phone" | "onboarding" | "editing" | "pending-review";
 
 const GENDER_OPTIONS = ["woman", "man", "other"];
 
@@ -31,6 +32,14 @@ function emptyPrompts(): ProfilePrompt[] {
 // already tolerates an empty phoneNumber (handleSubmit below,
 // lib/types.ts), so this is safe to toggle either way.
 const REQUIRE_PHONE_VERIFICATION = false;
+
+// Direct product decision, not a permanent policy: registration opens to
+// women first (a supply-side cold-start move — a dating app lives or
+// dies on female profile density) while men get captured on the
+// waitlist instead. Flip off once general registration opens; nothing
+// downstream (data model, matching, pricing) is gender-conditional
+// anywhere else, per lib/types.ts's own "no field encodes... " policy.
+const WOMEN_ONLY_PRELAUNCH = true;
 
 function isAtLeast18(birthdate: string): boolean {
   const dob = new Date(birthdate);
@@ -55,6 +64,8 @@ export default function SignUp() {
   const [prompts, setPrompts] = useState<ProfilePrompt[]>(emptyPrompts);
   const [existingProfile, setExistingProfile] = useState<UserProfile | null>(null);
   const [photoSubmissions, setPhotoSubmissions] = useState<PhotoSubmission[]>([]);
+
+  const [genderGateBlocked, setGenderGateBlocked] = useState(false);
 
   const [phoneInput, setPhoneInput] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
@@ -86,6 +97,11 @@ export default function SignUp() {
       if (existing.exists()) {
         setStage("pending-review");
         watchProfile(nextUser.uid);
+      } else if (WOMEN_ONLY_PRELAUNCH) {
+        // Ask before the phone step / full form, not after — no reason
+        // to make someone fill anything in before finding out they
+        // can't register yet.
+        setStage("gender-gate");
       } else if (REQUIRE_PHONE_VERIFICATION && !nextUser.phoneNumber) {
         // Required of everyone equally — the low-friction traceability
         // signal every major dating app already uses (SMS OTP), instead
@@ -102,6 +118,14 @@ export default function SignUp() {
       recaptchaVerifierRef.current?.clear();
     };
   }, []);
+
+  function handleGenderGateContinue() {
+    if (gender === "woman") {
+      setStage(REQUIRE_PHONE_VERIFICATION && !user?.phoneNumber ? "verify-phone" : "onboarding");
+    } else {
+      setGenderGateBlocked(true);
+    }
+  }
 
   async function sendVerificationCode() {
     if (!user) return;
@@ -286,6 +310,58 @@ export default function SignUp() {
             >
               Continue with Google
             </button>
+          </div>
+        )}
+
+        {stage === "gender-gate" && (
+          <div className="flex flex-col items-start gap-6 pt-8">
+            {!genderGateBlocked ? (
+              <>
+                <div className="flex flex-col gap-2">
+                  <h1 className="text-3xl font-medium tracking-tight">Quick question before we start</h1>
+                  <p className="max-w-md text-neutral-500">
+                    {BRAND_CONFIG.appTitle} is opening to women first, so we can build a real, verified community
+                    before general launch.
+                  </p>
+                </div>
+                <fieldset className="flex flex-col gap-1.5 text-sm">
+                  <legend className="mb-0.5">I am a</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {GENDER_OPTIONS.map((option) => (
+                      <button
+                        type="button"
+                        key={option}
+                        onClick={() => setGender(option)}
+                        className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                          gender === option
+                            ? "border-neutral-900 bg-neutral-900 text-white"
+                            : "border-neutral-300 text-neutral-600"
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </fieldset>
+                <button
+                  onClick={handleGenderGateContinue}
+                  className="w-fit rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+                >
+                  Continue
+                </button>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-col gap-2">
+                  <h1 className="text-3xl font-medium tracking-tight">Men&apos;s registration opens soon</h1>
+                  <p className="max-w-md text-neutral-500">
+                    We&apos;re focused on building a real, verified community of women first. Leave your email and
+                    we&apos;ll let you know the moment it&apos;s your turn.
+                  </p>
+                </div>
+                <WaitlistForm />
+              </>
+            )}
           </div>
         )}
 
