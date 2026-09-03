@@ -52,6 +52,7 @@ export default function SignUp() {
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const unsubscribeProfileRef = useRef<(() => void) | undefined>(undefined);
+  const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
   // Live, not one-time — so an auto-activation triggered by a photo
   // upload (app/api/photos/route.ts) shows up here without a reload.
@@ -87,6 +88,7 @@ export default function SignUp() {
     return () => {
       unsubscribeAuth();
       unsubscribeProfileRef.current?.();
+      recaptchaVerifierRef.current?.clear();
     };
   }, []);
 
@@ -95,7 +97,15 @@ export default function SignUp() {
     setPhoneError(null);
     setPhoneSubmitting(true);
     try {
+      // A fresh RecaptchaVerifier on every call (e.g. a retry after the
+      // first attempt seemed to hang) renders a second widget into the
+      // same container without clearing the first one — real symptom
+      // seen: two separate reCAPTCHA bframe iframes in the Sources
+      // panel at once, leading to a timeout and an orphaned
+      // verification session the entered code could never match.
+      recaptchaVerifierRef.current?.clear();
       const verifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
+      recaptchaVerifierRef.current = verifier;
       const result = await linkWithPhoneNumber(user, phoneInput.trim(), verifier);
       setConfirmationResult(result);
     } catch {
