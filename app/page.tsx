@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { BRAND_CONFIG } from "@/config/brand";
 import { WaitlistForm } from "@/components/WaitlistForm";
+import { InAppBrowserWarning } from "@/components/InAppBrowserWarning";
 
 // Real differentiators only — no feature listed here that isn't actually
 // enforced in lib/moderation.ts. "Strict photo policy" and "no
@@ -30,6 +31,9 @@ const DIFFERENTIATORS = [
 export default function Home() {
   return (
     <main className="flex-1 bg-white text-neutral-900">
+      <div className="px-6 pt-4 sm:px-10">
+        <InAppBrowserWarning />
+      </div>
       <section className="relative flex min-h-[85vh] flex-col overflow-hidden">
         <Image src="/images/hero-couple.png" alt="" fill priority className="object-cover" />
         {/* Two stacked overlays: a mild wash across the whole photo so the

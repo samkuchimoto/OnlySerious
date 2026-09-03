@@ -12,6 +12,7 @@ import { PhotoUploader, type PhotoSubmission } from "@/components/PhotoUploader"
 import { WaitlistForm } from "@/components/WaitlistForm";
 import { PushPrimer } from "@/components/PushPrimer";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { InAppBrowserWarning } from "@/components/InAppBrowserWarning";
 
 type Stage = "loading" | "signed-out" | "gender-gate" | "verify-phone" | "onboarding" | "editing" | "pending-review";
 
@@ -337,6 +338,7 @@ export default function SignUp() {
 
         {stage === "signed-out" && (
           <div className="flex flex-col items-start gap-6 pt-8">
+            <InAppBrowserWarning />
             <h1 className="text-4xl font-medium leading-tight tracking-tight">Create your profile</h1>
             <p className="max-w-md text-neutral-500">{BRAND_CONFIG.heroSubheadline}</p>
             <button
