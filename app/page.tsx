@@ -76,18 +76,22 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Prelaunch email capture — registration is women-first right now
-          (see app/sign-up/page.tsx's WOMEN_ONLY_PRELAUNCH gate), so this
-          is where everyone else (and anyone not ready to fully sign up
-          yet) gets captured instead of bouncing. */}
-      <section className="border-t border-neutral-100 bg-neutral-50 px-6 py-20 text-center sm:px-10 sm:py-28">
-        <div className="mx-auto flex max-w-xl flex-col items-center gap-4">
-          <h2 className="text-3xl font-medium tracking-tight sm:text-4xl">Be one of the first on OSThai</h2>
-          <p className="text-neutral-500">
-            We&apos;re opening registration to women first, to build a real, verified community before general
-            launch. Leave your email and we&apos;ll let you know the moment it&apos;s your turn.
+      {/* Universal email capture for the Google Play launch link —
+          deliberately separate from the women-first registration gate
+          (app/sign-up/page.tsx's WOMEN_ONLY_PRELAUNCH). That gate's
+          explanation belongs on the sign-up screen where someone who's
+          already tried to register and hit it needs to hear it; this
+          section is a stranger's first touch, so it stays open and
+          leads with the same real differentiators as the section above
+          instead of a reason to wait. */}
+      <section className="border-t border-neutral-100 bg-neutral-50 px-6 py-20 sm:px-10 sm:py-28">
+        <div className="mx-auto max-w-xl rounded-2xl border border-neutral-200 bg-white p-8 text-center shadow-sm sm:p-10">
+          <h2 className="text-2xl font-medium tracking-tight sm:text-3xl">Get early access</h2>
+          <p className="mt-3 text-sm text-neutral-500">
+            Verified intent, not just photos. A strict photo policy. Zero tolerance for solicitation. Leave
+            your email and we&apos;ll send you the link the moment OSThai launches on Google Play.
           </p>
-          <div className="mt-2 w-full">
+          <div className="mt-6">
             <WaitlistForm align="center" />
           </div>
         </div>

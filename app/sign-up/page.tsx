@@ -414,7 +414,7 @@ export default function SignUp() {
                   <h1 className="text-3xl font-medium tracking-tight">Men&apos;s registration opens soon</h1>
                   <p className="max-w-md text-neutral-500">
                     We&apos;re focused on building a real, verified community of women first. Leave your email and
-                    we&apos;ll let you know the moment it&apos;s your turn.
+                    we&apos;ll send you the link the moment OSThai launches on Google Play.
                   </p>
                 </div>
                 <WaitlistForm />

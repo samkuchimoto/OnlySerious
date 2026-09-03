@@ -36,7 +36,7 @@ export function WaitlistForm({ ctaLabel = "Notify me at launch", align = "start"
   if (status === "done") {
     return (
       <p className={`text-sm font-medium text-neutral-900 ${align === "center" ? "text-center" : ""}`}>
-        You&apos;re on the list — we&apos;ll email you the moment OSThai launches.
+        You&apos;re on the list — we&apos;ll email you the link the moment OSThai launches on Google Play.
       </p>
     );
   }
