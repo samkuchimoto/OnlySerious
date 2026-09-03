@@ -15,7 +15,10 @@ import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 type Stage = "loading" | "signed-out" | "gender-gate" | "verify-phone" | "onboarding" | "editing" | "pending-review";
 
-const GENDER_OPTIONS = ["woman", "man", "other"];
+// Strictly binary, opposite-gender matching only, per direct product
+// decision — man looking for woman and woman looking for man, nothing
+// else. Shared by both the "I am a" and "Interested in" fields below.
+const GENDER_OPTIONS = ["woman", "man"];
 
 function calculateAge(birthdate: string): number {
   const dob = new Date(birthdate);
@@ -216,10 +219,11 @@ export default function SignUp() {
     }
   }
 
-  function toggleInterestedIn(option: string) {
-    setInterestedIn((prev) =>
-      prev.includes(option) ? prev.filter((value) => value !== option) : [...prev, option],
-    );
+  // Single-select — kept as a string[] in state/type for schema
+  // compatibility, but only ever holds one value: opposite-gender-only
+  // matching means there's exactly one real choice (see GENDER_OPTIONS).
+  function selectInterestedIn(option: string) {
+    setInterestedIn([option]);
   }
 
   function startEditing() {
@@ -505,7 +509,7 @@ export default function SignUp() {
                   <button
                     type="button"
                     key={option}
-                    onClick={() => toggleInterestedIn(option)}
+                    onClick={() => selectInterestedIn(option)}
                     className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                       interestedIn.includes(option)
                         ? "border-neutral-900 bg-neutral-900 text-white"
