@@ -15,7 +15,7 @@ type WaitlistFormProps = {
   align?: "center" | "start";
 };
 
-export function WaitlistForm({ ctaLabel = "Notify me at launch", align = "start" }: WaitlistFormProps) {
+export function WaitlistForm({ ctaLabel = "Get the link", align = "start" }: WaitlistFormProps) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">("idle");
 
