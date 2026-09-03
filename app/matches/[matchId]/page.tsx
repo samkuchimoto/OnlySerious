@@ -49,9 +49,21 @@ export default function MatchChat() {
   useEffect(() => {
     if (!match) return;
     const q = query(collection(db, "messages"), where("matchId", "==", matchId), orderBy("createdAt", "asc"));
-    return onSnapshot(q, (snapshot) => {
-      setMessages(snapshot.docs.map((d) => d.data() as Message));
-    });
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        setMessages(snapshot.docs.map((d) => d.data() as Message));
+      },
+      (err) => {
+        // A query combining an equality filter with orderBy on a
+        // different field needs a composite index (see
+        // firestore.indexes.json) — without an error handler here, a
+        // missing/not-yet-propagated index fails this listener silently
+        // and the conversation just never appears, for either side.
+        console.error("messages listener failed:", err);
+        setError("Couldn't load this conversation. Try refreshing.");
+      },
+    );
   }, [match, matchId]);
 
   useEffect(() => {

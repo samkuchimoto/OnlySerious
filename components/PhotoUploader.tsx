@@ -60,6 +60,7 @@ export function PhotoUploader({
   const [submissions, setSubmissions] = useState<PhotoSubmission[]>([]);
   const [uploading, setUploading] = useState(false);
   const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -90,6 +91,27 @@ export function PhotoUploader({
       setError("Retry failed. Please try again.");
     } finally {
       setRetryingId(null);
+    }
+  }
+
+  async function handleDelete(photoId: string) {
+    setError(null);
+    setDeletingId(photoId);
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/photos", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
+        body: JSON.stringify({ photoId }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error ?? "Couldn't remove that photo. Please try again.");
+      }
+    } catch {
+      setError("Couldn't remove that photo. Please try again.");
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -137,14 +159,25 @@ export function PhotoUploader({
       <div className="flex flex-wrap gap-3">
         {submissions.map((submission) => (
           <div key={submission.id} className="flex w-28 flex-col items-center gap-1.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={submission.url}
-              alt=""
-              className={`h-28 w-28 rounded-lg object-cover ${
-                submission.moderationStatus === "rejected" ? "opacity-40" : ""
-              }`}
-            />
+            <div className="relative">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={submission.url}
+                alt=""
+                className={`h-28 w-28 rounded-lg object-cover ${
+                  submission.moderationStatus === "rejected" ? "opacity-40" : ""
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => handleDelete(submission.id)}
+                disabled={deletingId === submission.id}
+                aria-label="Remove photo"
+                className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-neutral-900 text-xs text-white shadow disabled:opacity-50"
+              >
+                {deletingId === submission.id ? "…" : "✕"}
+              </button>
+            </div>
             <StatusBadge status={submission.moderationStatus} reason={submission.reason} />
             {submission.moderationStatus === "pending" && (
               <button

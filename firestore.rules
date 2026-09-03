@@ -86,11 +86,14 @@ service cloud.firestore {
     }
 
     match /likes/{likeId} {
-      // Writes stay server-only (the daily-limit check and mutual-match
-      // detection both have to be trusted — a client could otherwise
-      // just skip its own limit). Reads are allowed for "who liked me",
-      // strictly limited to likes addressed to the reader.
-      allow read: if isSignedIn() && resource.data.likedId == request.auth.uid;
+      // Writes stay server-only (the daily-limit check, deterministic-id
+      // idempotency, and mutual-match detection all have to be trusted —
+      // a client could otherwise skip its own limit or double-like).
+      // Reads are allowed both for "who liked me" and "who have I
+      // already liked" (Browse excludes them so a profile you've liked
+      // doesn't keep reappearing).
+      allow read: if isSignedIn()
+        && (resource.data.likedId == request.auth.uid || resource.data.likerId == request.auth.uid);
       allow write: if false;
     }
 

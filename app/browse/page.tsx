@@ -61,16 +61,21 @@ export default function Browse() {
       // Both directions for blocks: people I've blocked, and people who've
       // blocked me — neither should see the other in browse. Hides are
       // one-directional by design (see lib/types.ts's Hide comment) — only
-      // the hider's own results are filtered.
-      const [blockedByMe, blockedMe, hiddenByMe] = await Promise.all([
+      // the hider's own results are filtered. Already-liked profiles are
+      // excluded too, so a reload doesn't re-show someone as freshly
+      // likeable (see app/api/likes' deterministic-id fix for the data
+      // side of the same bug).
+      const [blockedByMe, blockedMe, hiddenByMe, likedByMe] = await Promise.all([
         getDocs(query(collection(db, "blocks"), where("blockerId", "==", nextUser.uid))),
         getDocs(query(collection(db, "blocks"), where("blockedId", "==", nextUser.uid))),
         getDocs(query(collection(db, "hides"), where("hiderId", "==", nextUser.uid))),
+        getDocs(query(collection(db, "likes"), where("likerId", "==", nextUser.uid))),
       ]);
       const excludedIds = new Set([
         ...blockedByMe.docs.map((d) => d.data().blockedId as string),
         ...blockedMe.docs.map((d) => d.data().blockerId as string),
         ...hiddenByMe.docs.map((d) => d.data().hiddenId as string),
+        ...likedByMe.docs.map((d) => d.data().likedId as string),
       ]);
 
       const activeSnap = await getDocs(query(collection(db, "users"), where("status", "==", "active")));

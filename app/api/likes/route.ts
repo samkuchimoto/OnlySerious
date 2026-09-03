@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { verifyRequestUser, adminDb } from "@/lib/firebaseAdmin";
@@ -38,6 +37,27 @@ export async function POST(request: Request) {
   }
   const profile = userSnap.data() as UserProfile;
 
+  // Deterministic id (mirrors Block/Hide's `${a}_${b}` pattern) instead
+  // of a random one — makes "like the same profile twice" structurally
+  // impossible (an overwrite of the same doc, not a second one), where
+  // a randomUUID() id let Browse re-showing an already-liked profile
+  // (it didn't exclude your own likes) silently create duplicates.
+  const likeId = `${uid}_${likedUserId}`;
+  const likeRef = adminDb.collection("likes").doc(likeId);
+  const reciprocalRef = adminDb.collection("likes").doc(`${likedUserId}_${uid}`);
+
+  const existingLike = await likeRef.get();
+  if (existingLike.exists) {
+    // Already liked — a harmless re-click (e.g. a stale Browse list),
+    // not a new like. No daily-limit consumption, no repeat
+    // notification, just report the current state.
+    const reciprocal = await reciprocalRef.get();
+    const today = todayKey();
+    const usedToday = profile.dailyLikesDate === today ? (profile.dailyLikesUsed ?? 0) : 0;
+    const limit = profile.subscriptionStatus === "active" ? PAID_DAILY_LIKE_LIMIT : FREE_DAILY_LIKE_LIMIT;
+    return NextResponse.json({ liked: true, matched: reciprocal.exists, remaining: limit - usedToday });
+  }
+
   const today = todayKey();
   const usedBeforeToday = profile.dailyLikesDate === today ? (profile.dailyLikesUsed ?? 0) : 0;
   // Applied by subscriptionStatus, never by gender — see the comment on
@@ -47,8 +67,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "daily like limit reached", remaining: 0 }, { status: 429 });
   }
 
-  const likeId = randomUUID();
-  await adminDb.collection("likes").doc(likeId).set({
+  await likeRef.set({
     id: likeId,
     likerId: uid,
     likedId: likedUserId,
@@ -56,18 +75,12 @@ export async function POST(request: Request) {
   });
   await userRef.update({ dailyLikesUsed: usedBeforeToday + 1, dailyLikesDate: today });
 
-  // Mutual like → real match. Two pure-equality filters, no composite
-  // index needed (unlike a range query, which the daily-counter design
-  // above exists specifically to avoid).
-  const reciprocal = await adminDb
-    .collection("likes")
-    .where("likerId", "==", likedUserId)
-    .where("likedId", "==", uid)
-    .limit(1)
-    .get();
+  // Mutual like → real match. A direct doc get on the same deterministic
+  // id shape, not a query.
+  const reciprocal = await reciprocalRef.get();
 
   let matched = false;
-  if (!reciprocal.empty) {
+  if (reciprocal.exists) {
     matched = true;
     const matchId = [uid, likedUserId].sort().join("_");
     const matchRef = adminDb.collection("matches").doc(matchId);
