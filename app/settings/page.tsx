@@ -10,6 +10,7 @@ import { BRAND_CONFIG } from "@/config/brand";
 import { SelfieVerification } from "@/components/SelfieVerification";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { BlockedHiddenList } from "@/components/BlockedHiddenList";
+import { withRetry } from "@/lib/retry";
 import type { UserProfile } from "@/lib/types";
 
 export default function Settings() {
@@ -30,8 +31,10 @@ export default function Settings() {
         return;
       }
       try {
-        const snap = await getDoc(doc(db, "users", nextUser.uid));
-        if (snap.exists()) setProfile(snap.data() as UserProfile);
+        await withRetry(async () => {
+          const snap = await getDoc(doc(db, "users", nextUser.uid));
+          if (snap.exists()) setProfile(snap.data() as UserProfile);
+        });
       } catch (err) {
         console.error("settings load failed:", err);
         setError("Couldn't load your settings. Try refreshing the page.");

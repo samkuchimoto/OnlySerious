@@ -6,6 +6,7 @@ import { collection, doc, getDoc, getDocs, query, where } from "firebase/firesto
 import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
+import { withRetry } from "@/lib/retry";
 import type { Like, UserProfile } from "@/lib/types";
 
 interface LikeWithLiker {
@@ -31,16 +32,18 @@ export default function LikedMe() {
       }
       setLoadError(false);
       try {
-        const likeSnap = await getDocs(query(collection(db, "likes"), where("likedId", "==", nextUser.uid)));
-        const withLikers = await Promise.all(
-          likeSnap.docs.map(async (d) => {
-            const like = d.data() as Like;
-            const likerSnap = await getDoc(doc(db, "users", like.likerId));
-            if (!likerSnap.exists()) return null;
-            return { like, liker: likerSnap.data() as UserProfile };
-          }),
-        );
-        setLikes(withLikers.filter((l): l is LikeWithLiker => l !== null));
+        await withRetry(async () => {
+          const likeSnap = await getDocs(query(collection(db, "likes"), where("likedId", "==", nextUser.uid)));
+          const withLikers = await Promise.all(
+            likeSnap.docs.map(async (d) => {
+              const like = d.data() as Like;
+              const likerSnap = await getDoc(doc(db, "users", like.likerId));
+              if (!likerSnap.exists()) return null;
+              return { like, liker: likerSnap.data() as UserProfile };
+            }),
+          );
+          setLikes(withLikers.filter((l): l is LikeWithLiker => l !== null));
+        });
       } catch (err) {
         console.error("liked-me load failed:", err);
         setLoadError(true);

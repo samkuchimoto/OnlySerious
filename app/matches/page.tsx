@@ -7,6 +7,7 @@ import { collection, doc, getDoc, getDocs, query, where } from "firebase/firesto
 import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
+import { withRetry } from "@/lib/retry";
 import type { Match, UserProfile } from "@/lib/types";
 
 interface MatchWithOther {
@@ -29,18 +30,20 @@ export default function Matches() {
       }
       setLoadError(false);
       try {
-        const matchSnap = await getDocs(query(collection(db, "matches"), where("userIds", "array-contains", nextUser.uid)));
-        const withOthers = await Promise.all(
-          matchSnap.docs.map(async (d) => {
-            const match = d.data() as Match;
-            const otherId = match.userIds.find((id) => id !== nextUser.uid);
-            if (!otherId) return null;
-            const otherSnap = await getDoc(doc(db, "users", otherId));
-            if (!otherSnap.exists()) return null;
-            return { match, other: otherSnap.data() as UserProfile };
-          }),
-        );
-        setMatches(withOthers.filter((m): m is MatchWithOther => m !== null));
+        await withRetry(async () => {
+          const matchSnap = await getDocs(query(collection(db, "matches"), where("userIds", "array-contains", nextUser.uid)));
+          const withOthers = await Promise.all(
+            matchSnap.docs.map(async (d) => {
+              const match = d.data() as Match;
+              const otherId = match.userIds.find((id) => id !== nextUser.uid);
+              if (!otherId) return null;
+              const otherSnap = await getDoc(doc(db, "users", otherId));
+              if (!otherSnap.exists()) return null;
+              return { match, other: otherSnap.data() as UserProfile };
+            }),
+          );
+          setMatches(withOthers.filter((m): m is MatchWithOther => m !== null));
+        });
       } catch (err) {
         // Otherwise a failed read here shows "No matches yet" instead of
         // an actual error — indistinguishable from genuinely having none.

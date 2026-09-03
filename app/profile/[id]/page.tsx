@@ -10,6 +10,7 @@ import { BRAND_CONFIG } from "@/config/brand";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { PrivateNote } from "@/components/PrivateNote";
 import { getActivityStatus } from "@/lib/activity";
+import { withRetry } from "@/lib/retry";
 import type { UserProfile } from "@/lib/types";
 
 function calculateAge(birthdate: string): number {
@@ -41,8 +42,10 @@ export default function ProfileDetail() {
     return watchAuthState(async (nextUser) => {
       setUser(nextUser);
       try {
-        const snap = await getDoc(doc(db, "users", id));
-        if (snap.exists()) setProfile(snap.data() as UserProfile);
+        await withRetry(async () => {
+          const snap = await getDoc(doc(db, "users", id));
+          if (snap.exists()) setProfile(snap.data() as UserProfile);
+        });
       } catch (err) {
         // Falls into the existing "!loading && !profile" -> "This profile
         // isn't available" branch below — not perfectly worded for a

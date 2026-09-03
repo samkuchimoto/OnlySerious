@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db } from "@/lib/firebase";
+import { withRetry } from "@/lib/retry";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -20,8 +21,10 @@ export function PrivateNote({ user, aboutUserId }: { user: User; aboutUserId: st
   useEffect(() => {
     async function load() {
       try {
-        const snap = await getDoc(doc(db, "users", user.uid, "notes", aboutUserId));
-        if (snap.exists()) setText((snap.data().text as string) ?? "");
+        await withRetry(async () => {
+          const snap = await getDoc(doc(db, "users", user.uid, "notes", aboutUserId));
+          if (snap.exists()) setText((snap.data().text as string) ?? "");
+        });
       } catch (err) {
         // Without this, a failed read leaves the whole component
         // permanently invisible (loaded never flips true) rather than
@@ -38,10 +41,12 @@ export function PrivateNote({ user, aboutUserId }: { user: User; aboutUserId: st
   async function save() {
     setStatus("saving");
     try {
-      await setDoc(doc(db, "users", user.uid, "notes", aboutUserId), {
-        text,
-        updatedAt: new Date().toISOString(),
-      });
+      await withRetry(() =>
+        setDoc(doc(db, "users", user.uid, "notes", aboutUserId), {
+          text,
+          updatedAt: new Date().toISOString(),
+        }),
+      );
       setStatus("saved");
     } catch (err) {
       console.error("private note save failed:", err);

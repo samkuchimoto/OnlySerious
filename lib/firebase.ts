@@ -5,7 +5,13 @@
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut, type Auth, type User } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import {
+  initializeFirestore,
+  getFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  type Firestore,
+} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -23,7 +29,24 @@ const firebaseConfig = {
 // config to initialize with anyway during a build.
 function initFirebase(): { app: FirebaseApp; auth: Auth; db: Firestore } {
   const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-  return { app, auth: getAuth(app), db: getFirestore(app) };
+  let db: Firestore;
+  try {
+    // Persistent local cache: reads keep working from cache through a
+    // brief network/Firestore blip instead of erroring immediately, and
+    // writes made while offline queue up and sync automatically once
+    // connectivity returns — same "cache aggressively, degrade to
+    // stale-but-working" pattern every high-uptime consumer app relies
+    // on instead of hard-failing on transient issues.
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+    });
+  } catch {
+    // initializeFirestore throws if Firestore was already initialized on
+    // this app (e.g. Fast Refresh re-running this module in dev) — reuse
+    // the existing instance instead of crashing.
+    db = getFirestore(app);
+  }
+  return { app, auth: getAuth(app), db };
 }
 
 const clientSdk = typeof window !== "undefined" ? initFirebase() : undefined;

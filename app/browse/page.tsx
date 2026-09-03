@@ -9,6 +9,7 @@ import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { getActivityStatus, isNewMember } from "@/lib/activity";
+import { withRetry } from "@/lib/retry";
 import type { UserProfile } from "@/lib/types";
 
 // Decorative only — reflects who the viewer said they're interested in,
@@ -52,6 +53,7 @@ export default function Browse() {
 
       setLoadError(false);
       try {
+        await withRetry(async () => {
         const ownSnap = await getDoc(doc(db, "users", nextUser.uid));
         const own = ownSnap.exists() ? (ownSnap.data() as UserProfile) : null;
         setOwnProfile(own);
@@ -90,11 +92,13 @@ export default function Browse() {
           .filter((p) => !own?.interestedIn?.length || own.interestedIn.includes(p.gender));
 
         setProfiles(active);
+        });
       } catch (err) {
-        // Without this, any single failed read above (a transient
-        // Firestore blip, a rules hiccup) leaves the page stuck on
-        // "Loading…" forever — setLoading(false) below never runs and
-        // there's no way out short of knowing to hard-refresh.
+        // withRetry already tried this DEFAULT_ATTEMPTS times with
+        // backoff — reaching here means it didn't recover, not just a
+        // one-off blip. Without this catch, that would still leave the
+        // page stuck on "Loading…" forever (setLoading(false) below never
+        // runs) with no way out short of knowing to hard-refresh.
         console.error("browse load failed:", err);
         setLoadError(true);
       } finally {

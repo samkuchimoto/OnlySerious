@@ -7,6 +7,7 @@ import { collection, doc, getDoc, onSnapshot, orderBy, query, where } from "fire
 import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
+import { withRetry } from "@/lib/retry";
 import type { Match, Message, UserProfile } from "@/lib/types";
 
 export default function MatchChat() {
@@ -30,18 +31,20 @@ export default function MatchChat() {
         return;
       }
       try {
-        const matchSnap = await getDoc(doc(db, "matches", matchId));
-        if (!matchSnap.exists() || !(matchSnap.data() as Match).userIds.includes(nextUser.uid)) {
-          setNotAllowed(true);
-          return;
-        }
-        const matchData = matchSnap.data() as Match;
-        setMatch(matchData);
-        const otherId = matchData.userIds.find((id) => id !== nextUser.uid);
-        if (otherId) {
-          const otherSnap = await getDoc(doc(db, "users", otherId));
-          if (otherSnap.exists()) setOther(otherSnap.data() as UserProfile);
-        }
+        await withRetry(async () => {
+          const matchSnap = await getDoc(doc(db, "matches", matchId));
+          if (!matchSnap.exists() || !(matchSnap.data() as Match).userIds.includes(nextUser.uid)) {
+            setNotAllowed(true);
+            return;
+          }
+          const matchData = matchSnap.data() as Match;
+          setMatch(matchData);
+          const otherId = matchData.userIds.find((id) => id !== nextUser.uid);
+          if (otherId) {
+            const otherSnap = await getDoc(doc(db, "users", otherId));
+            if (otherSnap.exists()) setOther(otherSnap.data() as UserProfile);
+          }
+        });
       } catch (err) {
         console.error("match chat load failed:", err);
         setError("Couldn't load this conversation. Try refreshing.");
