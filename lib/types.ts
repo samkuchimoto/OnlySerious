@@ -39,19 +39,6 @@ export const PROMPT_QUESTIONS = [
 
 export const REQUIRED_PROMPT_COUNT = 3;
 
-// Long-term-relationship-scoped on purpose — this isn't Hinge's full
-// short/long spectrum. The platform's whole scope is already long-term
-// (see this file's header comment), so every option here stays inside
-// that; this field exists to capture *which flavor* of long-term someone
-// wants, and makes the homepage's "verified for intent" claim concretely
-// true instead of just implied by policy.
-export const DATING_INTENTION_OPTIONS = [
-  "Life partner",
-  "Long-term relationship",
-  "Marriage-minded",
-  "Still figuring out the details",
-] as const;
-
 export interface ProfilePrompt {
   id: string;
   question: string;
@@ -66,10 +53,6 @@ export interface UserProfile {
   interestedIn: string[];
   city: string;
   country: string;
-  // Optional (not every existing profile has one) — see
-  // DATING_INTENTION_OPTIONS above for why this is scoped narrower than
-  // a typical "what are you looking for" field.
-  datingIntention?: string;
   prompts: ProfilePrompt[];
   // Mirrors the number linked to this account's Firebase Auth user via
   // linkWithPhoneNumber — required of everyone equally (not gender-

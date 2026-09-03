@@ -7,14 +7,7 @@ import { RecaptchaVerifier, linkWithPhoneNumber, type ConfirmationResult, type U
 import { FirebaseError } from "firebase/app";
 import { auth, db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
-import {
-  DATING_INTENTION_OPTIONS,
-  MIN_PROFILE_PHOTOS,
-  PROMPT_QUESTIONS,
-  REQUIRED_PROMPT_COUNT,
-  type ProfilePrompt,
-  type UserProfile,
-} from "@/lib/types";
+import { MIN_PROFILE_PHOTOS, PROMPT_QUESTIONS, REQUIRED_PROMPT_COUNT, type ProfilePrompt, type UserProfile } from "@/lib/types";
 import { PhotoUploader, type PhotoSubmission } from "@/components/PhotoUploader";
 import { WaitlistForm } from "@/components/WaitlistForm";
 import { PushPrimer } from "@/components/PushPrimer";
@@ -108,7 +101,6 @@ export default function SignUp() {
   const [interestedIn, setInterestedIn] = useState<string[]>([GENDER_OPTIONS[0]]);
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
-  const [datingIntention, setDatingIntention] = useState("");
   const [prompts, setPrompts] = useState<ProfilePrompt[]>(emptyPrompts);
   const [existingProfile, setExistingProfile] = useState<UserProfile | null>(null);
   const [photoSubmissions, setPhotoSubmissions] = useState<PhotoSubmission[]>([]);
@@ -249,7 +241,6 @@ export default function SignUp() {
     setInterestedIn(existingProfile.interestedIn);
     setCity(existingProfile.city);
     setCountry(existingProfile.country);
-    setDatingIntention(existingProfile.datingIntention ?? "");
     setPrompts(existingProfile.prompts?.length === REQUIRED_PROMPT_COUNT ? existingProfile.prompts : emptyPrompts());
     setError(null);
     setStage("editing");
@@ -268,10 +259,6 @@ export default function SignUp() {
       setError("Select at least one option for who you're interested in.");
       return;
     }
-    if (!datingIntention) {
-      setError("Let others know what you're looking for.");
-      return;
-    }
     if (prompts.some((p) => !p.question || !p.answer.trim())) {
       setError("Pick a question and write an answer for all three prompts.");
       return;
@@ -288,7 +275,6 @@ export default function SignUp() {
       interestedIn,
       city: city.trim(),
       country: country.trim(),
-      datingIntention,
       prompts: prompts.map((p) => ({ ...p, answer: p.answer.trim() })),
     };
 
@@ -545,26 +531,6 @@ export default function SignUp() {
               </div>
             </fieldset>
 
-            <fieldset className="flex flex-col gap-1.5 text-sm">
-              <legend className="mb-0.5">What are you looking for?</legend>
-              <div className="flex flex-wrap gap-2">
-                {DATING_INTENTION_OPTIONS.map((option) => (
-                  <button
-                    type="button"
-                    key={option}
-                    onClick={() => setDatingIntention(option)}
-                    className={`rounded-full border px-4 py-2 text-sm transition-colors ${
-                      datingIntention === option
-                        ? "border-neutral-900 bg-neutral-900 text-white"
-                        : "border-neutral-300 text-neutral-600"
-                    }`}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
             <div className="flex gap-4">
               <label className="flex flex-1 flex-col gap-1.5 text-sm">
                 City
@@ -717,11 +683,6 @@ export default function SignUp() {
                         selfieVerified={existingProfile.selfieVerified}
                       />
                     </div>
-                    {existingProfile.datingIntention && (
-                      <span className="w-fit rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-600">
-                        {existingProfile.datingIntention}
-                      </span>
-                    )}
                     {existingProfile.prompts?.[0]?.answer && (
                       <div className="rounded-xl border border-neutral-200 p-4">
                         <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">

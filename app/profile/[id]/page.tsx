@@ -198,11 +198,6 @@ export default function ProfileDetail() {
                   {profile.city}
                   {profile.country ? `, ${profile.country}` : ""}
                 </span>
-                {profile.datingIntention && (
-                  <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-600">
-                    {profile.datingIntention}
-                  </span>
-                )}
                 {(() => {
                   const activity = getActivityStatus(profile.lastActiveAt);
                   if (!activity) return null;

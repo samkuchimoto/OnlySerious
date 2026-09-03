@@ -231,11 +231,6 @@ export default function Browse() {
                         {profile.displayName}, {calculateAge(profile.birthdate)}
                         <span className="text-sm font-normal text-neutral-400">{profile.city}</span>
                         <VerifiedBadge approvedPhotoCount={profile.photos.length} selfieVerified={profile.selfieVerified} />
-                        {profile.datingIntention && (
-                          <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-600">
-                            {profile.datingIntention}
-                          </span>
-                        )}
                       </Link>
                       {activity && !activity.isOnline && <p className="-mt-2 text-xs text-neutral-400">{activity.label}</p>}
 
