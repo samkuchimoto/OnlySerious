@@ -60,6 +60,13 @@ const REQUIRE_PHONE_VERIFICATION = false;
 // anywhere else, per lib/types.ts's own "no field encodes... " policy.
 const WOMEN_ONLY_PRELAUNCH = true;
 
+// Without this, nobody -- including whoever runs this app -- can create
+// an account to browse and confirm women are actually showing up, since
+// the gate above blocks every non-woman sign-up equally. A tiny, explicit
+// allowlist rather than any real admin system: this is a stopgap for the
+// prelaunch window, not a permanent feature.
+const PRELAUNCH_GATE_ALLOWLIST = ["samuelclermont.contact@gmail.com", "samuel.r.louis@gmail.com"];
+
 // Thin progress bar across the sign-up funnel (Hinge's pattern: a bare
 // bar, no step count/percentage label). Built from the same feature
 // flags above so it never drifts out of sync with which stages are
@@ -162,7 +169,8 @@ export default function SignUp() {
   }, []);
 
   function handleGenderGateContinue() {
-    if (gender === "woman") {
+    const allowed = gender === "woman" || (!!user?.email && PRELAUNCH_GATE_ALLOWLIST.includes(user.email));
+    if (allowed) {
       setStage(REQUIRE_PHONE_VERIFICATION && !user?.phoneNumber ? "verify-phone" : "onboarding");
     } else {
       setGenderGateBlocked(true);
