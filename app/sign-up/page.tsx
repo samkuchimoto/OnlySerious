@@ -360,6 +360,20 @@ export default function SignUp() {
                 <Link href="/settings" className="transition-colors hover:text-neutral-900">
                   Settings
                 </Link>
+                {/* Same Upgrade entry point as components/AppNav, inlined
+                    because this page's header is stage-dependent (a
+                    signed-out visitor and someone mid-form shouldn't see
+                    it) and the subscription status is already loaded here
+                    as existingProfile. */}
+                {existingProfile && existingProfile.subscriptionStatus !== "active" && (
+                  <Link
+                    href="/premium"
+                    onClick={() => capture("upgrade_clicked", { source: "nav:/sign-up" })}
+                    className="rounded-full bg-neutral-900 px-4 py-1.5 text-xs font-medium text-white transition-transform hover:scale-[1.03]"
+                  >
+                    Upgrade
+                  </Link>
+                )}
               </>
             )}
             <button onClick={() => {

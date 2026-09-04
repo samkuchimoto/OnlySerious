@@ -120,6 +120,26 @@ export default function Premium() {
           </div>
         )}
 
+        {/* Signed in but no profile document yet. The checkout route
+            requires one (it reads displayName and writes stripeCustomerId
+            back to it) and 404s without it, so offering Subscribe here
+            would fail with a generic error after the click instead of
+            saying what's actually missing. */}
+        {!loading && user && !profile && (
+          <div className="flex flex-col items-start gap-4 pt-8">
+            <h1 className="text-3xl font-medium tracking-tight">Finish your profile first</h1>
+            <p className="max-w-md text-neutral-500">
+              You&apos;ll be able to subscribe once your profile is set up.
+            </p>
+            <Link
+              href="/sign-up"
+              className="rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+            >
+              Create your profile
+            </Link>
+          </div>
+        )}
+
         {/* Already paying — showing a buy button here would either create
             a second subscription or dead-end on the checkout route's 409. */}
         {!loading && user && profile?.subscriptionStatus === "active" && (
@@ -146,7 +166,7 @@ export default function Premium() {
           </div>
         )}
 
-        {!loading && user && profile?.subscriptionStatus !== "active" && (
+        {!loading && user && profile && profile.subscriptionStatus !== "active" && (
           <div className="flex flex-col items-start gap-8 pt-8">
             <div className="flex flex-col gap-2">
               <h1 className="text-3xl font-medium tracking-tight">More likes, every day</h1>
