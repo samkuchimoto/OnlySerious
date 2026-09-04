@@ -44,9 +44,27 @@ export async function GET() {
     console.error("stripe price lookup failed:", err);
     const configured = process.env.STRIPE_PRICE_ID ?? "";
     const prefix = configured.split("_")[0];
-    const hint = configured.startsWith("price_")
-      ? "STRIPE_PRICE_ID has the right shape, but Stripe doesn't recognise it. Check you copied it from the same mode (test vs live) the secret key belongs to."
-      : `STRIPE_PRICE_ID must start with "price_" but starts with "${prefix}_". A product id (prod_) is the usual mix-up — open the product, find the price row, and copy the price id.`;
+
+    // Stripe's own error classification, which separates "your key is
+    // bad" from "that id doesn't exist" — two failures that look
+    // identical from the outside and have completely different fixes.
+    // Only the type/code are surfaced, never the message: an
+    // invalid_request message can quote back the value it was given,
+    // which would leak a secret key if one had been pasted in by mistake.
+    const stripeError = err as { type?: string; code?: string };
+    const keyMode = (process.env.STRIPE_SECRET_KEY ?? "").startsWith("sk_live_") ? "live" : "test";
+    const priceMode = configured.includes("_live_") ? "live" : "test";
+
+    let hint: string;
+    if (!configured.startsWith("price_")) {
+      hint = `STRIPE_PRICE_ID must start with "price_" but starts with "${prefix}_". A product id (prod_) is the usual mix-up — open the product, find the price row, and copy the price id.`;
+    } else if (stripeError.type === "StripeAuthenticationError") {
+      hint = `Stripe rejected the API key, not the price id. STRIPE_SECRET_KEY in Vercel is wrong or revoked — if you rotated the key, the new one was never saved here.`;
+    } else if (stripeError.code === "resource_missing") {
+      hint = `Stripe has no price with that id on this account (secret key is ${keyMode} mode). Re-copy the price id from the product's Pricing row — the Events log entry "a new price called price_… was created" also has it.`;
+    } else {
+      hint = `Stripe refused the lookup (${stripeError.type ?? "unknown error"}${stripeError.code ? `, ${stripeError.code}` : ""}). Key is ${keyMode} mode and the price id looks like ${priceMode} mode.`;
+    }
     return NextResponse.json({ error: "price unavailable", hint }, { status: 502 });
   }
 }

@@ -11,6 +11,7 @@ import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { PrivateNote } from "@/components/PrivateNote";
 import { getActivityStatus } from "@/lib/activity";
 import { withRetry } from "@/lib/retry";
+import { capture } from "@/lib/analytics";
 import type { UserProfile } from "@/lib/types";
 
 function calculateAge(birthdate: string): number {
@@ -238,31 +239,47 @@ export default function ProfileDetail() {
               </div>
             ))}
 
-            {user && user.uid !== profile.id && (
+            {/* The third place the daily limit is felt (Browse and Likes
+                are the others). It used to grey the button to "Daily
+                limit reached" and stop there — no explanation of when it
+                resets, and no way to act on it while looking at the exact
+                person you wanted to like. */}
+            {user && user.uid !== profile.id && likeStatus === "limit-reached" && (
+              <div className="flex w-fit flex-col items-start gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
+                <p className="text-sm text-neutral-600">
+                  You&apos;re out of likes for today. They reset tomorrow.
+                </p>
+                <Link
+                  href="/premium"
+                  onClick={() => capture("upgrade_clicked", { source: "profile_limit" })}
+                  className="rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+                >
+                  Like {profile.displayName} now
+                </Link>
+              </div>
+            )}
+
+            {user && user.uid !== profile.id && likeStatus !== "limit-reached" && (
               <button
                 onClick={handleLike}
-                disabled={likeStatus === "sending" || likeStatus === "liked" || likeStatus === "matched" || likeStatus === "limit-reached"}
+                disabled={likeStatus === "sending" || likeStatus === "liked" || likeStatus === "matched"}
                 className={`w-fit rounded-full border px-8 py-3.5 text-sm font-medium transition-colors disabled:cursor-default ${
                   likeStatus === "matched"
                     ? "border-neutral-900 bg-neutral-900 text-white"
                     : likeStatus === "liked"
                       ? "border-neutral-300 text-neutral-400"
-                      : likeStatus === "limit-reached"
-                        ? "border-neutral-200 text-neutral-300"
-                        : "border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white"
+                      : "border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white"
                 }`}
               >
                 {likeStatus === "matched"
                   ? "It's a match!"
                   : likeStatus === "liked"
                     ? "Liked"
-                    : likeStatus === "limit-reached"
-                      ? "Daily limit reached"
-                      : likeStatus === "error"
-                        ? "Try again"
-                        : likeStatus === "sending"
-                          ? "…"
-                          : "Like"}
+                    : likeStatus === "error"
+                      ? "Try again"
+                      : likeStatus === "sending"
+                        ? "…"
+                        : "Like"}
               </button>
             )}
           </div>
