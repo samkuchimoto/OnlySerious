@@ -19,6 +19,19 @@ export const MIN_PROFILE_PHOTOS = 3;
 export const FREE_DAILY_LIKE_LIMIT = 5;
 export const PAID_DAILY_LIKE_LIMIT = 100;
 
+// ThaiFriendly's messaging model, adopted deliberately: the free tier is
+// throttled on *speed*, not volume — one message every ten minutes, and
+// paying removes the wait entirely. Nothing caps how many messages a
+// free member can send in total.
+//
+// The distinction matters. A daily message quota tells someone "you have
+// run out, come back tomorrow", which ends the conversation and often
+// the session. A cooldown says "wait, or pay to skip the wait" while a
+// live conversation is in progress — the moment when paying is worth
+// most to them. It is also the gentler failure mode: nobody is ever
+// locked out of replying to someone who wrote to them.
+export const FREE_MESSAGE_COOLDOWN_MS = 10 * 60 * 1000;
+
 // ThaiFriendly's model, not Hinge's — a short one-line headline (what
 // shows first on a Browse card) plus a plain free-text bio, instead of
 // picking curated prompts and writing witty answers to them. Direct
@@ -65,6 +78,11 @@ export interface UserProfile {
   // setup step). Resets whenever dailyLikesDate isn't today.
   dailyLikesUsed?: number;
   dailyLikesDate?: string; // "YYYY-MM-DD"
+  // When this person last sent a message — the only input to the free
+  // tier's send cooldown (app/api/messages/route.ts). Server-written
+  // only, like the like counters above: a client that could set this
+  // could clear its own cooldown.
+  lastMessageAt?: string; // ISO timestamp
   // Set only by app/api/verify-selfie/route.ts after a real Groq vision
   // comparison against an approved profile photo returns a confident
   // match — never client-settable, and never set on an uncertain result

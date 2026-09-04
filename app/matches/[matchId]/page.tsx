@@ -8,7 +8,14 @@ import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import { withRetry } from "@/lib/retry";
-import type { Match, Message, UserProfile } from "@/lib/types";
+import { capture } from "@/lib/analytics";
+import { FREE_MESSAGE_COOLDOWN_MS, type Match, type Message, type UserProfile } from "@/lib/types";
+
+// mm:ss, because a bare "412 seconds left" is unreadable at a glance.
+function formatCountdown(ms: number): string {
+  const total = Math.ceil(ms / 1000);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
+}
 
 export default function MatchChat() {
   const { matchId } = useParams<{ matchId: string }>();
@@ -21,7 +28,22 @@ export default function MatchChat() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Absolute wall-clock time the next message may be sent, not a
+  // remaining-seconds number — a counter that only decrements while the
+  // tab is focused would drift and let the input unlock early.
+  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  // Ticks only while a cooldown is actually running.
+  useEffect(() => {
+    if (cooldownUntil === null) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [cooldownUntil]);
+
+  const cooldownRemaining = cooldownUntil === null ? 0 : Math.max(0, cooldownUntil - now);
+  const onCooldown = cooldownRemaining > 0;
 
   useEffect(() => {
     return watchAuthState(async (nextUser) => {
@@ -43,6 +65,17 @@ export default function MatchChat() {
           if (otherId) {
             const otherSnap = await getDoc(doc(db, "users", otherId));
             if (otherSnap.exists()) setOther(otherSnap.data() as UserProfile);
+          }
+
+          // Restore any cooldown still running from a previous visit.
+          // Without this the countdown would only ever appear after a
+          // send in this same session, so reopening the chat would show
+          // an enabled Send button that the server then refuses.
+          const ownSnap = await getDoc(doc(db, "users", nextUser.uid));
+          const own = ownSnap.exists() ? (ownSnap.data() as UserProfile) : null;
+          if (own && own.subscriptionStatus !== "active" && own.lastMessageAt) {
+            const until = new Date(own.lastMessageAt).getTime() + FREE_MESSAGE_COOLDOWN_MS;
+            if (until > Date.now()) setCooldownUntil(until);
           }
         });
       } catch (err) {
@@ -90,11 +123,23 @@ export default function MatchChat() {
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${idToken}` },
         body: JSON.stringify({ matchId, text: draft.trim() }),
       });
+      const body = await res.json().catch(() => ({}));
+      // The server refused because the cooldown is still running — most
+      // likely a second tab sent something, or the page was reopened.
+      // Adopt its number rather than the local guess.
+      if (res.status === 429) {
+        setCooldownUntil(Date.now() + (body.retryAfterMs ?? FREE_MESSAGE_COOLDOWN_MS));
+        capture("message_cooldown_hit");
+        return;
+      }
       if (!res.ok) {
         setError("Message couldn't be sent. Please try again.");
         return;
       }
       setDraft("");
+      capture("message_sent");
+      // Zero for subscribers, so the input never locks for them.
+      if (body.cooldownMs) setCooldownUntil(Date.now() + body.cooldownMs);
     } catch {
       setError("Message couldn't be sent. Please try again.");
     } finally {
@@ -154,20 +199,47 @@ export default function MatchChat() {
             </div>
 
             {error && <p className="mb-2 text-sm text-red-600">{error}</p>}
+
+            {/* The conversion moment for messaging, and the reason the
+                cooldown is a cooldown rather than a daily quota: it lands
+                mid-conversation, when skipping the wait is worth most.
+                Says what's happening and offers the way out, rather than
+                just greying the button. */}
+            {onCooldown && (
+              <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+                <span className="text-sm text-neutral-600">
+                  Next message in{" "}
+                  <span className="font-medium tabular-nums text-neutral-900">
+                    {formatCountdown(cooldownRemaining)}
+                  </span>
+                </span>
+                <Link
+                  href="/premium"
+                  onClick={() => capture("upgrade_clicked", { source: "message_cooldown" })}
+                  className="text-sm font-medium text-neutral-900 underline underline-offset-2"
+                >
+                  Message without waiting
+                </Link>
+              </div>
+            )}
+
             <form onSubmit={handleSend} className="flex gap-2 border-t border-neutral-100 pt-4">
               <input
                 type="text"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                placeholder="Message…"
+                placeholder={onCooldown ? `You can write again in ${formatCountdown(cooldownRemaining)}` : "Message…"}
+                // Left editable during the cooldown on purpose: someone
+                // can compose their reply while they wait, and only the
+                // send is held back.
                 className="flex-1 rounded-full border border-neutral-300 px-4 py-2.5 text-sm focus:border-neutral-900 focus:outline-none"
               />
               <button
                 type="submit"
-                disabled={sending || !draft.trim()}
+                disabled={sending || !draft.trim() || onCooldown}
                 className="rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white disabled:opacity-50"
               >
-                Send
+                {onCooldown ? formatCountdown(cooldownRemaining) : "Send"}
               </button>
             </form>
           </>

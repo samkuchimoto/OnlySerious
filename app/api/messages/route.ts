@@ -4,7 +4,7 @@ import { z } from "zod";
 import { verifyRequestUser, adminDb } from "@/lib/firebaseAdmin";
 import { moderateText } from "@/lib/moderation";
 import { notifyUser } from "@/lib/notify";
-import type { Match, Message, UserProfile } from "@/lib/types";
+import { FREE_MESSAGE_COOLDOWN_MS, type Match, type Message, type UserProfile } from "@/lib/types";
 
 const requestSchema = z.object({
   matchId: z.string().min(1),
@@ -36,6 +36,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "not a participant in this match" }, { status: 403 });
   }
 
+  // Free tier: one message every FREE_MESSAGE_COOLDOWN_MS. Enforced here
+  // and nowhere else — the countdown the client renders is a courtesy,
+  // and a client that skipped it would still be refused here, the same
+  // way the daily like limit works (app/api/likes/route.ts).
+  const senderRef = adminDb.collection("users").doc(uid);
+  const senderSnap = await senderRef.get();
+  const sender = senderSnap.data() as UserProfile | undefined;
+
+  if (sender?.subscriptionStatus !== "active" && sender?.lastMessageAt) {
+    const elapsed = Date.now() - new Date(sender.lastMessageAt).getTime();
+    // A negative elapsed would mean a clock skew wrote a future
+    // timestamp; treating it as "wait" rather than "allow" fails closed.
+    if (elapsed < FREE_MESSAGE_COOLDOWN_MS) {
+      return NextResponse.json(
+        { error: "message cooldown", retryAfterMs: FREE_MESSAGE_COOLDOWN_MS - elapsed },
+        { status: 429 },
+      );
+    }
+  }
+
   const { flagged } = moderateText(text);
 
   const messageId = randomUUID();
@@ -49,12 +69,20 @@ export async function POST(request: Request) {
   };
   await adminDb.collection("messages").doc(messageId).set(message);
 
+  // Starts the next cooldown. Written for subscribers too, so the field
+  // stays truthful if a subscription later lapses — otherwise a
+  // cancelled member would carry a stale timestamp and get one free
+  // message with no wait.
+  await senderRef.update({ lastMessageAt: message.createdAt });
+
   const otherId = match.userIds.find((id) => id !== uid);
   if (otherId) {
-    const senderSnap = await adminDb.collection("users").doc(uid).get();
-    const senderName = (senderSnap.data() as UserProfile | undefined)?.displayName ?? "Someone";
+    const senderName = sender?.displayName ?? "Someone";
     await notifyUser(otherId, senderName, text.length > 80 ? `${text.slice(0, 80)}…` : text);
   }
 
-  return NextResponse.json({ sent: true, flagged });
+  // Lets the client start its countdown from the authoritative clock
+  // rather than guessing from its own.
+  const cooldownMs = sender?.subscriptionStatus === "active" ? 0 : FREE_MESSAGE_COOLDOWN_MS;
+  return NextResponse.json({ sent: true, flagged, cooldownMs });
 }

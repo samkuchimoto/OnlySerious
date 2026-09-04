@@ -28,6 +28,8 @@ export type AnalyticsEvent =
   | "like_sent"
   | "match_made"
   | "daily_limit_reached"
+  | "message_sent"
+  | "message_cooldown_hit"
   | "upgrade_clicked"
   | "checkout_started"
   | "waitlist_joined";
