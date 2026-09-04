@@ -5,7 +5,7 @@ import Link from "next/link";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
-import { BRAND_CONFIG } from "@/config/brand";
+import { AppNav } from "@/components/AppNav";
 import { withRetry } from "@/lib/retry";
 import type { Like, UserProfile } from "@/lib/types";
 
@@ -75,14 +75,7 @@ export default function LikedMe() {
 
   return (
     <main className="flex min-h-screen flex-col bg-white text-neutral-900">
-      <header className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-y-2 px-6 py-8">
-        <Link href="/browse" className="text-lg font-semibold tracking-tight">
-          {BRAND_CONFIG.appTitle}
-        </Link>
-        <Link href="/matches" className="text-sm text-neutral-400 transition-colors hover:text-neutral-900">
-          Matches
-        </Link>
-      </header>
+      <AppNav />
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
         <h1 className="pt-8 text-3xl font-medium tracking-tight">Likes</h1>

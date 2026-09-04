@@ -6,12 +6,12 @@ import Link from "next/link";
 import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
-import { BRAND_CONFIG } from "@/config/brand";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { getActivityStatus, isNewMember } from "@/lib/activity";
 import { withRetry } from "@/lib/retry";
 import { FREE_DAILY_LIKE_LIMIT, PAID_DAILY_LIKE_LIMIT, type UserProfile } from "@/lib/types";
 import { capture } from "@/lib/analytics";
+import { AppNav } from "@/components/AppNav";
 
 // Mirrors app/api/likes/route.ts's own todayKey() so the header can show
 // a real count on first paint instead of "nothing until you spend a
@@ -186,26 +186,7 @@ export default function Browse() {
 
   return (
     <main className="flex min-h-screen flex-col bg-white text-neutral-900">
-      <header className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-y-2 px-6 py-8">
-        <Link href="/" className="text-lg font-semibold tracking-tight">
-          {BRAND_CONFIG.appTitle}
-        </Link>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-400">
-          {remaining !== null && <span>{remaining} likes left today</span>}
-          <Link href="/matches" className="transition-colors hover:text-neutral-900">
-            Matches
-          </Link>
-          <Link href="/liked-me" className="transition-colors hover:text-neutral-900">
-            Likes
-          </Link>
-          <Link href="/sign-up" className="transition-colors hover:text-neutral-900">
-            My profile
-          </Link>
-          <Link href="/settings" className="transition-colors hover:text-neutral-900">
-            Settings
-          </Link>
-        </div>
-      </header>
+      <AppNav meta={remaining !== null ? <span>{remaining} likes left today</span> : null} />
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
         {loading && <p className="text-sm text-neutral-400">Loading…</p>}

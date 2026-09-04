@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db, signOutUser, watchAuthState } from "@/lib/firebase";
-import { BRAND_CONFIG } from "@/config/brand";
+import { AppNav } from "@/components/AppNav";
 import { SelfieVerification } from "@/components/SelfieVerification";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { BlockedHiddenList } from "@/components/BlockedHiddenList";
@@ -116,11 +116,7 @@ export default function Settings() {
 
   return (
     <main className="flex min-h-screen flex-col bg-white text-neutral-900">
-      <header className="mx-auto flex w-full max-w-2xl items-center justify-between px-6 py-8">
-        <Link href="/browse" className="text-lg font-semibold tracking-tight">
-          {BRAND_CONFIG.appTitle}
-        </Link>
-      </header>
+      <AppNav />
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
         <h1 className="pt-8 text-3xl font-medium tracking-tight">Settings</h1>

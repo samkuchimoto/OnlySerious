@@ -6,7 +6,7 @@ import Link from "next/link";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
-import { BRAND_CONFIG } from "@/config/brand";
+import { AppNav } from "@/components/AppNav";
 import { withRetry } from "@/lib/retry";
 import type { Match, UserProfile } from "@/lib/types";
 
@@ -57,22 +57,7 @@ export default function Matches() {
 
   return (
     <main className="flex min-h-screen flex-col bg-white text-neutral-900">
-      <header className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-y-2 px-6 py-8">
-        <Link href="/" className="text-lg font-semibold tracking-tight">
-          {BRAND_CONFIG.appTitle}
-        </Link>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-400">
-          <Link href="/browse" className="transition-colors hover:text-neutral-900">
-            Browse
-          </Link>
-          <Link href="/liked-me" className="transition-colors hover:text-neutral-900">
-            Likes
-          </Link>
-          <Link href="/settings" className="transition-colors hover:text-neutral-900">
-            Settings
-          </Link>
-        </div>
-      </header>
+      <AppNav />
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
         <h1 className="pt-8 text-3xl font-medium tracking-tight">Matches</h1>
