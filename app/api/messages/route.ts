@@ -36,6 +36,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "not a participant in this match" }, { status: 403 });
   }
 
+  // Blocking never deleted the match, and this route only ever checked
+  // participation — so a blocked person could keep sending messages to
+  // the person who blocked them, and they arrived as push notifications.
+  // Checked in both directions off the deterministic block ids, so it's
+  // two doc gets rather than a query.
+  const otherUserId = match.userIds.find((id) => id !== uid);
+  if (otherUserId) {
+    const [iBlockedThem, theyBlockedMe] = await Promise.all([
+      adminDb.collection("blocks").doc(`${uid}_${otherUserId}`).get(),
+      adminDb.collection("blocks").doc(`${otherUserId}_${uid}`).get(),
+    ]);
+    if (iBlockedThem.exists || theyBlockedMe.exists) {
+      // Deliberately the same message either way: telling someone "you
+      // have been blocked" hands a harasser a confirmation they can act
+      // on. It just reads as a conversation that's no longer available.
+      return NextResponse.json({ error: "this conversation is no longer available" }, { status: 403 });
+    }
+  }
+
   // Free tier: one message every FREE_MESSAGE_COOLDOWN_MS. Enforced here
   // and nowhere else — the countdown the client renders is a courtesy,
   // and a client that skipped it would still be refused here, the same
@@ -75,10 +94,9 @@ export async function POST(request: Request) {
   // message with no wait.
   await senderRef.update({ lastMessageAt: message.createdAt });
 
-  const otherId = match.userIds.find((id) => id !== uid);
-  if (otherId) {
+  if (otherUserId) {
     const senderName = sender?.displayName ?? "Someone";
-    await notifyUser(otherId, senderName, text.length > 80 ? `${text.slice(0, 80)}…` : text);
+    await notifyUser(otherUserId, senderName, text.length > 80 ? `${text.slice(0, 80)}…` : text);
   }
 
   // Lets the client start its countdown from the authoritative clock

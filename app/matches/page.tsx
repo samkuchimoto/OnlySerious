@@ -31,12 +31,25 @@ export default function Matches() {
       setLoadError(false);
       try {
         await withRetry(async () => {
-          const matchSnap = await getDocs(query(collection(db, "matches"), where("userIds", "array-contains", nextUser.uid)));
+          // Blocks in both directions, as Browse does. A block never
+          // deletes the match document, so without this the person you
+          // blocked stayed in your Matches list with an open conversation
+          // — the most visible place they could possibly remain.
+          const [matchSnap, blockedByMe, blockedMe] = await Promise.all([
+            getDocs(query(collection(db, "matches"), where("userIds", "array-contains", nextUser.uid))),
+            getDocs(query(collection(db, "blocks"), where("blockerId", "==", nextUser.uid))),
+            getDocs(query(collection(db, "blocks"), where("blockedId", "==", nextUser.uid))),
+          ]);
+          const blockedIds = new Set([
+            ...blockedByMe.docs.map((d) => d.data().blockedId as string),
+            ...blockedMe.docs.map((d) => d.data().blockerId as string),
+          ]);
+
           const withOthers = await Promise.all(
             matchSnap.docs.map(async (d) => {
               const match = d.data() as Match;
               const otherId = match.userIds.find((id) => id !== nextUser.uid);
-              if (!otherId) return null;
+              if (!otherId || blockedIds.has(otherId)) return null;
               const otherSnap = await getDoc(doc(db, "users", otherId));
               if (!otherSnap.exists()) return null;
               return { match, other: otherSnap.data() as UserProfile };

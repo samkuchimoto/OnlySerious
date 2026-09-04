@@ -35,7 +35,18 @@ export async function GET() {
     // Almost always a STRIPE_PRICE_ID that isn't a real price id — the
     // most common setup mistake is pasting a product id (prod_...) or
     // some other object id instead of the price id (price_...).
+    //
+    // The hint reports only the *prefix* of the configured value, never
+    // the value itself. Echoing it back would be a real leak if the
+    // variable had been filled with a secret key by mistake — which is
+    // exactly the sort of misconfiguration this endpoint exists to
+    // catch.
     console.error("stripe price lookup failed:", err);
-    return NextResponse.json({ error: "price unavailable" }, { status: 502 });
+    const configured = process.env.STRIPE_PRICE_ID ?? "";
+    const prefix = configured.split("_")[0];
+    const hint = configured.startsWith("price_")
+      ? "STRIPE_PRICE_ID has the right shape, but Stripe doesn't recognise it. Check you copied it from the same mode (test vs live) the secret key belongs to."
+      : `STRIPE_PRICE_ID must start with "price_" but starts with "${prefix}_". A product id (prod_) is the usual mix-up — open the product, find the price row, and copy the price id.`;
+    return NextResponse.json({ error: "price unavailable", hint }, { status: 502 });
   }
 }
