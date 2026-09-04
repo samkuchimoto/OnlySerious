@@ -13,6 +13,7 @@ import { WaitlistForm } from "@/components/WaitlistForm";
 import { PushPrimer } from "@/components/PushPrimer";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { InAppBrowserWarning } from "@/components/InAppBrowserWarning";
+import { capture, identify, resetAnalytics } from "@/lib/analytics";
 
 type Stage = "loading" | "signed-out" | "gender-gate" | "verify-phone" | "onboarding" | "editing" | "pending-review";
 
@@ -115,6 +116,9 @@ export default function SignUp() {
   const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const unsubscribeProfileRef = useRef<(() => void) | undefined>(undefined);
+  // One-shot guard so profile_live is counted once per session, not once
+  // per Firestore snapshot of an already-active profile.
+  const profileLiveTrackedRef = useRef(false);
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
   // Live, not one-time — so an auto-activation triggered by a photo
@@ -124,7 +128,18 @@ export default function SignUp() {
     unsubscribeProfileRef.current = onSnapshot(
       doc(db, "users", uid),
       (snap) => {
-        if (snap.exists()) setExistingProfile(snap.data() as UserProfile);
+        if (!snap.exists()) return;
+        const next = snap.data() as UserProfile;
+        setExistingProfile(next);
+        // The top of the funnel that actually matters: a profile other
+        // people can see. Fires when moderation flips the account to
+        // active, which is why it's here and not after handleSubmit.
+        // The ref guards against re-firing on every later snapshot
+        // (a photo change, a pause) for an already-live profile.
+        if (next.status === "active" && !profileLiveTrackedRef.current) {
+          profileLiveTrackedRef.current = true;
+          capture("profile_live", { gender: next.gender, photoCount: next.photos.length });
+        }
       },
       (err) => {
         // A silent failure here would strand someone on "under review"
@@ -145,6 +160,11 @@ export default function SignUp() {
         setStage("signed-out");
         return;
       }
+      // Ties every later event to one person instead of one browser
+      // session — without it a returning user counts as a new one and
+      // the top of every funnel is inflated.
+      identify(nextUser.uid);
+
       const existing = await getDoc(doc(db, "users", nextUser.uid));
       if (existing.exists()) {
         setStage("pending-review");
@@ -304,6 +324,10 @@ export default function SignUp() {
         };
         await setDoc(doc(db, "users", user.uid), profile);
         setExistingProfile(profile);
+        // The bottom of the form funnel. Gender rides along because
+        // "how many men vs women finish the form" is the split that
+        // decides whether the marketing spend is working.
+        capture("profile_submitted", { gender: profile.gender });
         watchProfile(user.uid);
       }
       setStage("pending-review");
@@ -338,7 +362,10 @@ export default function SignUp() {
                 </Link>
               </>
             )}
-            <button onClick={() => signOutUser()} className="transition-colors hover:text-neutral-900">
+            <button onClick={() => {
+                resetAnalytics();
+                signOutUser();
+              }} className="transition-colors hover:text-neutral-900">
               Sign out
             </button>
           </div>
@@ -356,7 +383,10 @@ export default function SignUp() {
             <h1 className="text-4xl font-medium leading-tight tracking-tight">Create your profile</h1>
             <p className="max-w-md text-neutral-500">{BRAND_CONFIG.heroSubheadline}</p>
             <button
-              onClick={() => signInWithGoogle()}
+              onClick={() => {
+                capture("signup_started");
+                signInWithGoogle();
+              }}
               className="rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
             >
               Continue with Google

@@ -11,6 +11,7 @@ import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { getActivityStatus, isNewMember } from "@/lib/activity";
 import { withRetry } from "@/lib/retry";
 import { FREE_DAILY_LIKE_LIMIT, PAID_DAILY_LIKE_LIMIT, type UserProfile } from "@/lib/types";
+import { capture } from "@/lib/analytics";
 
 // Mirrors app/api/likes/route.ts's own todayKey() so the header can show
 // a real count on first paint instead of "nothing until you spend a
@@ -153,6 +154,9 @@ export default function Browse() {
       if (res.status === 429) {
         setLikeStatus((prev) => ({ ...prev, [profile.id]: "limit-reached" }));
         setRemaining(0);
+        // The moment the paywall is actually felt. Its ratio against
+        // upgrade_clicked is the conversion rate of the whole paid tier.
+        capture("daily_limit_reached");
         return;
       }
       if (!res.ok) {
@@ -160,6 +164,8 @@ export default function Browse() {
         return;
       }
       setLikeStatus((prev) => ({ ...prev, [profile.id]: body.matched ? "matched" : "liked" }));
+      capture("like_sent", { matched: Boolean(body.matched) });
+      if (body.matched) capture("match_made");
       setRemaining(typeof body.remaining === "number" ? body.remaining : null);
     } catch {
       setLikeStatus((prev) => ({ ...prev, [profile.id]: "error" }));
@@ -173,6 +179,7 @@ export default function Browse() {
     if (!user) return;
     setUpgradeError(null);
     setUpgrading(true);
+    capture("upgrade_clicked", { source: "browse_limit_banner" });
     try {
       const idToken = await user.getIdToken();
       const res = await fetch("/api/stripe/checkout", {
@@ -192,6 +199,10 @@ export default function Browse() {
         setUpgrading(false);
         return;
       }
+      // Fires only once Stripe has actually handed back a Checkout URL,
+      // so the drop-off between this and upgrade_clicked isolates
+      // billing failures from people simply not clicking.
+      capture("checkout_started");
       window.location.href = body.url;
     } catch {
       setUpgradeError("Couldn't start checkout. Please try again.");

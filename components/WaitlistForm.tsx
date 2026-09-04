@@ -9,6 +9,7 @@ import { useState, type FormEvent } from "react";
 import { addDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { WaitlistEntry } from "@/lib/types";
+import { capture } from "@/lib/analytics";
 
 type WaitlistFormProps = {
   ctaLabel?: string;
@@ -27,6 +28,11 @@ export function WaitlistForm({ ctaLabel = "Get the link", align = "start" }: Wai
     try {
       const entry: Omit<WaitlistEntry, "id"> = { email: trimmed, createdAt: new Date().toISOString() };
       await addDoc(collection(db, "waitlist"), entry);
+      // No email address in the event — Firestore already has the list,
+      // and analytics is the wrong place for a second copy of it. This
+      // records only that a capture happened, so the landing page's
+      // conversion rate is measurable per traffic source.
+      capture("waitlist_joined");
       setStatus("done");
     } catch {
       setStatus("error");
