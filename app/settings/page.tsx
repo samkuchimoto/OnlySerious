@@ -11,7 +11,7 @@ import { SelfieVerification } from "@/components/SelfieVerification";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { BlockedHiddenList } from "@/components/BlockedHiddenList";
 import { withRetry } from "@/lib/retry";
-import type { UserProfile } from "@/lib/types";
+import { FREE_DAILY_LIKE_LIMIT, PAID_DAILY_LIKE_LIMIT, type UserProfile } from "@/lib/types";
 
 export default function Settings() {
   const router = useRouter();
@@ -22,6 +22,8 @@ export default function Settings() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [billingError, setBillingError] = useState<string | null>(null);
 
   useEffect(() => {
     return watchAuthState(async (nextUser) => {
@@ -55,6 +57,39 @@ export default function Settings() {
       setPausing(false);
     }
   }
+
+  // Both billing buttons do the same thing structurally — ask a server
+  // route for a Stripe-hosted URL and hand the browser over. Neither one
+  // changes subscriptionStatus; only the webhook does that.
+  async function openStripeUrl(endpoint: "checkout" | "portal") {
+    if (!user) return;
+    setBillingError(null);
+    setBillingLoading(true);
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch(`/api/stripe/${endpoint}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.url) {
+        setBillingError(
+          res.status === 503
+            ? "Subscriptions aren't switched on yet."
+            : "Couldn't open billing. Please try again.",
+        );
+        setBillingLoading(false);
+        return;
+      }
+      window.location.href = body.url;
+    } catch {
+      setBillingError("Couldn't open billing. Please try again.");
+      setBillingLoading(false);
+    }
+  }
+
+  const startCheckout = () => openStripeUrl("checkout");
+  const openBillingPortal = () => openStripeUrl("portal");
 
   async function deleteAccount() {
     if (!user) return;
@@ -126,6 +161,36 @@ export default function Settings() {
                 >
                   {pausing ? "…" : profile.paused ? "Unpause profile" : "Pause profile"}
                 </button>
+              </div>
+            )}
+
+            {/* Both entry points live here: start a subscription, or open
+                Stripe's portal to change the card / see invoices / cancel.
+                The portal is only offered once a billing account exists —
+                without a stripeCustomerId the portal route has nothing to
+                open and would just 404. */}
+            {profile && (
+              <div className="flex flex-col gap-3 border-b border-neutral-100 pb-8">
+                <h2 className="text-sm font-medium text-neutral-700">Subscription</h2>
+                <p className="text-sm text-neutral-500">
+                  {profile.subscriptionStatus === "active"
+                    ? `You have ${PAID_DAILY_LIKE_LIMIT} likes a day.`
+                    : profile.subscriptionStatus === "past_due"
+                      ? "Your last payment didn't go through — update your card to keep your extra likes."
+                      : `You're on the free plan — ${FREE_DAILY_LIKE_LIMIT} likes a day.`}
+                </p>
+                <button
+                  onClick={profile.stripeCustomerId ? openBillingPortal : startCheckout}
+                  disabled={billingLoading}
+                  className="w-fit rounded-full border border-neutral-900 px-5 py-2 text-sm font-medium transition-colors hover:bg-neutral-900 hover:text-white disabled:opacity-50"
+                >
+                  {billingLoading
+                    ? "…"
+                    : profile.stripeCustomerId
+                      ? "Manage subscription"
+                      : "Get more likes"}
+                </button>
+                {billingError && <p className="text-xs text-red-600">{billingError}</p>}
               </div>
             )}
 

@@ -41,13 +41,16 @@ function calculateAge(birthdate: string): number {
 // lib/types.ts), so this is safe to toggle either way.
 const REQUIRE_PHONE_VERIFICATION = false;
 
-// Direct product decision, not a permanent policy: registration opens to
-// women first (a supply-side cold-start move — a dating app lives or
-// dies on female profile density) while men get captured on the
-// waitlist instead. Flip off once general registration opens; nothing
-// downstream (data model, matching, pricing) is gender-conditional
-// anywhere else, per lib/types.ts's own "no field encodes... " policy.
-const WOMEN_ONLY_PRELAUNCH = true;
+// Now off: general registration is open to everyone. It ran as a
+// supply-side cold-start move (a dating app lives or dies on female
+// profile density) with men captured on the waitlist instead, but men
+// are the paying side — leaving this on meant the paid tier had no one
+// who could reach it, and the marketing milestones are denominated in
+// paying male subscribers. Flip back to true only to re-close
+// registration; nothing downstream (data model, matching, pricing) is
+// gender-conditional anywhere else, per lib/types.ts's own "no field
+// encodes... " policy.
+const WOMEN_ONLY_PRELAUNCH = false;
 
 // Without this, nobody -- including whoever runs this app -- can create
 // an account to browse and confirm women are actually showing up, since
@@ -566,6 +569,22 @@ export default function SignUp() {
                 onChange={(e) => setHeadline(e.target.value)}
                 className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
               />
+              {/* Without this, maxLength just stops accepting keystrokes with
+                  nothing on screen to explain it — which is how a real profile
+                  ended up published reading "...someone who has chil". Only
+                  appears once you're close to the wall, so it's a warning
+                  rather than permanent chrome. */}
+              {headline.length >= MAX_HEADLINE_LENGTH - 20 && (
+                <span
+                  className={`text-xs ${
+                    headline.length >= MAX_HEADLINE_LENGTH ? "text-red-600" : "text-neutral-400"
+                  }`}
+                >
+                  {headline.length >= MAX_HEADLINE_LENGTH
+                    ? "Headline is full — trim it so it doesn't end mid-word."
+                    : `${MAX_HEADLINE_LENGTH - headline.length} characters left`}
+                </span>
+              )}
             </label>
 
             <label className="flex flex-col gap-1.5 text-sm">

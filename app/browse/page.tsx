@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
@@ -10,7 +10,18 @@ import { BRAND_CONFIG } from "@/config/brand";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { getActivityStatus, isNewMember } from "@/lib/activity";
 import { withRetry } from "@/lib/retry";
-import type { UserProfile } from "@/lib/types";
+import { FREE_DAILY_LIKE_LIMIT, PAID_DAILY_LIKE_LIMIT, type UserProfile } from "@/lib/types";
+
+// Mirrors app/api/likes/route.ts's own todayKey() so the header can show
+// a real count on first paint instead of "nothing until you spend a
+// like". Display only — the server stays authoritative and returns the
+// true `remaining` on every like, which overwrites whatever this seeded.
+function likesRemainingFor(profile: UserProfile): number {
+  const today = new Date().toISOString().slice(0, 10);
+  const used = profile.dailyLikesDate === today ? (profile.dailyLikesUsed ?? 0) : 0;
+  const limit = profile.subscriptionStatus === "active" ? PAID_DAILY_LIKE_LIMIT : FREE_DAILY_LIKE_LIMIT;
+  return Math.max(0, limit - used);
+}
 
 // Decorative only — reflects who the viewer said they're interested in,
 // never tied to any real or fake profile. "Other"/unset falls back to
@@ -42,6 +53,20 @@ export default function Browse() {
   const [likeStatus, setLikeStatus] = useState<Record<string, LikeStatus>>({});
   const [remaining, setRemaining] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
+  const [upgradeError, setUpgradeError] = useState<string | null>(null);
+
+  // The ?subscribed=1 flag Stripe Checkout sends us back with. Read as
+  // external browser state rather than copied into a useState inside an
+  // effect (which cascades an extra render) or read via useSearchParams
+  // (which would push this whole page under a Suspense boundary for one
+  // boolean). The server snapshot is false, so SSR and hydration agree.
+  const justSubscribed = useSyncExternalStore(
+    // Never changes for the life of the page — nothing to subscribe to.
+    () => () => {},
+    () => new URLSearchParams(window.location.search).get("subscribed") === "1",
+    () => false,
+  );
 
   useEffect(() => {
     return watchAuthState(async (nextUser) => {
@@ -57,6 +82,10 @@ export default function Browse() {
         const ownSnap = await getDoc(doc(db, "users", nextUser.uid));
         const own = ownSnap.exists() ? (ownSnap.data() as UserProfile) : null;
         setOwnProfile(own);
+        // Seed the counter before any like is sent — otherwise someone
+        // arriving with 0 left sees a normal-looking page and only finds
+        // out by clicking Like and getting a dead grey button.
+        if (own) setRemaining(likesRemainingFor(own));
 
         // Real "last active" signal, not a live presence system — see
         // lib/activity.ts. Fire-and-forget: this page's own render doesn't
@@ -134,6 +163,39 @@ export default function Browse() {
       setRemaining(typeof body.remaining === "number" ? body.remaining : null);
     } catch {
       setLikeStatus((prev) => ({ ...prev, [profile.id]: "error" }));
+    }
+  }
+
+  // Hands off to Stripe-hosted Checkout. Paid access is never granted
+  // here or on the return trip — only the webhook does that
+  // (app/api/stripe/webhook/route.ts).
+  async function handleUpgrade() {
+    if (!user) return;
+    setUpgradeError(null);
+    setUpgrading(true);
+    try {
+      const idToken = await user.getIdToken();
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${idToken}` },
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.url) {
+        // 503 is the honest case where billing env vars aren't set yet —
+        // worth saying plainly rather than showing a generic failure on
+        // what is meant to be the conversion moment.
+        setUpgradeError(
+          res.status === 503
+            ? "Subscriptions aren't switched on yet — check back shortly."
+            : "Couldn't start checkout. Please try again.",
+        );
+        setUpgrading(false);
+        return;
+      }
+      window.location.href = body.url;
+    } catch {
+      setUpgradeError("Couldn't start checkout. Please try again.");
+      setUpgrading(false);
     }
   }
 
@@ -224,6 +286,46 @@ export default function Browse() {
               </div>
             )}
             <h1 className="pt-8 text-3xl font-medium tracking-tight">Browse</h1>
+
+            {/* The conversion moment. Browsing itself stays unlimited (a
+                cap on visibility would just advertise how small the pool
+                is); what's limited is the action. Shown once, at the top,
+                so it reads as a state of the account rather than a dead
+                button discovered per-card. */}
+            {remaining === 0 && ownProfile.subscriptionStatus !== "active" && (
+              <div className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
+                <p className="text-base font-medium">
+                  You&apos;ve used all {FREE_DAILY_LIKE_LIMIT} likes for today
+                </p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Your likes reset tomorrow. Or get {PAID_DAILY_LIKE_LIMIT} likes a day — keep going now
+                  instead of waiting.
+                </p>
+                <button
+                  onClick={handleUpgrade}
+                  disabled={upgrading}
+                  className="mt-4 w-fit rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
+                >
+                  {upgrading ? "Opening checkout…" : "Get more likes"}
+                </button>
+                {upgradeError && <p className="mt-2 text-xs text-red-600">{upgradeError}</p>}
+                <p className="mt-3 text-xs text-neutral-400">Cancel any time from Settings.</p>
+              </div>
+            )}
+
+            {/* Checkout redirects back here immediately, but the webhook
+                that actually flips the account can land a beat later — so
+                this confirms the payment without claiming the unlock has
+                already happened. */}
+            {justSubscribed && ownProfile.subscriptionStatus !== "active" && (
+              <div className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
+                <p className="text-base font-medium">Payment received — thank you</p>
+                <p className="mt-1 text-sm text-neutral-500">
+                  Your extra likes are being switched on. Refresh in a few seconds if they aren&apos;t
+                  there yet.
+                </p>
+              </div>
+            )}
             {profiles.length === 0 ? (
               <p className="mt-4 text-sm text-neutral-500">
                 No one matching your preferences has an active profile yet — check back soon.
@@ -261,7 +363,12 @@ export default function Browse() {
                       {activity && !activity.isOnline && <p className="-mt-2 text-xs text-neutral-400">{activity.label}</p>}
 
                       {profile.headline && <p className="text-base font-medium">{profile.headline}</p>}
-                      {profile.bio && <p className="text-sm text-neutral-600">{profile.bio}</p>}
+                      {/* Clamped, not cut: a 500-char bio would otherwise
+                          push the next card off-screen and make the feed
+                          scroll unevenly. line-clamp ends with a real
+                          ellipsis, so a trailing "…" reads as "there's more
+                          on the profile" rather than as broken text. */}
+                      {profile.bio && <p className="line-clamp-3 text-sm text-neutral-600">{profile.bio}</p>}
 
                       <div className="flex items-center gap-4">
                         <button

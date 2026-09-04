@@ -24,7 +24,14 @@ export const PAID_DAILY_LIKE_LIMIT = 100;
 // picking curated prompts and writing witty answers to them. Direct
 // feedback: crafting a clever English prompt answer is real friction for
 // non-native English speakers, which is exactly the audience here.
-export const MAX_HEADLINE_LENGTH = 80;
+// Raised from 80 after the first real profiles came in: 80 cut a sincere
+// one-sentence headline off mid-word ("...someone who has chil"), because
+// maxLength silently stops accepting keystrokes with nothing on screen
+// saying so. The input now shows a live counter (see the sign-up form) —
+// that's the actual fix; the extra room just stops the common case from
+// hitting the wall at all. Non-native English speakers write longer, not
+// shorter, when they're being earnest.
+export const MAX_HEADLINE_LENGTH = 120;
 export const MAX_BIO_LENGTH = 500;
 
 export interface UserProfile {
