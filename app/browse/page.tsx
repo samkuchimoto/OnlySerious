@@ -54,8 +54,6 @@ export default function Browse() {
   const [likeStatus, setLikeStatus] = useState<Record<string, LikeStatus>>({});
   const [remaining, setRemaining] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
-  const [upgrading, setUpgrading] = useState(false);
-  const [upgradeError, setUpgradeError] = useState<string | null>(null);
 
   // The ?subscribed=1 flag Stripe Checkout sends us back with. Read as
   // external browser state rather than copied into a useState inside an
@@ -172,44 +170,6 @@ export default function Browse() {
     }
   }
 
-  // Hands off to Stripe-hosted Checkout. Paid access is never granted
-  // here or on the return trip — only the webhook does that
-  // (app/api/stripe/webhook/route.ts).
-  async function handleUpgrade() {
-    if (!user) return;
-    setUpgradeError(null);
-    setUpgrading(true);
-    capture("upgrade_clicked", { source: "browse_limit_banner" });
-    try {
-      const idToken = await user.getIdToken();
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${idToken}` },
-      });
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok || !body.url) {
-        // 503 is the honest case where billing env vars aren't set yet —
-        // worth saying plainly rather than showing a generic failure on
-        // what is meant to be the conversion moment.
-        setUpgradeError(
-          res.status === 503
-            ? "Subscriptions aren't switched on yet — check back shortly."
-            : "Couldn't start checkout. Please try again.",
-        );
-        setUpgrading(false);
-        return;
-      }
-      // Fires only once Stripe has actually handed back a Checkout URL,
-      // so the drop-off between this and upgrade_clicked isolates
-      // billing failures from people simply not clicking.
-      capture("checkout_started");
-      window.location.href = body.url;
-    } catch {
-      setUpgradeError("Couldn't start checkout. Please try again.");
-      setUpgrading(false);
-    }
-  }
-
   // One-tap, no confirmation — a deliberately lighter alternative to
   // Block (see lib/types.ts's Hide comment) available right from the
   // grid, not just the profile-detail menu.
@@ -312,14 +272,18 @@ export default function Browse() {
                   Your likes reset tomorrow. Or get {PAID_DAILY_LIKE_LIMIT} likes a day — keep going now
                   instead of waiting.
                 </p>
-                <button
-                  onClick={handleUpgrade}
-                  disabled={upgrading}
-                  className="mt-4 w-fit rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
+                {/* Goes to the checkout page rather than straight into
+                    Stripe: someone who hasn't decided yet needs to see the
+                    price and what they get before being sent to a payment
+                    form. The page also reads the live price from Stripe,
+                    which this banner deliberately doesn't state. */}
+                <Link
+                  href="/premium"
+                  onClick={() => capture("upgrade_clicked", { source: "browse_limit_banner" })}
+                  className="mt-4 inline-block w-fit rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
                 >
-                  {upgrading ? "Opening checkout…" : "Get more likes"}
-                </button>
-                {upgradeError && <p className="mt-2 text-xs text-red-600">{upgradeError}</p>}
+                  Get more likes
+                </Link>
                 <p className="mt-3 text-xs text-neutral-400">Cancel any time from Settings.</p>
               </div>
             )}
