@@ -68,29 +68,36 @@ export async function GET() {
       // usual cause. Rather than describe that, just list what this key
       // can actually see: price ids are not secrets, and the right value
       // is almost certainly in the list.
-      const available = await getStripe()
-        .prices.list({ limit: 5, active: true, expand: ["data.product"] })
-        .then((res) =>
-          res.data.map((p) => ({
-            id: p.id,
-            amount: p.unit_amount,
-            currency: p.currency.toUpperCase(),
-            interval: p.recurring?.interval ?? null,
-            product:
-              typeof p.product === "object" && p.product && "name" in p.product
-                ? (p.product as { name?: string }).name
-                : undefined,
-          })),
-        )
-        .catch(() => null);
+      // Separated from the "empty list" case on purpose. Collapsing a
+      // failed list call into "no prices found" is how a diagnostic
+      // starts lying: it reported an environment mismatch when the real
+      // fault could have been the list call itself, sending someone off
+      // to recreate a product that already existed.
+      let available: Array<Record<string, unknown>> | null = null;
+      let listFailed: string | null = null;
+      try {
+        const res = await getStripe().prices.list({ limit: 10, active: true });
+        available = res.data.map((p) => ({
+          id: p.id,
+          amount: p.unit_amount,
+          currency: p.currency.toUpperCase(),
+          interval: p.recurring?.interval ?? null,
+        }));
+      } catch (listErr) {
+        const e = listErr as { type?: string; code?: string };
+        listFailed = e.type ?? e.code ?? "unknown";
+      }
 
-      hint =
-        available && available.length > 0
-          ? `Stripe has no price with that id on this account (key is ${keyMode} mode), but it does have the prices listed in availablePrices below — copy one of those ids into STRIPE_PRICE_ID.`
-          : `Stripe has no price with that id, and this key can't see any active prices at all (key is ${keyMode} mode). The key and the product were almost certainly created in different environments — a Stripe Sandbox is separate from standard test mode. Create the product again in whichever one the key belongs to.`;
+      if (listFailed) {
+        hint = `Stripe has no price with that id, and listing prices also failed (${listFailed}). That points at the key rather than the id — re-check STRIPE_SECRET_KEY.`;
+      } else if (available && available.length > 0) {
+        hint = `Stripe has no price with that id, but this key CAN see the prices in availablePrices below — copy one of those ids into STRIPE_PRICE_ID.`;
+      } else {
+        hint = `The key works and Stripe accepted it, but this account has zero active prices (key is ${keyMode} mode). The key and the product are in different Stripe environments — a Sandbox has its own separate catalog and its own API keys. Take the secret key from inside the same Sandbox where you created the product, and remember an env-var change only reaches a NEW deployment: redeploy after saving it.`;
+      }
 
       return NextResponse.json(
-        { error: "price unavailable", hint, availablePrices: available ?? [] },
+        { error: "price unavailable", hint, availablePrices: available ?? [], listFailed },
         { status: 502 },
       );
     } else {

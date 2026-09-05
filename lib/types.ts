@@ -32,6 +32,18 @@ export const PAID_DAILY_LIKE_LIMIT = 100;
 // locked out of replying to someone who wrote to them.
 export const FREE_MESSAGE_COOLDOWN_MS = 10 * 60 * 1000;
 
+// "Who liked you" is a paid feature (ThaiFriendly's model). Enforced in
+// app/api/liked-me, not in the UI — firestore.rules stops a client
+// reading likes addressed to it, so this can't be defeated from devtools.
+//
+// A single switch because it has one real risk worth being able to undo
+// in a minute: the gate keys off subscriptionStatus, not gender, so
+// women see it too — and they're the side being recruited, not the side
+// expected to pay. If female retention dips after launch, flip this to
+// false and the page shows everyone their likers again, with no other
+// change needed anywhere.
+export const LIKED_ME_REQUIRES_SUBSCRIPTION = true;
+
 // ThaiFriendly's model, not Hinge's — a short one-line headline (what
 // shows first on a Browse card) plus a plain free-text bio, instead of
 // picking curated prompts and writing witty answers to them. Direct

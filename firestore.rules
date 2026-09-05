@@ -89,11 +89,15 @@ service cloud.firestore {
       // Writes stay server-only (the daily-limit check, deterministic-id
       // idempotency, and mutual-match detection all have to be trusted —
       // a client could otherwise skip its own limit or double-like).
-      // Reads are allowed both for "who liked me" and "who have I
-      // already liked" (Browse excludes them so a profile you've liked
-      // doesn't keep reappearing).
-      allow read: if isSignedIn()
-        && (resource.data.likedId == request.auth.uid || resource.data.likerId == request.auth.uid);
+      // Only "who have I already liked" is readable from the client —
+      // Browse needs it to stop re-showing a profile you've liked.
+      //
+      // "Who liked me" is deliberately NOT readable here. It's the paid
+      // feature (app/api/liked-me), and leaving this open would have made
+      // that paywall decoration: anyone could run the same query from
+      // devtools and read every liker's identity. The server route uses
+      // the Admin SDK, which bypasses these rules.
+      allow read: if isSignedIn() && resource.data.likerId == request.auth.uid;
       allow write: if false;
     }
 
