@@ -54,8 +54,18 @@ argument while the Play listing is prepared.
 
 ## Building the Play Store package
 
-Needs a machine with a JDK. Bubblewrap downloads the Android SDK itself
-on first run.
+`twa-manifest.json` in the repo root is Bubblewrap's input, already
+filled in — so the interactive `init` below can be skipped if the
+toolchain is in place. Run `npx @bubblewrap/cli build` from the repo
+root instead.
+
+> **Bubblewrap's own JDK installer doesn't work non-interactively on
+> Windows.** It prompts, and if stdin isn't a real terminal it downloads
+> only the JDK *sources* and exits — leaving `~/.bubblewrap/config.json`
+> with empty paths and no `java.exe` anywhere. Symptom: 170MB+ in
+> `~/.bubblewrap/jdk` and still "no JDK found". Install a JDK yourself
+> (Temurin 17) and point Bubblewrap at it rather than fighting the
+> prompt.
 
 ### 1. Generate the project
 
