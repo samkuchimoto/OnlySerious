@@ -8,6 +8,7 @@ import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import { withRetry } from "@/lib/retry";
+import { getActivityStatus } from "@/lib/activity";
 import { capture } from "@/lib/analytics";
 import { FREE_MESSAGE_COOLDOWN_MS, type Match, type Message, type UserProfile } from "@/lib/types";
 
@@ -153,7 +154,30 @@ export default function MatchChat() {
         <Link href="/matches" className="text-sm text-neutral-400 transition-colors hover:text-neutral-900">
           ← {BRAND_CONFIG.appTitle}
         </Link>
-        {other && <p className="text-sm font-medium">{other.displayName}</p>}
+        {/* Name plus freshness, as ThaiFriendly does in its chat header.
+            Knowing whether the person is around right now changes what
+            you write and how long you wait for a reply — Browse and the
+            profile page both showed it and the conversation, where it
+            matters most, didn't. */}
+        {other && (
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+            <Link href={`/profile/${other.id}`} className="text-sm font-medium hover:underline">
+              {other.displayName}
+            </Link>
+            {(() => {
+              const activity = getActivityStatus(other.lastActiveAt);
+              if (!activity) return null;
+              return (
+                <span className="flex items-center gap-1.5 text-xs text-neutral-400">
+                  {activity.isOnline && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden />
+                  )}
+                  {activity.label}
+                </span>
+              );
+            })()}
+          </div>
+        )}
       </header>
 
       <section className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pb-6">
