@@ -38,6 +38,7 @@ export async function POST(request: Request) {
 
   const stripe = getStripe();
 
+  try {
   // Reuse the customer across attempts. Without this, every abandoned
   // Checkout leaves behind another customer record for the same person,
   // and the webhook's customer -> user lookup stops being one-to-one.
@@ -82,4 +83,26 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ url: session.url });
+  } catch (err) {
+    // Any Stripe call above can throw — a revoked key, a price id that
+    // doesn't resolve, a network failure. Uncaught, they surfaced as a
+    // bare 500 in the browser console, which tells whoever is debugging
+    // nothing about which of those it was. Same classification the price
+    // route uses, and the same rule: never echo Stripe's message, since
+    // an invalid_request quotes back the value it was handed.
+    const stripeError = err as { type?: string; code?: string };
+    console.error("stripe checkout failed:", err);
+    return NextResponse.json(
+      {
+        error: "could not start checkout",
+        reason:
+          stripeError.type === "StripeAuthenticationError"
+            ? "stripe_key_rejected"
+            : stripeError.code === "resource_missing"
+              ? "stripe_price_missing"
+              : "stripe_error",
+      },
+      { status: 502 },
+    );
+  }
 }
