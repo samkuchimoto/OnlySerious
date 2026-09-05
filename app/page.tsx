@@ -98,6 +98,23 @@ export default function Home() {
           <div className="mt-6">
             <WaitlistForm align="center" />
           </div>
+
+          {/* The waitlist above is for the Play listing, which doesn't
+              exist yet. This is the app they can actually have right now —
+              offered second so it doesn't compete with the email capture,
+              but present, because asking someone to wait for something
+              they could install in one tap is a needless loss. */}
+          <div className="mt-8 border-t border-neutral-100 pt-6">
+            <p className="text-sm text-neutral-500">
+              On your phone? You can install {BRAND_CONFIG.appTitle} now — no download, no store.
+            </p>
+            <Link
+              href="/get-app"
+              className="mt-3 inline-block text-sm font-medium underline underline-offset-4 hover:text-neutral-900"
+            >
+              Install the app
+            </Link>
+          </div>
         </div>
       </section>
 

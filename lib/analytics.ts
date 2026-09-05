@@ -32,7 +32,12 @@ export type AnalyticsEvent =
   | "message_cooldown_hit"
   | "upgrade_clicked"
   | "checkout_started"
-  | "waitlist_joined";
+  | "waitlist_joined"
+  | "app_install_prompted"
+  | "app_install_accepted"
+  | "app_install_dismissed"
+  | "app_installed"
+  | "apk_downloaded";
 
 function enabled(): boolean {
   return Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY);
