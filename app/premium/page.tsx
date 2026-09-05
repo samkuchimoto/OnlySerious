@@ -25,6 +25,9 @@ export default function Premium() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [price, setPrice] = useState<PriceInfo | null>(null);
+  // Distinguishes "still fetching" from "Stripe refused" — they render
+  // very differently and were previously both just `price === null`.
+  const [priceState, setPriceState] = useState<"loading" | "ready" | "unavailable">("loading");
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -39,14 +42,24 @@ export default function Premium() {
     });
   }, []);
 
+  // The price lookup doubles as a health check on billing. It and
+  // Checkout talk to Stripe with the same key and the same price id, so
+  // if this fails, Subscribe is guaranteed to fail too — which is
+  // exactly what a misconfigured key produced: a page with no price and
+  // a button that errored on click. Better to say billing is
+  // unavailable than to invite someone into a checkout that can't work.
   useEffect(() => {
-    // A failure here is not fatal — the page still sells the plan, just
-    // without a number on it, which beats blocking checkout entirely
-    // because a price lookup timed out.
     fetch("/api/stripe/price")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setPrice(data))
-      .catch(() => setPrice(null));
+      .then(async (res) => {
+        if (!res.ok) throw new Error("price unavailable");
+        return res.json();
+      })
+      .then((data: PriceInfo) => {
+        if (data?.amount == null) throw new Error("price has no amount");
+        setPrice(data);
+        setPriceState("ready");
+      })
+      .catch(() => setPriceState("unavailable"));
   }, []);
 
   async function startCheckout() {
@@ -79,12 +92,6 @@ export default function Premium() {
       setStarting(false);
     }
   }
-
-  const priceLabel =
-    price?.amount != null
-      ? `${price.currency} ${price.amount}${price.interval ? ` / ${price.interval}` : ""}`
-      : null;
-
   const benefits = [
     `${PAID_DAILY_LIKE_LIMIT} likes a day instead of ${FREE_DAILY_LIKE_LIMIT}`,
     "Reach everyone you're interested in, the day you find them",
@@ -177,10 +184,23 @@ export default function Premium() {
             </div>
 
             <div className="w-full rounded-2xl border border-neutral-200 p-6">
-              {priceLabel && (
-                <p className="text-2xl font-medium tracking-tight">{priceLabel}</p>
+              {/* The price leads the card. Nobody decides to subscribe
+                  from a feature list alone, and a card that lists
+                  benefits and then asks for a card number without ever
+                  naming the amount reads as something to be wary of. */}
+              {priceState === "ready" && price?.amount != null && (
+                <p className="text-3xl font-medium tracking-tight">
+                  {price.currency} {price.amount}
+                  {price.interval && (
+                    <span className="text-base font-normal text-neutral-500"> / {price.interval}</span>
+                  )}
+                </p>
               )}
-              <ul className="mt-4 flex flex-col gap-2.5">
+              {priceState === "loading" && (
+                <div className="h-9 w-32 animate-pulse rounded-md bg-neutral-100" aria-hidden />
+              )}
+
+              <ul className={`flex flex-col gap-2.5 ${priceState === "unavailable" ? "" : "mt-5"}`}>
                 {benefits.map((benefit) => (
                   <li key={benefit} className="flex items-start gap-2.5 text-sm text-neutral-600">
                     <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-neutral-900" />
@@ -189,19 +209,31 @@ export default function Premium() {
                 ))}
               </ul>
 
-              <button
-                onClick={startCheckout}
-                disabled={starting}
-                className="mt-6 w-fit rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
-              >
-                {starting ? "Opening checkout…" : "Subscribe"}
-              </button>
+              {priceState === "unavailable" ? (
+                // Same key, same price id as Checkout — if the price
+                // can't be read, Subscribe cannot succeed. Showing the
+                // button anyway just moves the failure one click later.
+                <p className="mt-6 text-sm text-neutral-500">
+                  Subscriptions are temporarily unavailable. Nothing has been charged — please try again
+                  shortly.
+                </p>
+              ) : (
+                <>
+                  <button
+                    onClick={startCheckout}
+                    disabled={starting || priceState === "loading"}
+                    className="mt-6 w-fit rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
+                  >
+                    {starting ? "Opening checkout…" : "Subscribe"}
+                  </button>
 
-              {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+                  {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
-              <p className="mt-4 text-xs text-neutral-400">
-                Secure payment through Stripe. Your card details never touch {BRAND_CONFIG.appTitle}.
-              </p>
+                  <p className="mt-4 text-xs text-neutral-400">
+                    Secure payment through Stripe. Your card details never touch {BRAND_CONFIG.appTitle}.
+                  </p>
+                </>
+              )}
             </div>
 
             <p className="text-xs text-neutral-400">
