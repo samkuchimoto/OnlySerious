@@ -10,7 +10,7 @@
   "navigationColorDark": "#171717",
   "navigationDividerColor": "#171717",
   "navigationDividerColorDark": "#171717",
-  "backgroundColor": "#ffffff",
+  "backgroundColor": "#FFFFFF",
   "enableNotifications": true,
   "startUrl": "/browse",
   "iconUrl": "https://intently-web.vercel.app/icons/icon-512.png",
@@ -20,8 +20,8 @@
     "path": "./android-upload.keystore",
     "alias": "osthai"
   },
-  "appVersionName": "1.0.0",
-  "appVersionCode": 1,
+  "appVersionName": "y",
+  "appVersionCode": 2,
   "shortcuts": [
     {
       "name": "Browse",
@@ -52,5 +52,6 @@
   "fingerprints": [],
   "additionalTrustedOrigins": [],
   "retainedBundles": [],
-  "appVersion": "1.0.0"
+  "displayOverride": [],
+  "appVersion": "y"
 }
