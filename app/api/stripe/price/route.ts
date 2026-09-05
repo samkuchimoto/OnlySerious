@@ -61,7 +61,38 @@ export async function GET() {
     } else if (stripeError.type === "StripeAuthenticationError") {
       hint = `Stripe rejected the API key, not the price id. STRIPE_SECRET_KEY in Vercel is wrong or revoked — if you rotated the key, the new one was never saved here.`;
     } else if (stripeError.code === "resource_missing") {
-      hint = `Stripe has no price with that id on this account (secret key is ${keyMode} mode). Re-copy the price id from the product's Pricing row — the Events log entry "a new price called price_… was created" also has it.`;
+      // The key works but the id doesn't resolve, which means the price
+      // lives on a different account or mode than the key — a Stripe
+      // Sandbox is a separate environment from standard test mode, and
+      // copying an id from one while the key belongs to the other is the
+      // usual cause. Rather than describe that, just list what this key
+      // can actually see: price ids are not secrets, and the right value
+      // is almost certainly in the list.
+      const available = await getStripe()
+        .prices.list({ limit: 5, active: true, expand: ["data.product"] })
+        .then((res) =>
+          res.data.map((p) => ({
+            id: p.id,
+            amount: p.unit_amount,
+            currency: p.currency.toUpperCase(),
+            interval: p.recurring?.interval ?? null,
+            product:
+              typeof p.product === "object" && p.product && "name" in p.product
+                ? (p.product as { name?: string }).name
+                : undefined,
+          })),
+        )
+        .catch(() => null);
+
+      hint =
+        available && available.length > 0
+          ? `Stripe has no price with that id on this account (key is ${keyMode} mode), but it does have the prices listed in availablePrices below — copy one of those ids into STRIPE_PRICE_ID.`
+          : `Stripe has no price with that id, and this key can't see any active prices at all (key is ${keyMode} mode). The key and the product were almost certainly created in different environments — a Stripe Sandbox is separate from standard test mode. Create the product again in whichever one the key belongs to.`;
+
+      return NextResponse.json(
+        { error: "price unavailable", hint, availablePrices: available ?? [] },
+        { status: 502 },
+      );
     } else {
       hint = `Stripe refused the lookup (${stripeError.type ?? "unknown error"}${stripeError.code ? `, ${stripeError.code}` : ""}). Key is ${keyMode} mode and the price id looks like ${priceMode} mode.`;
     }
