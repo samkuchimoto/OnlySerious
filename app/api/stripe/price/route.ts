@@ -88,6 +88,22 @@ export async function GET() {
         listFailed = e.type ?? e.code ?? "unknown";
       }
 
+      // Which Stripe account the *deployed* key actually resolves to.
+      // This is the question that repeated "check the key" instructions
+      // couldn't answer: whether the running deployment is using the key
+      // that was saved, or an older one from a different environment.
+      // Neither value is a secret — the account id appears in the
+      // dashboard's own URL, and four characters of a random key reveal
+      // nothing usable — but together they settle it by inspection.
+      let account: string | null = null;
+      try {
+        const acct = await getStripe().accounts.retrieve(null);
+        account = acct.id;
+      } catch {
+        account = null;
+      }
+      const keyTail = (process.env.STRIPE_SECRET_KEY ?? "").slice(-4);
+
       if (listFailed) {
         hint = `Stripe has no price with that id, and listing prices also failed (${listFailed}). That points at the key rather than the id — re-check STRIPE_SECRET_KEY.`;
       } else if (available && available.length > 0) {
@@ -97,7 +113,18 @@ export async function GET() {
       }
 
       return NextResponse.json(
-        { error: "price unavailable", hint, availablePrices: available ?? [], listFailed },
+        {
+          error: "price unavailable",
+          hint,
+          availablePrices: available ?? [],
+          listFailed,
+          // Compare deployedKeyBelongsToAccount against the acct_… in
+          // your Stripe dashboard URL. If they differ, the running
+          // deployment is not using the key you saved.
+          deployedKeyBelongsToAccount: account,
+          deployedKeyEndsWith: keyTail,
+          configuredPriceId: configured,
+        },
         { status: 502 },
       );
     } else {
