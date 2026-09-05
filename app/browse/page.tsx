@@ -12,6 +12,7 @@ import { withRetry } from "@/lib/retry";
 import { FREE_DAILY_LIKE_LIMIT, PAID_DAILY_LIKE_LIMIT, type UserProfile } from "@/lib/types";
 import { capture } from "@/lib/analytics";
 import { AppNav } from "@/components/AppNav";
+import { BRAND_CONFIG } from "@/config/brand";
 
 // Mirrors app/api/likes/route.ts's own todayKey() so the header can show
 // a real count on first paint instead of "nothing until you spend a
@@ -269,17 +270,58 @@ export default function Browse() {
               </div>
             )}
 
-            {/* Checkout redirects back here immediately, but the webhook
-                that actually flips the account can land a beat later — so
-                this confirms the payment without claiming the unlock has
-                already happened. */}
-            {justSubscribed && ownProfile.subscriptionStatus !== "active" && (
-              <div className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
-                <p className="text-base font-medium">Payment received — thank you</p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Your extra likes are being switched on. Refresh in a few seconds if they aren&apos;t
-                  there yet.
-                </p>
+            {/* Returning from Checkout. This used to render ONLY while
+                the webhook was still catching up, so a fast webhook — the
+                normal case — meant paying $10 and being dropped back onto
+                an ordinary Browse page with nothing acknowledging it at
+                all. Now it always confirms, and only the wording depends
+                on whether the unlock has landed yet. */}
+            {justSubscribed && (
+              <div className="mt-6 rounded-2xl border border-neutral-900 bg-neutral-900 p-6 text-white">
+                {ownProfile.subscriptionStatus === "active" ? (
+                  <>
+                    <p className="text-xl font-medium tracking-tight">
+                      Welcome to {BRAND_CONFIG.premiumName}
+                    </p>
+                    <p className="mt-1 text-sm text-neutral-300">
+                      You&apos;re all set. Here&apos;s what changed:
+                    </p>
+                    <ul className="mt-4 flex flex-col gap-2">
+                      {[
+                        `${PAID_DAILY_LIKE_LIMIT} likes a day, up from ${FREE_DAILY_LIKE_LIMIT}`,
+                        "Message without waiting between messages",
+                        "See everyone who liked you",
+                      ].map((line) => (
+                        <li key={line} className="flex items-start gap-2.5 text-sm text-neutral-200">
+                          <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white" />
+                          {line}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <Link
+                        href="/liked-me"
+                        className="rounded-full bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 transition-transform hover:scale-[1.02]"
+                      >
+                        See who liked you
+                      </Link>
+                      <Link
+                        href="/settings"
+                        className="rounded-full border border-neutral-600 px-5 py-2.5 text-sm font-medium text-neutral-200 transition-colors hover:border-white hover:text-white"
+                      >
+                        Manage subscription
+                      </Link>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xl font-medium tracking-tight">Payment received — thank you</p>
+                    <p className="mt-1 text-sm text-neutral-300">
+                      Your {BRAND_CONFIG.premiumName} benefits are switching on now. Refresh in a few
+                      seconds if they aren&apos;t there yet.
+                    </p>
+                  </>
+                )}
               </div>
             )}
             {profiles.length === 0 ? (

@@ -20,4 +20,9 @@ export const BRAND_CONFIG = {
   // but launch messaging stays dating-specific.
   heroHeadline: "Done wasting time on dating apps?",
   heroSubheadline: "Meet people who are actually serious about a relationship.",
+  // What the paid tier is called wherever a member sees it. Kept here so
+  // the checkout page, the confirmation and any future push copy all say
+  // the same thing — a plan that's "membership" in one place and "Plus"
+  // in another reads like two different products.
+  premiumName: "OSThai Plus",
 } as const;

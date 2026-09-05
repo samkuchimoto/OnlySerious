@@ -18,6 +18,9 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { adminDb } from "@/lib/firebaseAdmin";
 import { getStripe, isStripeConfigured, mapSubscriptionStatus } from "@/lib/stripe";
+import { notifyUser } from "@/lib/notify";
+import { BRAND_CONFIG } from "@/config/brand";
+import { PAID_DAILY_LIKE_LIMIT, type UserProfile } from "@/lib/types";
 
 // Resolves a Stripe object back to the Firestore user it belongs to.
 // Prefers the metadata written at checkout; falls back to a lookup by
@@ -48,11 +51,35 @@ async function applySubscription(subscription: Stripe.Subscription): Promise<voi
     return;
   }
 
-  await adminDb.collection("users").doc(uid).update({
-    subscriptionStatus: mapSubscriptionStatus(subscription.status),
+  const userRef = adminDb.collection("users").doc(uid);
+  const nextStatus = mapSubscriptionStatus(subscription.status);
+
+  // Read before writing, so the transition is known rather than just the
+  // new value. Stripe sends subscription.updated for renewals and other
+  // no-op changes too, and notifying on every one of those would mean a
+  // "welcome" push every billing cycle.
+  const beforeSnap = await userRef.get();
+  const previousStatus = (beforeSnap.data() as UserProfile | undefined)?.subscriptionStatus;
+
+  await userRef.update({
+    subscriptionStatus: nextStatus,
     stripeSubscriptionId: subscription.id,
     ...(customerId ? { stripeCustomerId: customerId } : {}),
   });
+
+  // Only on the actual free -> active transition.
+  if (nextStatus === "active" && previousStatus !== "active") {
+    await notifyUser(
+      uid,
+      `Welcome to ${BRAND_CONFIG.premiumName}`,
+      `You now get ${PAID_DAILY_LIKE_LIMIT} likes a day, messaging with no wait, and you can see everyone who liked you.`,
+    ).catch((err) => {
+      // A failed push must never fail the webhook: returning non-2xx
+      // would make Stripe retry an event whose Firestore write already
+      // succeeded, and the person has paid either way.
+      console.error("subscription welcome notification failed:", err);
+    });
+  }
 }
 
 export async function POST(request: Request) {
