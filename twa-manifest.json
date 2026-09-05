@@ -1,0 +1,56 @@
+{
+  "packageId": "app.osthai.twa",
+  "host": "intently-web.vercel.app",
+  "name": "OSThai — Serious matchmaking in Thailand.",
+  "launcherName": "OSThai",
+  "display": "standalone",
+  "themeColor": "#171717",
+  "themeColorDark": "#171717",
+  "navigationColor": "#171717",
+  "navigationColorDark": "#171717",
+  "navigationDividerColor": "#171717",
+  "navigationDividerColorDark": "#171717",
+  "backgroundColor": "#ffffff",
+  "enableNotifications": true,
+  "startUrl": "/browse",
+  "iconUrl": "https://intently-web.vercel.app/icons/icon-512.png",
+  "maskableIconUrl": "https://intently-web.vercel.app/icons/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android-upload.keystore",
+    "alias": "osthai"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    {
+      "name": "Browse",
+      "shortName": "Browse",
+      "url": "/browse",
+      "chosenIconUrl": "https://intently-web.vercel.app/icons/icon-192.png"
+    },
+    {
+      "name": "Matches",
+      "shortName": "Matches",
+      "url": "/matches",
+      "chosenIconUrl": "https://intently-web.vercel.app/icons/icon-192.png"
+    }
+  ],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://intently-web.vercel.app/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://intently-web.vercel.app/",
+  "minSdkVersion": 21,
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "appVersion": "1.0.0"
+}

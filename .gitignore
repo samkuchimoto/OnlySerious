@@ -45,3 +45,14 @@ next-env.d.ts
 # actual asset lives under public/images/ once it's in use
 /ChatGPT Image*.png
 /Gemini_Generated_Image*
+
+# Android / TWA build output. The generated project is reproducible from
+# twa-manifest.json, so only that is committed.
+/android/
+
+# Signing keystore — NEVER commit. Anyone holding it can publish an
+# update that Google Play will accept as genuinely yours, and losing it
+# means the listing can never be updated again. Keep the backup outside
+# this repo.
+*.keystore
+*.jks
