@@ -8,6 +8,16 @@ const nextConfig: NextConfig = {
   // natively instead, which is the standard fix for this with
   // firebase-admin in Next.js.
   serverExternalPackages: ["firebase-admin"],
+
+  async rewrites() {
+    return [
+      // Android looks for Digital Asset Links at this exact path and
+      // nowhere else. It can't be an app/ route directly because Next's
+      // file router ignores dot-prefixed directories, so the real handler
+      // lives at /api/assetlinks and is surfaced here.
+      { source: "/.well-known/assetlinks.json", destination: "/api/assetlinks" },
+    ];
+  },
 };
 
 export default nextConfig;

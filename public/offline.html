@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#171717" />
+    <title>OSThai — offline</title>
+    <style>
+      /* Inlined and self-contained on purpose: this page is served when
+         the network is gone, so it cannot fetch a stylesheet or a font. */
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 24px;
+        background: #fff;
+        color: #171717;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        text-align: center;
+      }
+      h1 { margin: 0; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; }
+      p { margin: 0; max-width: 30rem; color: #737373; font-size: 14px; line-height: 1.5; }
+      button {
+        margin-top: 12px;
+        border: 0;
+        border-radius: 999px;
+        background: #171717;
+        color: #fff;
+        padding: 14px 32px;
+        font-size: 14px;
+        font-weight: 500;
+        font-family: inherit;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>You're offline</h1>
+    <p>OSThai needs a connection to show profiles and messages. Your account and matches are safe — they're waiting for you.</p>
+    <button onclick="location.reload()">Try again</button>
+  </body>
+</html>
