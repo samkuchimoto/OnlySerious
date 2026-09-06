@@ -17,6 +17,7 @@ import Link from "next/link";
 import { BRAND_CONFIG } from "@/config/brand";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { ApkDownloadLink } from "@/components/ApkDownloadLink";
+import { InAppBrowserWarning } from "@/components/InAppBrowserWarning";
 
 export const metadata: Metadata = {
   title: `Get the ${BRAND_CONFIG.appTitle} app`,
@@ -44,7 +45,17 @@ export default function GetApp() {
       </header>
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
-        <h1 className="pt-8 text-3xl font-medium tracking-tight sm:text-4xl">
+        {/* This page is reached mostly from links pasted into WhatsApp
+            and LINE, and an in-app browser can't install a PWA at all —
+            beforeinstallprompt never fires there. Without this the
+            button silently falls back to "open this in Chrome" text
+            after a delay, which is easy to miss on the one page whose
+            entire job is getting the app installed. */}
+        <div className="pt-8">
+          <InAppBrowserWarning context="install" />
+        </div>
+
+        <h1 className="text-3xl font-medium tracking-tight sm:text-4xl">
           Get {BRAND_CONFIG.appTitle} on your phone
         </h1>
         <p className="mt-3 max-w-md text-neutral-500">
