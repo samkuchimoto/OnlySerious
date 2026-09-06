@@ -344,20 +344,23 @@ export default function SignUp() {
         <Link href="/" className="text-lg font-semibold tracking-tight">
           {BRAND_CONFIG.appTitle}
         </Link>
+        {/* Scrolls sideways instead of wrapping, matching
+            components/AppNav — the wrapped version stranded "Sign out"
+            alone on a second line on a phone. */}
         {user && (
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-400">
+          <div className="flex items-center gap-x-4 overflow-x-auto whitespace-nowrap text-sm text-neutral-400 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {stage === "pending-review" && (
               <>
-                <Link href="/browse" className="transition-colors hover:text-neutral-900">
+                <Link href="/browse" className="shrink-0 transition-colors hover:text-neutral-900">
                   Browse
                 </Link>
-                <Link href="/matches" className="transition-colors hover:text-neutral-900">
+                <Link href="/matches" className="shrink-0 transition-colors hover:text-neutral-900">
                   Matches
                 </Link>
-                <Link href="/liked-me" className="transition-colors hover:text-neutral-900">
+                <Link href="/liked-me" className="shrink-0 transition-colors hover:text-neutral-900">
                   Likes
                 </Link>
-                <Link href="/settings" className="transition-colors hover:text-neutral-900">
+                <Link href="/settings" className="shrink-0 transition-colors hover:text-neutral-900">
                   Settings
                 </Link>
                 {/* Same Upgrade entry point as components/AppNav, inlined
@@ -379,7 +382,7 @@ export default function SignUp() {
             <button onClick={() => {
                 resetAnalytics();
                 signOutUser();
-              }} className="transition-colors hover:text-neutral-900">
+              }} className="shrink-0 transition-colors hover:text-neutral-900">
               Sign out
             </button>
           </div>

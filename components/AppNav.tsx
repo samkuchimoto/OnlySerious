@@ -61,28 +61,43 @@ export function AppNav({ meta }: AppNavProps) {
     subscriptionStatus !== null && subscriptionStatus !== "active" && pathname !== "/premium";
 
   return (
-    <header className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-y-2 px-6 py-8">
-      <Link href="/browse" className="text-lg font-semibold tracking-tight">
-        {BRAND_CONFIG.appTitle}
-      </Link>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-400">
-        {meta}
-        {LINKS.filter((link) => link.href !== pathname).map((link) => (
-          <Link key={link.href} href={link.href} className="transition-colors hover:text-neutral-900">
-            {link.label}
-          </Link>
-        ))}
+    // Two deliberate rows on a phone, one row from sm up. Six links plus
+    // the likes counter cannot fit 360px, and letting them wrap produced
+    // a ragged break mid-list ("...My profile" / "Settings [Upgrade]")
+    // that read as broken rather than designed. Most traffic is phones.
+    <header className="mx-auto w-full max-w-2xl px-6 py-6 sm:py-8">
+      <div className="flex items-center justify-between gap-4">
+        <Link href="/browse" className="text-lg font-semibold tracking-tight">
+          {BRAND_CONFIG.appTitle}
+        </Link>
+        {/* Pinned to the top row on every width, so the one commercial
+            action never ends up orphaned on a line of its own. */}
         {showUpgrade && (
-          // Filled, not another grey text link — it has to read as an
-          // offer rather than as a fifth navigation item.
           <Link
             href="/premium"
             onClick={() => capture("upgrade_clicked", { source: `nav:${pathname}` })}
-            className="rounded-full bg-neutral-900 px-4 py-1.5 text-xs font-medium text-white transition-transform hover:scale-[1.03]"
+            className="shrink-0 rounded-full bg-neutral-900 px-4 py-1.5 text-xs font-medium text-white transition-transform hover:scale-[1.03]"
           >
             Upgrade
           </Link>
         )}
+      </div>
+
+      {/* Scrolls sideways rather than wrapping if it ever overflows —
+          a single tidy line beats a second ragged one. The scrollbar is
+          hidden because the row is short enough that it reads as a row,
+          not as a scroller. */}
+      <div className="mt-3 flex items-center gap-x-4 overflow-x-auto whitespace-nowrap text-sm text-neutral-400 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {meta && <span className="shrink-0">{meta}</span>}
+        {LINKS.filter((link) => link.href !== pathname).map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="shrink-0 transition-colors hover:text-neutral-900"
+          >
+            {link.label}
+          </Link>
+        ))}
       </div>
     </header>
   );
