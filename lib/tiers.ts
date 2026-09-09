@@ -45,7 +45,7 @@ export const TIERS: Tier[] = [
   {
     id: "free",
     name: "Free",
-    displayPrice: "$0",
+    displayPrice: "€0",
     tagline: "Everything a verified member needs to be found.",
     benefits: [
       "A verified profile with a stated intent",
@@ -58,7 +58,7 @@ export const TIERS: Tier[] = [
     id: "standard",
     name: "Standard",
     priceEnv: "STRIPE_PRICE_ID",
-    displayPrice: "$9.99",
+    displayPrice: "€9.99",
     tagline: "For when the free daily likes run out too fast.",
     benefits: ["More likes every day", "No message cooldown", "Cancel any time"],
     visible: true,
@@ -67,7 +67,7 @@ export const TIERS: Tier[] = [
     id: "gold",
     name: "Gold Passport",
     priceEnv: "STRIPE_PRICE_ID_GOLD",
-    displayPrice: "$24.99",
+    displayPrice: "€24.99",
     tagline: "For meeting people across borders, not just across town.",
     benefits: [
       "Everything in Standard",
@@ -81,7 +81,7 @@ export const TIERS: Tier[] = [
     id: "vip",
     name: "VIP",
     priceEnv: "STRIPE_PRICE_ID_VIP",
-    displayPrice: "$49.99",
+    displayPrice: "€49.99",
     tagline: "For the top of the grid.",
     benefits: ["Everything in Gold Passport"],
     pending: ["Top placement in the grid", "Priority support"],

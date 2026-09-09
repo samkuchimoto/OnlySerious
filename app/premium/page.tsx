@@ -16,6 +16,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import { Mascot } from "@/components/Mascot";
+import { TIERS, type TierId } from "@/lib/tiers";
 import { FREE_DAILY_LIKE_LIMIT, PAID_DAILY_LIKE_LIMIT, type UserProfile } from "@/lib/types";
 import { capture } from "@/lib/analytics";
 
@@ -25,9 +26,8 @@ export default function Premium() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [price, setPrice] = useState<PriceInfo | null>(null);
   // Distinguishes "still fetching" from "Stripe refused" — they render
-  // very differently and were previously both just `price === null`.
+  // very differently, and were previously both just a null price.
   const [priceState, setPriceState] = useState<"loading" | "ready" | "unavailable">("loading");
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,22 +57,26 @@ export default function Premium() {
       })
       .then((data: PriceInfo) => {
         if (data?.amount == null) throw new Error("price has no amount");
-        setPrice(data);
+        // The amount itself is no longer rendered — each tier card shows
+        // its own figure. What is still needed is the signal: this route
+        // and Checkout share a key and a price id, so a price that can't
+        // be read guarantees a click that fails.
         setPriceState("ready");
       })
       .catch(() => setPriceState("unavailable"));
   }, []);
 
-  async function startCheckout() {
+  async function startCheckout(tier: TierId = "standard") {
     if (!user) return;
     setError(null);
     setStarting(true);
-    capture("upgrade_clicked", { source: "premium_page" });
+    capture("upgrade_clicked", { source: "premium_page", tier });
     try {
       const idToken = await user.getIdToken();
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
-        headers: { Authorization: `Bearer ${idToken}` },
+        headers: { Authorization: `Bearer ${idToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ tier }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body.url) {
@@ -93,11 +97,6 @@ export default function Premium() {
       setStarting(false);
     }
   }
-  const benefits = [
-    `${PAID_DAILY_LIKE_LIMIT} likes a day instead of ${FREE_DAILY_LIKE_LIMIT}`,
-    "Reach everyone you're interested in, the day you find them",
-    "Cancel any time — no lock-in",
-  ];
 
   return (
     <main className="flex min-h-screen flex-col text-[var(--foreground)]">
@@ -191,58 +190,76 @@ export default function Premium() {
               </div>
             </div>
 
-            <div className="w-full rounded-2xl border border-[var(--rule)] p-6">
-              {/* The price leads the card. Nobody decides to subscribe
-                  from a feature list alone, and a card that lists
-                  benefits and then asks for a card number without ever
-                  naming the amount reads as something to be wary of. */}
-              {priceState === "ready" && price?.amount != null && (
-                <p className="text-3xl font-medium tracking-tight">
-                  {price.currency} {price.amount}
-                  {price.interval && (
-                    <span className="text-base font-normal text-[var(--muted)]"> / {price.interval}</span>
-                  )}
-                </p>
-              )}
-              {priceState === "loading" && (
-                <div className="h-9 w-32 animate-pulse rounded-md bg-[var(--rule)]" aria-hidden />
-              )}
-
-              <ul className={`flex flex-col gap-2.5 ${priceState === "unavailable" ? "" : "mt-5"}`}>
-                {benefits.map((benefit) => (
-                  <li key={benefit} className="flex items-start gap-2.5 text-sm text-[var(--muted)]">
-                    <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--foreground)]" />
-                    {benefit}
-                  </li>
-                ))}
-              </ul>
-
-              {priceState === "unavailable" ? (
-                // Same key, same price id as Checkout — if the price
-                // can't be read, Subscribe cannot succeed. Showing the
-                // button anyway just moves the failure one click later.
-                <p className="mt-6 text-sm text-[var(--muted)]">
-                  Subscriptions are temporarily unavailable. Nothing has been charged — please try again
-                  shortly.
-                </p>
-              ) : (
-                <>
-                  <button
-                    onClick={startCheckout}
-                    disabled={starting || priceState === "loading"}
-                    className="mt-6 w-fit btn-gold px-8 py-3.5 text-sm disabled:opacity-50"
+            {/* The ladder. Only tiers marked visible in lib/tiers appear,
+                and only their built benefits are listed — anything in a
+                tier's `pending` array is deliberately not rendered,
+                because a plan page that advertises a feature which does
+                not exist is the fastest route to a chargeback in a
+                product whose whole pitch is that it is the honest one. */}
+            <div className="grid w-full gap-4 sm:grid-cols-3">
+              {TIERS.filter((t) => t.visible).map((t) => {
+                const paid = Boolean(t.priceEnv);
+                return (
+                  <div
+                    key={t.id}
+                    className={`flex flex-col p-5 ${t.id === "gold" ? "card-gold" : "card"}`}
                   >
-                    {starting ? "Opening checkout…" : "Subscribe"}
-                  </button>
-
-                  {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-
-                  <p className="mt-4 text-xs text-[var(--muted)]">
-                    Secure payment through Stripe. Your card details never touch {BRAND_CONFIG.appTitle}.
-                  </p>
-                </>
-              )}
+                    {t.id === "gold" && (
+                      <span className="label mb-2 w-fit rounded-full bg-[color-mix(in_srgb,var(--gold)_25%,transparent)] px-2.5 py-1">
+                        Most complete
+                      </span>
+                    )}
+                    <p className="display text-xl">{t.name}</p>
+                    <p className="display mt-1 text-2xl">
+                      {t.displayPrice}
+                      {paid && <span className="text-sm text-[var(--muted)]"> / month</span>}
+                    </p>
+                    <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">{t.tagline}</p>
+                    <ul className="mt-4 flex flex-1 flex-col gap-2">
+                      {t.benefits.map((b) => (
+                        <li key={b} className="flex items-start gap-2 text-xs text-[var(--muted)]">
+                          <span aria-hidden className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[var(--gold)]" />
+                          {b}
+                        </li>
+                      ))}
+                    </ul>
+                    {paid && (
+                      <button
+                        onClick={() => startCheckout(t.id)}
+                        disabled={starting || priceState === "unavailable"}
+                        className={`mt-5 w-full px-4 py-2.5 text-sm disabled:opacity-50 ${
+                          t.id === "gold" ? "btn-gold" : "btn-quiet"
+                        }`}
+                      >
+                        {starting ? "Starting…" : `Choose ${t.name}`}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
+
+            {/* The single-plan card that used to live here is gone: with
+                the ladder above it, the page offered two different
+                purchase UIs for the same subscription, and a checkout
+                screen that asks the same question twice is a checkout
+                screen people leave. What it did that the grid does not —
+                refuse to show a buy button when Stripe can't be reached —
+                is preserved below, because the price route and Checkout
+                use the same key and price id, so an unreadable price
+                guarantees a failed click. */}
+            {priceState === "unavailable" && (
+              <p className="w-full rounded-2xl border border-[var(--rule)] p-5 text-sm text-[var(--muted)]">
+                Subscriptions are temporarily unavailable. Nothing has been charged — please try
+                again shortly.
+              </p>
+            )}
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
+
+            <p className="text-xs text-[var(--muted)]">
+              Secure payment through Stripe. Your card details never touch {BRAND_CONFIG.appTitle}.
+            </p>
 
             <p className="text-xs text-[var(--muted)]">
               Subscriptions renew automatically until cancelled. Cancel any time from{" "}
