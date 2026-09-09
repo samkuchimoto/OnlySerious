@@ -12,9 +12,48 @@
 import { NextResponse } from "next/server";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
 
-export async function GET() {
+export async function GET(request: Request) {
   if (!isStripeConfigured()) {
     return NextResponse.json({ error: "billing is not configured" }, { status: 503 });
+  }
+
+  // ?list=1 — every active recurring price this key can see, with the
+  // product name attached. Previously this information only appeared
+  // inside an error path, which meant the only way to find out what the
+  // catalogue contained was to first break the configuration.
+  //
+  // Safe to serve openly: a price id is designed to be handed to a
+  // browser at checkout, and the amounts are the public list prices
+  // already shown on Stripe's own page. Nothing customer-specific and no
+  // key material is returned. It exists so wiring a new tier is a lookup
+  // rather than a copy-paste from a dashboard screenshot.
+  if (new URL(request.url).searchParams.get("list") === "1") {
+    try {
+      const res = await getStripe().prices.list({ limit: 50, active: true, expand: ["data.product"] });
+      return NextResponse.json({
+        prices: res.data
+          .filter((p) => p.recurring)
+          .map((p) => ({
+            id: p.id,
+            product:
+              typeof p.product === "object" && p.product && "name" in p.product
+                ? (p.product as { name?: string }).name ?? null
+                : null,
+            amount: p.unit_amount,
+            currency: p.currency.toUpperCase(),
+            interval: p.recurring?.interval ?? null,
+          })),
+      });
+    } catch (err) {
+      // Same rule as everywhere else in this file: type and code only,
+      // never Stripe's message, which can quote back the value it was
+      // given — and that value might be a secret key pasted by mistake.
+      const e = err as { type?: string; code?: string };
+      return NextResponse.json(
+        { error: "list failed", reason: e.type ?? e.code ?? "unknown" },
+        { status: 502 },
+      );
+    }
   }
 
   try {
