@@ -19,8 +19,16 @@ const DIFFERENTIATORS = [
     body: "No shirtless, swimwear, or underwear photos. Every upload is checked before it goes live.",
   },
   {
-    title: "Zero tolerance for solicitation",
-    body: "Commercial or transactional messages are flagged and reviewed — this isn't that kind of app.",
+    // Replaced a "zero tolerance for solicitation" claim. Two reasons.
+    // It led with what the app forbids rather than what it is for, which
+    // is a poor first impression in any market. And "transactional" is a
+    // Western reading: across much of Southeast Asia, supporting a
+    // partner's family is part of a serious commitment rather than a
+    // transaction, so the word quietly insults half the people the app
+    // exists to serve. The policy still lives in the Terms, where a
+    // policy belongs.
+    title: "Built for long-term, not for the weekend",
+    body: "Everyone here chooses marriage, a long-term relationship, or building a life together. There is no casual option.",
   },
 ];
 
@@ -43,7 +51,12 @@ export default function Home() {
       </div>
 
       <section className="relative flex min-h-[86vh] flex-col overflow-hidden">
-        <Image src="/images/hero-couple.png" alt="" fill priority className="object-cover" />
+        {/* A woman, not a couple. The paying audience is a Western man
+            deciding in four seconds whether the people he wants to meet
+            are on this app; a couple already together answers a question
+            he did not ask. Every competitor that converts this audience
+            leads with members, not with outcomes. */}
+        <Image src="/images/hero-woman.png" alt="" fill priority className="object-cover" />
         {/* Two stacked overlays: a mild wash across the whole photo so the
             nav stays legible without flattening the image, plus an extra
             bottom-weighted gradient concentrated where the headline sits.

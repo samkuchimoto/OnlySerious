@@ -252,21 +252,32 @@ export async function verifySelfie(selfieBase64: string, approvedPhotoUrl: strin
 // (Tinder/Bumble/Hinge all prohibit solicitation for commercial sexual
 // services in their own terms of service). Deliberately NOT built around
 // any one region's slang.
+// Narrowed deliberately. The previous list included "how much" and
+// "allowance", which are ordinary speech rather than solicitation:
+// "how much longer are you in Bangkok?" and "I send my mother an
+// allowance" are both normal messages between people meeting across
+// this particular border, and both were being flagged.
+//
+// That is not a tuning detail, it is a cultural one. Financial support
+// inside a relationship is read very differently in Southeast Asia than
+// in Western Europe or North America — in much of the region, supporting
+// a partner's family is an expected part of a serious commitment, not a
+// transaction. A filter that treats the vocabulary of support as the
+// vocabulary of prostitution imports a moral frame that does not travel,
+// and it does the damage silently, to exactly the members with the least
+// recourse.
+//
+// So what remains is only language that has no innocent reading: terms
+// that appear when someone is pricing an encounter. Everything
+// ambiguous is left to human reporting, which is the correct tool for
+// judgement calls.
 const SOLICITATION_TERMS = [
   "sugar daddy",
   "sugar baby",
-  "pay you",
-  "pay me",
-  "cash gift",
-  "allowance",
-  "how much",
   "your rate",
-  "escort",
+  "escort service",
   "outcall",
   "incall",
-  "venmo me",
-  "cashapp me",
-  "sponsor me",
 ];
 
 export interface TextModerationResult {
