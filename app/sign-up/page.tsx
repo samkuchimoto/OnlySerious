@@ -7,7 +7,15 @@ import { RecaptchaVerifier, linkWithPhoneNumber, type ConfirmationResult, type U
 import { FirebaseError } from "firebase/app";
 import { auth, db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
-import { MAX_BIO_LENGTH, MAX_HEADLINE_LENGTH, MIN_PROFILE_PHOTOS, type UserProfile } from "@/lib/types";
+import {
+  MAX_BIO_LENGTH,
+  MAX_HEADLINE_LENGTH,
+  MIN_PROFILE_PHOTOS,
+  RELATIONSHIP_INTENTS,
+  isRelationshipIntent,
+  type RelationshipIntent,
+  type UserProfile,
+} from "@/lib/types";
 import { PhotoUploader, type PhotoSubmission } from "@/components/PhotoUploader";
 import { WaitlistForm } from "@/components/WaitlistForm";
 import { PushPrimer } from "@/components/PushPrimer";
@@ -103,6 +111,9 @@ export default function SignUp() {
   const [country, setCountry] = useState("");
   const [headline, setHeadline] = useState("");
   const [bio, setBio] = useState("");
+  // Intent Commitment. No default value on purpose — a pre-selected goal
+  // is not a commitment, it is a value someone failed to notice.
+  const [relationshipIntent, setRelationshipIntent] = useState<RelationshipIntent | "">("");
   const [existingProfile, setExistingProfile] = useState<UserProfile | null>(null);
   const [photoSubmissions, setPhotoSubmissions] = useState<PhotoSubmission[]>([]);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -271,6 +282,7 @@ export default function SignUp() {
     setCountry(existingProfile.country);
     setHeadline(existingProfile.headline ?? "");
     setBio(existingProfile.bio ?? "");
+    setRelationshipIntent(existingProfile.relationshipIntent ?? "");
     setError(null);
     setStage("editing");
   }
@@ -292,6 +304,14 @@ export default function SignUp() {
       setError("Add a headline and a short bio.");
       return;
     }
+    // Checked here rather than only by disabling the button. The entire
+    // promise of the product is that everyone in the grid has declared a
+    // goal; a profile that reaches Firestore without one silently breaks
+    // that promise for every person who later sees it.
+    if (!isRelationshipIntent(relationshipIntent)) {
+      setError("Choose what you're looking for — every profile here states its intent.");
+      return;
+    }
 
     const editableFields = {
       displayName: displayName.trim(),
@@ -302,6 +322,7 @@ export default function SignUp() {
       country: country.trim(),
       headline: headline.trim(),
       bio: bio.trim(),
+      relationshipIntent,
     };
 
     setSubmitting(true);
@@ -605,6 +626,45 @@ export default function SignUp() {
                 />
               </label>
             </div>
+
+            {/* Intent Commitment. Three options, all of them serious —
+                there is deliberately no "casual" or "not sure yet" here.
+                That absence is the product: the competition's structural
+                weakness is not that it has casual users, it is that it
+                cannot tell which is which, so every serious woman on it
+                is answering messages from people with a different goal.
+                An app offering "not sure yet" has recreated that problem
+                while claiming to have solved it. */}
+            <fieldset className="flex flex-col gap-3">
+              <legend className="text-sm font-medium">What are you looking for?</legend>
+              <p className="-mt-1 text-xs text-[var(--muted)]">
+                Everyone here answers this, and it shows on your profile. It is the reason this
+                isn&apos;t like the other apps.
+              </p>
+              <div className="flex flex-col gap-2.5">
+                {RELATIONSHIP_INTENTS.map((option) => {
+                  const selected = relationshipIntent === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => setRelationshipIntent(option.value)}
+                      className={`rounded-[var(--radius)] border p-4 text-left transition-colors ${
+                        selected
+                          ? "border-[var(--gold)] bg-[color-mix(in_srgb,var(--gold)_12%,transparent)]"
+                          : "border-[var(--rule)] hover:border-[var(--gold)]"
+                      }`}
+                    >
+                      <span className="block text-sm font-semibold">{option.label}</span>
+                      <span className="mt-1 block text-xs leading-relaxed text-[var(--muted)]">
+                        {option.description}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
 
             <label className="flex flex-col gap-1.5 text-sm">
               Headline

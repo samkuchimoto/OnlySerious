@@ -59,6 +59,55 @@ export const LIKED_ME_REQUIRES_SUBSCRIPTION = true;
 export const MAX_HEADLINE_LENGTH = 120;
 export const MAX_BIO_LENGTH = 500;
 
+// ---------------------------------------------------------------------
+// Relationship intent.
+//
+// The blueprint's Step 1.2 — "Intent Commitment", mandatory selection,
+// casual options excluded. The exclusion is the entire mechanic and it
+// is worth being precise about why: ThaiFriendly's structural weakness
+// is not that it has casual users, it is that it has no way to tell
+// which is which, so every serious woman on it is answering messages
+// from people with a different goal. An app that lets someone pick
+// "not sure yet" has re-created that problem while claiming to solve it.
+//
+// So there is no casual option here — not a discouraged one, not one
+// that routes elsewhere. The list below is exhaustive, and a profile
+// without one of these values does not go live.
+// ---------------------------------------------------------------------
+
+export const RELATIONSHIP_INTENTS = [
+  {
+    value: "marriage",
+    label: "Seeking marriage",
+    description: "I want to marry. I would rather be clear about that now than in a year.",
+  },
+  {
+    value: "long_term",
+    label: "Long-term relationship",
+    description: "Something real and lasting. Marriage is possible if it becomes right.",
+  },
+  {
+    value: "life_partner",
+    label: "Relocation & life partner",
+    description: "I am open to building a life across borders, including moving country.",
+  },
+] as const;
+
+export type RelationshipIntent = (typeof RELATIONSHIP_INTENTS)[number]["value"];
+
+export const RELATIONSHIP_INTENT_VALUES = RELATIONSHIP_INTENTS.map((i) => i.value) as readonly string[];
+
+/** Server-side guard. The UI offers only these three, but the UI is not
+ *  a security boundary — a profile could otherwise be written with any
+ *  intent string, or none, straight through the client SDK. */
+export function isRelationshipIntent(value: unknown): value is RelationshipIntent {
+  return typeof value === "string" && RELATIONSHIP_INTENT_VALUES.includes(value);
+}
+
+export function intentLabel(value: string | undefined): string | null {
+  return RELATIONSHIP_INTENTS.find((i) => i.value === value)?.label ?? null;
+}
+
 export interface UserProfile {
   id: string; // Firebase Auth uid
   displayName: string;
@@ -69,6 +118,19 @@ export interface UserProfile {
   country: string;
   headline: string;
   bio: string;
+  // Mandatory from the Intent Commitment step. Optional in the type only
+  // because profiles created before this shipped do not have one — those
+  // are prompted to choose on next sign-in rather than being deleted.
+  // Everything written from here forward has it.
+  relationshipIntent?: RelationshipIntent;
+  // Lifestyle attributes (blueprint Step 1.4). Optional by design: these
+  // improve filtering and are worth asking for, but making them
+  // mandatory adds four screens between someone deciding to join and
+  // having a profile, which is where onboarding funnels die.
+  occupation?: string;
+  languages?: string[];
+  religion?: string;
+  children?: "none" | "have" | "want" | "open";
   // Mirrors the number linked to this account's Firebase Auth user via
   // linkWithPhoneNumber — required of everyone equally (not gender-
   // specific), as the low-friction traceability signal every major
