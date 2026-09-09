@@ -11,6 +11,7 @@
 import { NextResponse } from "next/server";
 import { verifyRequestUser, adminDb, adminAuth } from "@/lib/firebaseAdmin";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
+import { priceIdFor, tierById } from "@/lib/tiers";
 import type { UserProfile } from "@/lib/types";
 
 export async function POST(request: Request) {
@@ -21,6 +22,24 @@ export async function POST(request: Request) {
   const uid = await verifyRequestUser(request);
   if (!uid) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  // Which tier. Defaults to standard so an older client that posts no
+  // body keeps working exactly as before — this route shipped without a
+  // body and there may be a cached bundle out there still calling it.
+  const body = await request.json().catch(() => ({}));
+  const tier = tierById(typeof body?.tier === "string" ? body.tier : "standard");
+  // A hidden tier is not purchasable, and the check is here rather than
+  // only in the UI: `visible: false` is a product decision about what may
+  // be sold, so a crafted request must not be able to buy VIP either.
+  if (!tier || !tier.visible || !tier.priceEnv) {
+    return NextResponse.json({ error: "unknown tier" }, { status: 400 });
+  }
+  const priceId = priceIdFor(tier);
+  if (!priceId) {
+    // Unconfigured, not broken — 503 says "not available yet" rather
+    // than implying the request was malformed.
+    return NextResponse.json({ error: "tier not available" }, { status: 503 });
   }
 
   const userRef = adminDb.collection("users").doc(uid);
@@ -65,7 +84,7 @@ export async function POST(request: Request) {
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customerId,
-    line_items: [{ price: process.env.STRIPE_PRICE_ID as string, quantity: 1 }],
+    line_items: [{ price: priceId, quantity: 1 }],
     // Both point back into Browse: the whole reason someone subscribes is
     // to keep liking, so landing anywhere else adds a step.
     success_url: `${appUrl}/browse?subscribed=1`,
@@ -74,7 +93,9 @@ export async function POST(request: Request) {
     // Copied onto the Subscription itself, not just the Checkout Session —
     // later lifecycle events (renewal, cancellation, payment failure)
     // arrive as subscription events that never reference the session.
-    subscription_data: { metadata: { firebaseUid: uid } },
+    // Tier travels on the subscription so the webhook and any later
+    // lifecycle event know which plan this is without re-reading prices.
+    subscription_data: { metadata: { firebaseUid: uid, tier: tier.id } },
     allow_promotion_codes: true,
   });
 
