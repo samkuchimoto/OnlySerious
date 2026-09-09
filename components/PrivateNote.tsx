@@ -58,8 +58,8 @@ export function PrivateNote({ user, aboutUserId }: { user: User; aboutUserId: st
   if (loadFailed) return null;
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-dashed border-neutral-300 p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">Your private notes</p>
+    <div className="flex flex-col gap-2 rounded-xl border border-dashed border-[var(--rule)] p-4">
+      <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Your private notes</p>
       <textarea
         rows={2}
         placeholder="Only you can see this — where you matched, what you talked about, anything worth remembering."
@@ -69,9 +69,9 @@ export function PrivateNote({ user, aboutUserId }: { user: User; aboutUserId: st
           setStatus("idle");
         }}
         onBlur={save}
-        className="rounded-lg border border-neutral-200 px-3 py-2 text-sm focus:border-neutral-900 focus:outline-none"
+        className="rounded-lg border border-[var(--rule)] px-3 py-2 text-sm focus:border-[var(--foreground)] focus:outline-none"
       />
-      {status === "saved" && <p className="text-xs text-neutral-400">Saved.</p>}
+      {status === "saved" && <p className="text-xs text-[var(--muted)]">Saved.</p>}
       {status === "error" && <p className="text-xs text-red-600">Couldn&apos;t save — try again.</p>}
     </div>
   );

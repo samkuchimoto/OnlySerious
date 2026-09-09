@@ -15,6 +15,7 @@ import type { User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
+import { Mascot } from "@/components/Mascot";
 import { FREE_DAILY_LIKE_LIMIT, PAID_DAILY_LIKE_LIMIT, type UserProfile } from "@/lib/types";
 import { capture } from "@/lib/analytics";
 
@@ -99,28 +100,28 @@ export default function Premium() {
   ];
 
   return (
-    <main className="flex min-h-screen flex-col bg-white text-neutral-900">
+    <main className="flex min-h-screen flex-col text-[var(--foreground)]">
       <header className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-y-2 px-6 py-8">
         <Link href="/" className="text-lg font-semibold tracking-tight">
           {BRAND_CONFIG.appTitle}
         </Link>
-        <Link href="/browse" className="text-sm text-neutral-400 transition-colors hover:text-neutral-900">
+        <Link href="/browse" className="text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]">
           Back to browse
         </Link>
       </header>
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
-        {loading && <p className="text-sm text-neutral-400">Loading…</p>}
+        {loading && <p className="text-sm text-[var(--muted)]">Loading…</p>}
 
         {!loading && !user && (
           <div className="flex flex-col items-start gap-4 pt-8">
             <h1 className="text-3xl font-medium tracking-tight">Sign in first</h1>
-            <p className="max-w-md text-neutral-500">
+            <p className="max-w-md text-[var(--muted)]">
               You&apos;ll need an account before you can subscribe.
             </p>
             <Link
               href="/sign-up"
-              className="rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+              className="btn-gold px-8 py-3.5 text-sm"
             >
               Get started
             </Link>
@@ -135,12 +136,12 @@ export default function Premium() {
         {!loading && user && !profile && (
           <div className="flex flex-col items-start gap-4 pt-8">
             <h1 className="text-3xl font-medium tracking-tight">Finish your profile first</h1>
-            <p className="max-w-md text-neutral-500">
+            <p className="max-w-md text-[var(--muted)]">
               You&apos;ll be able to subscribe once your profile is set up.
             </p>
             <Link
               href="/sign-up"
-              className="rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+              className="btn-gold px-8 py-3.5 text-sm"
             >
               Create your profile
             </Link>
@@ -152,20 +153,20 @@ export default function Premium() {
         {!loading && user && profile?.subscriptionStatus === "active" && (
           <div className="flex flex-col items-start gap-4 pt-8">
             <h1 className="text-3xl font-medium tracking-tight">You&apos;re subscribed</h1>
-            <p className="max-w-md text-neutral-500">
+            <p className="max-w-md text-[var(--muted)]">
               You have {PAID_DAILY_LIKE_LIMIT} likes a day. Manage or cancel your subscription from
               Settings.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
                 href="/browse"
-                className="rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+                className="btn-gold px-8 py-3.5 text-sm"
               >
                 Back to browse
               </Link>
               <Link
                 href="/settings"
-                className="rounded-full border border-neutral-300 px-8 py-3.5 text-sm font-medium transition-colors hover:border-neutral-900"
+                className="rounded-full border border-[var(--rule)] px-8 py-3.5 text-sm font-medium transition-colors hover:border-[var(--foreground)]"
               >
                 Settings
               </Link>
@@ -175,15 +176,22 @@ export default function Premium() {
 
         {!loading && user && profile && profile.subscriptionStatus !== "active" && (
           <div className="flex flex-col items-start gap-8 pt-8">
-            <div className="flex flex-col gap-2">
-              <h1 className="text-3xl font-medium tracking-tight">More likes, every day</h1>
-              <p className="max-w-md text-neutral-500">
-                The free plan gives you {FREE_DAILY_LIKE_LIMIT} likes a day. If you&apos;re meeting
-                people you actually want to talk to, that runs out fast.
-              </p>
+            {/* Amara on the upgrade screen. This is the one page where a
+                warm face genuinely helps: an upgrade prompt with nothing
+                but a price and a benefit list reads as a toll gate, and
+                a toll gate is what people close. */}
+            <div className="flex items-center gap-5">
+              <Mascot pose="heart" size="md" className="shrink-0" />
+              <div className="flex flex-col gap-2">
+                <h1 className="display text-3xl">More likes, every day</h1>
+                <p className="max-w-md text-[var(--muted)]">
+                  The free plan gives you {FREE_DAILY_LIKE_LIMIT} likes a day. If you&apos;re meeting
+                  people you actually want to talk to, that runs out fast.
+                </p>
+              </div>
             </div>
 
-            <div className="w-full rounded-2xl border border-neutral-200 p-6">
+            <div className="w-full rounded-2xl border border-[var(--rule)] p-6">
               {/* The price leads the card. Nobody decides to subscribe
                   from a feature list alone, and a card that lists
                   benefits and then asks for a card number without ever
@@ -192,18 +200,18 @@ export default function Premium() {
                 <p className="text-3xl font-medium tracking-tight">
                   {price.currency} {price.amount}
                   {price.interval && (
-                    <span className="text-base font-normal text-neutral-500"> / {price.interval}</span>
+                    <span className="text-base font-normal text-[var(--muted)]"> / {price.interval}</span>
                   )}
                 </p>
               )}
               {priceState === "loading" && (
-                <div className="h-9 w-32 animate-pulse rounded-md bg-neutral-100" aria-hidden />
+                <div className="h-9 w-32 animate-pulse rounded-md bg-[var(--rule)]" aria-hidden />
               )}
 
               <ul className={`flex flex-col gap-2.5 ${priceState === "unavailable" ? "" : "mt-5"}`}>
                 {benefits.map((benefit) => (
-                  <li key={benefit} className="flex items-start gap-2.5 text-sm text-neutral-600">
-                    <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-neutral-900" />
+                  <li key={benefit} className="flex items-start gap-2.5 text-sm text-[var(--muted)]">
+                    <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--foreground)]" />
                     {benefit}
                   </li>
                 ))}
@@ -213,7 +221,7 @@ export default function Premium() {
                 // Same key, same price id as Checkout — if the price
                 // can't be read, Subscribe cannot succeed. Showing the
                 // button anyway just moves the failure one click later.
-                <p className="mt-6 text-sm text-neutral-500">
+                <p className="mt-6 text-sm text-[var(--muted)]">
                   Subscriptions are temporarily unavailable. Nothing has been charged — please try again
                   shortly.
                 </p>
@@ -222,23 +230,23 @@ export default function Premium() {
                   <button
                     onClick={startCheckout}
                     disabled={starting || priceState === "loading"}
-                    className="mt-6 w-fit rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
+                    className="mt-6 w-fit btn-gold px-8 py-3.5 text-sm disabled:opacity-50"
                   >
                     {starting ? "Opening checkout…" : "Subscribe"}
                   </button>
 
                   {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
-                  <p className="mt-4 text-xs text-neutral-400">
+                  <p className="mt-4 text-xs text-[var(--muted)]">
                     Secure payment through Stripe. Your card details never touch {BRAND_CONFIG.appTitle}.
                   </p>
                 </>
               )}
             </div>
 
-            <p className="text-xs text-neutral-400">
+            <p className="text-xs text-[var(--muted)]">
               Subscriptions renew automatically until cancelled. Cancel any time from{" "}
-              <Link href="/settings" className="underline hover:text-neutral-700">
+              <Link href="/settings" className="underline hover:text-[var(--foreground)]">
                 Settings
               </Link>
               .

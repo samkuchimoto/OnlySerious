@@ -76,7 +76,7 @@ export function AppNav({ meta }: AppNavProps) {
           <Link
             href="/premium"
             onClick={() => capture("upgrade_clicked", { source: `nav:${pathname}` })}
-            className="shrink-0 rounded-full bg-neutral-900 px-4 py-1.5 text-xs font-medium text-white transition-transform hover:scale-[1.03]"
+            className="shrink-0 btn-gold px-4 py-1.5 text-xs"
           >
             Upgrade
           </Link>
@@ -87,13 +87,13 @@ export function AppNav({ meta }: AppNavProps) {
           a single tidy line beats a second ragged one. The scrollbar is
           hidden because the row is short enough that it reads as a row,
           not as a scroller. */}
-      <div className="mt-3 flex items-center gap-x-4 overflow-x-auto whitespace-nowrap text-sm text-neutral-400 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mt-3 flex items-center gap-x-4 overflow-x-auto whitespace-nowrap text-sm text-[var(--muted)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {meta && <span className="shrink-0">{meta}</span>}
         {LINKS.filter((link) => link.href !== pathname).map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className="shrink-0 transition-colors hover:text-neutral-900"
+            className="shrink-0 transition-colors hover:text-[var(--foreground)]"
           >
             {link.label}
           </Link>

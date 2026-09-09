@@ -42,12 +42,12 @@ function fileToResizedBase64(file: File): Promise<string> {
 
 function StatusBadge({ status, reason }: { status: PhotoSubmission["moderationStatus"]; reason: string | null }) {
   if (status === "approved") {
-    return <span className="text-xs text-neutral-500">Approved</span>;
+    return <span className="text-xs text-[var(--muted)]">Approved</span>;
   }
   if (status === "rejected") {
     return <span className="text-xs text-red-600">Rejected{reason ? `: ${reason}` : ""}</span>;
   }
-  return <span className="text-xs text-neutral-500">Awaiting review</span>;
+  return <span className="text-xs text-[var(--muted)]">Awaiting review</span>;
 }
 
 export function PhotoUploader({
@@ -157,12 +157,12 @@ export function PhotoUploader({
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm font-medium text-neutral-700">
+      <p className="text-sm font-medium text-[var(--foreground)]">
         {approvedCount} of {MIN_PROFILE_PHOTOS} required photos approved
         {approvedCount < MIN_PROFILE_PHOTOS ? "" : " — you're set"}
       </p>
       {approvedCount < MAX_PROFILE_PHOTOS && (
-        <p className="-mt-2 text-xs text-neutral-400">
+        <p className="-mt-2 text-xs text-[var(--muted)]">
           Profiles with more photos get more messages — we recommend at least {MAX_PROFILE_PHOTOS}.
         </p>
       )}
@@ -184,7 +184,7 @@ export function PhotoUploader({
                 onClick={() => handleDelete(submission.id)}
                 disabled={deletingId === submission.id}
                 aria-label="Remove photo"
-                className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-neutral-900 text-xs text-white shadow disabled:opacity-50"
+                className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--foreground)] text-xs text-white shadow disabled:opacity-50"
               >
                 {deletingId === submission.id ? "…" : "✕"}
               </button>
@@ -205,12 +205,12 @@ export function PhotoUploader({
       </div>
 
       {!atLimit && (
-        <label className="w-fit cursor-pointer rounded-full border border-neutral-300 px-6 py-2.5 text-sm font-medium transition-colors hover:border-neutral-900">
+        <label className="w-fit cursor-pointer rounded-full border border-[var(--rule)] px-6 py-2.5 text-sm font-medium transition-colors hover:border-[var(--foreground)]">
           {uploading ? "Uploading…" : "Add a photo"}
           <input type="file" accept="image/*" className="hidden" disabled={uploading} onChange={handleFileChange} />
         </label>
       )}
-      {atLimit && <p className="text-sm text-neutral-400">Maximum of {MAX_PROFILE_PHOTOS} photos reached.</p>}
+      {atLimit && <p className="text-sm text-[var(--muted)]">Maximum of {MAX_PROFILE_PHOTOS} photos reached.</p>}
 
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>

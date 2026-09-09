@@ -129,23 +129,23 @@ export default function ProfileDetail() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-white text-neutral-900">
+    <main className="flex min-h-screen flex-col text-[var(--foreground)]">
       <header className="mx-auto flex w-full max-w-2xl items-center justify-between px-6 py-8">
-        <Link href="/browse" className="text-sm text-neutral-400 transition-colors hover:text-neutral-900">
+        <Link href="/browse" className="text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]">
           ← {BRAND_CONFIG.appTitle}
         </Link>
         {user && profile && user.uid !== profile.id && (
           <div className="relative">
             <button
               onClick={() => setMenuOpen((v) => !v)}
-              className="rounded-full px-2 py-1 text-lg text-neutral-400 hover:text-neutral-900"
+              className="rounded-full px-2 py-1 text-lg text-[var(--muted)] hover:text-[var(--foreground)]"
               aria-label="More options"
             >
               •••
             </button>
             {menuOpen && (
-              <div className="absolute right-0 z-10 mt-1 w-40 rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
-                <button onClick={handleHide} className="block w-full px-4 py-2 text-left text-sm hover:bg-neutral-50">
+              <div className="absolute right-0 z-10 mt-1 w-40 rounded-lg border border-[var(--rule)] bg-white py-1 shadow-lg">
+                <button onClick={handleHide} className="block w-full px-4 py-2 text-left text-sm hover:bg-[color-mix(in_srgb,var(--gold)_7%,var(--background))]">
                   Not interested
                 </button>
                 <button
@@ -153,11 +153,11 @@ export default function ProfileDetail() {
                     setMenuOpen(false);
                     setReportOpen(true);
                   }}
-                  className="block w-full px-4 py-2 text-left text-sm hover:bg-neutral-50"
+                  className="block w-full px-4 py-2 text-left text-sm hover:bg-[color-mix(in_srgb,var(--gold)_7%,var(--background))]"
                 >
                   Report
                 </button>
-                <button onClick={handleBlock} className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-neutral-50">
+                <button onClick={handleBlock} className="block w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-[color-mix(in_srgb,var(--gold)_7%,var(--background))]">
                   Block
                 </button>
               </div>
@@ -167,26 +167,26 @@ export default function ProfileDetail() {
       </header>
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
-        {loading && <p className="text-sm text-neutral-400">Loading…</p>}
-        {!loading && !profile && <p className="text-sm text-neutral-500">This profile isn&apos;t available.</p>}
+        {loading && <p className="text-sm text-[var(--muted)]">Loading…</p>}
+        {!loading && !profile && <p className="text-sm text-[var(--muted)]">This profile isn&apos;t available.</p>}
 
-        {actionMessage && <p className="mb-4 text-sm text-neutral-600">{actionMessage}</p>}
+        {actionMessage && <p className="mb-4 text-sm text-[var(--muted)]">{actionMessage}</p>}
 
         {reportOpen && (
-          <div className="mb-6 flex flex-col gap-2 rounded-xl border border-neutral-200 p-5">
+          <div className="mb-6 flex flex-col gap-2 rounded-xl border border-[var(--rule)] p-5">
             <p className="text-sm font-medium">Why are you reporting this profile?</p>
             <div className="flex flex-wrap gap-2">
               {REPORT_REASONS.map((reason) => (
                 <button
                   key={reason}
                   onClick={() => handleReport(reason)}
-                  className="rounded-full border border-neutral-300 px-4 py-2 text-sm transition-colors hover:border-neutral-900"
+                  className="rounded-full border border-[var(--rule)] px-4 py-2 text-sm transition-colors hover:border-[var(--foreground)]"
                 >
                   {reason}
                 </button>
               ))}
             </div>
-            <button onClick={() => setReportOpen(false)} className="mt-1 w-fit text-xs text-neutral-400 underline">
+            <button onClick={() => setReportOpen(false)} className="mt-1 w-fit text-xs text-[var(--muted)] underline">
               Cancel
             </button>
           </div>
@@ -202,7 +202,7 @@ export default function ProfileDetail() {
                 <VerifiedBadge approvedPhotoCount={profile.photos.length} selfieVerified={profile.selfieVerified} />
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-sm text-neutral-400">
+                <span className="text-sm text-[var(--muted)]">
                   {profile.city}
                   {profile.country ? `, ${profile.country}` : ""}
                 </span>
@@ -212,7 +212,7 @@ export default function ProfileDetail() {
                   return (
                     <span
                       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        activity.isOnline ? "bg-green-50 text-green-700" : "bg-neutral-100 text-neutral-500"
+                        activity.isOnline ? "bg-green-50 text-green-700" : "bg-[var(--rule)] text-[var(--muted)]"
                       }`}
                     >
                       {activity.isOnline && <span className="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden />}
@@ -228,12 +228,12 @@ export default function ProfileDetail() {
             {(profile.headline || profile.bio) && (
               <div className="flex flex-col gap-1.5">
                 {profile.headline && <p className="text-lg font-medium">{profile.headline}</p>}
-                {profile.bio && <p className="text-sm text-neutral-600">{profile.bio}</p>}
+                {profile.bio && <p className="text-sm text-[var(--muted)]">{profile.bio}</p>}
               </div>
             )}
 
             {profile.photos.map((photo) => (
-              <div key={photo.id} className="aspect-[4/5] w-full overflow-hidden rounded-2xl bg-neutral-100">
+              <div key={photo.id} className="aspect-[4/5] w-full overflow-hidden rounded-2xl bg-[var(--rule)]">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={photo.url} alt="" className="h-full w-full object-cover" />
               </div>
@@ -245,14 +245,14 @@ export default function ProfileDetail() {
                 resets, and no way to act on it while looking at the exact
                 person you wanted to like. */}
             {user && user.uid !== profile.id && likeStatus === "limit-reached" && (
-              <div className="flex w-fit flex-col items-start gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
-                <p className="text-sm text-neutral-600">
+              <div className="flex w-fit flex-col items-start gap-2 rounded-2xl border border-[var(--rule)] bg-[color-mix(in_srgb,var(--gold)_7%,var(--background))] p-5">
+                <p className="text-sm text-[var(--muted)]">
                   You&apos;re out of likes for today. They reset tomorrow.
                 </p>
                 <Link
                   href="/premium"
                   onClick={() => capture("upgrade_clicked", { source: "profile_limit" })}
-                  className="rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+                  className="btn-gold px-6 py-2.5 text-sm"
                 >
                   Like {profile.displayName} now
                 </Link>
@@ -265,10 +265,10 @@ export default function ProfileDetail() {
                 disabled={likeStatus === "sending" || likeStatus === "liked" || likeStatus === "matched"}
                 className={`w-fit rounded-full border px-8 py-3.5 text-sm font-medium transition-colors disabled:cursor-default ${
                   likeStatus === "matched"
-                    ? "border-neutral-900 bg-neutral-900 text-white"
+                    ? "border-[var(--foreground)] bg-[var(--foreground)] text-white"
                     : likeStatus === "liked"
-                      ? "border-neutral-300 text-neutral-400"
-                      : "border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white"
+                      ? "border-[var(--rule)] text-[var(--muted)]"
+                      : "border-[var(--foreground)] text-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white"
                 }`}
               >
                 {likeStatus === "matched"

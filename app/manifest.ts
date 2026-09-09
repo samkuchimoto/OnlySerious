@@ -1,5 +1,5 @@
 // /app/manifest.ts
-// Web App Manifest — what makes OSThai installable on an Android home
+// Web App Manifest — what makes AmoraAsia installable on an Android home
 // screen, and the prerequisite for the Play Store listing (a Trusted Web
 // Activity is a thin Android shell around exactly this).
 //
@@ -25,9 +25,9 @@ export default function manifest(): MetadataRoute.Manifest {
     // it reads as an app rather than a bookmark.
     display: "standalone",
     orientation: "portrait",
-    background_color: "#ffffff",
+    background_color: "#fff8f0",
     // Tints the Android status bar to match the app's own ink colour.
-    theme_color: "#171717",
+    theme_color: "#1c130e",
     categories: ["social", "lifestyle"],
     lang: "en",
     dir: "ltr",

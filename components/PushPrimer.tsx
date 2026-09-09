@@ -34,20 +34,20 @@ export function PushPrimer({ user, alreadyEnabled }: { user: User; alreadyEnable
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-neutral-200 p-5">
-      <p className="text-sm font-medium text-neutral-900">Don&apos;t miss when someone likes you</p>
-      <p className="text-sm text-neutral-500">
+    <div className="flex flex-col gap-2 rounded-xl border border-[var(--rule)] p-5">
+      <p className="text-sm font-medium text-[var(--foreground)]">Don&apos;t miss when someone likes you</p>
+      <p className="text-sm text-[var(--muted)]">
         Turn on notifications so you know the moment someone likes or messages you.
       </p>
       <div className="mt-1 flex items-center gap-4">
         <button
           onClick={handleEnable}
           disabled={status === "enabling"}
-          className="w-fit rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
+          className="w-fit btn-gold px-5 py-2 text-sm disabled:opacity-50"
         >
           {status === "enabling" ? "…" : "Turn on notifications"}
         </button>
-        <button type="button" onClick={() => setStatus("dismissed")} className="text-sm text-neutral-400 hover:text-neutral-900">
+        <button type="button" onClick={() => setStatus("dismissed")} className="text-sm text-[var(--muted)] hover:text-[var(--foreground)]">
           Not now
         </button>
       </div>

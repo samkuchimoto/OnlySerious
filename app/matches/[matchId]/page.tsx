@@ -149,9 +149,9 @@ export default function MatchChat() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-white text-neutral-900">
+    <main className="flex min-h-screen flex-col text-[var(--foreground)]">
       <header className="mx-auto flex w-full max-w-2xl items-center gap-4 px-6 py-6">
-        <Link href="/matches" className="text-sm text-neutral-400 transition-colors hover:text-neutral-900">
+        <Link href="/matches" className="text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]">
           ← {BRAND_CONFIG.appTitle}
         </Link>
         {/* Name plus freshness, as ThaiFriendly does in its chat header.
@@ -168,7 +168,7 @@ export default function MatchChat() {
               const activity = getActivityStatus(other.lastActiveAt);
               if (!activity) return null;
               return (
-                <span className="flex items-center gap-1.5 text-xs text-neutral-400">
+                <span className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
                   {activity.isOnline && (
                     <span className="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden />
                   )}
@@ -181,13 +181,13 @@ export default function MatchChat() {
       </header>
 
       <section className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pb-6">
-        {loading && <p className="text-sm text-neutral-400">Loading…</p>}
+        {loading && <p className="text-sm text-[var(--muted)]">Loading…</p>}
         {!loading && !user && (
           <Link href="/sign-up" className="text-sm underline underline-offset-2">
             Sign in to view this conversation
           </Link>
         )}
-        {!loading && notAllowed && <p className="text-sm text-neutral-500">This conversation isn&apos;t available.</p>}
+        {!loading && notAllowed && <p className="text-sm text-[var(--muted)]">This conversation isn&apos;t available.</p>}
         {!loading && user && !notAllowed && !match && error && (
           <p className="text-sm text-red-600">
             {error}{" "}
@@ -201,7 +201,7 @@ export default function MatchChat() {
           <>
             <div className="flex flex-1 flex-col gap-2 overflow-y-auto py-4">
               {messages.length === 0 && (
-                <p className="text-sm text-neutral-400">
+                <p className="text-sm text-[var(--muted)]">
                   You matched — say something about {other?.displayName ?? "their"} profile to start.
                 </p>
               )}
@@ -211,7 +211,7 @@ export default function MatchChat() {
                   <div key={message.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
                     <div
                       className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${
-                        isMine ? "bg-neutral-900 text-white" : "bg-neutral-100 text-neutral-900"
+                        isMine ? "bg-[var(--foreground)] text-white" : "bg-[var(--rule)] text-[var(--foreground)]"
                       }`}
                     >
                       {message.text}
@@ -230,24 +230,24 @@ export default function MatchChat() {
                 Says what's happening and offers the way out, rather than
                 just greying the button. */}
             {onCooldown && (
-              <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
-                <span className="text-sm text-neutral-600">
+              <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-[var(--rule)] bg-[color-mix(in_srgb,var(--gold)_7%,var(--background))] px-4 py-3">
+                <span className="text-sm text-[var(--muted)]">
                   Next message in{" "}
-                  <span className="font-medium tabular-nums text-neutral-900">
+                  <span className="font-medium tabular-nums text-[var(--foreground)]">
                     {formatCountdown(cooldownRemaining)}
                   </span>
                 </span>
                 <Link
                   href="/premium"
                   onClick={() => capture("upgrade_clicked", { source: "message_cooldown" })}
-                  className="text-sm font-medium text-neutral-900 underline underline-offset-2"
+                  className="text-sm font-medium text-[var(--foreground)] underline underline-offset-2"
                 >
                   Message without waiting
                 </Link>
               </div>
             )}
 
-            <form onSubmit={handleSend} className="flex gap-2 border-t border-neutral-100 pt-4">
+            <form onSubmit={handleSend} className="flex gap-2 border-t border-[var(--rule)] pt-4">
               <input
                 type="text"
                 value={draft}
@@ -256,12 +256,12 @@ export default function MatchChat() {
                 // Left editable during the cooldown on purpose: someone
                 // can compose their reply while they wait, and only the
                 // send is held back.
-                className="flex-1 rounded-full border border-neutral-300 px-4 py-2.5 text-sm focus:border-neutral-900 focus:outline-none"
+                className="flex-1 rounded-full border border-[var(--rule)] px-4 py-2.5 text-sm focus:border-[var(--foreground)] focus:outline-none"
               />
               <button
                 type="submit"
                 disabled={sending || !draft.trim() || onCooldown}
-                className="rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+                className="rounded-full bg-[var(--foreground)] px-6 py-2.5 text-sm font-medium text-white disabled:opacity-50"
               >
                 {onCooldown ? formatCountdown(cooldownRemaining) : "Send"}
               </button>

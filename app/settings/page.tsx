@@ -115,14 +115,14 @@ export default function Settings() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-white text-neutral-900">
+    <main className="flex min-h-screen flex-col text-[var(--foreground)]">
       <AppNav />
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
         <h1 className="pt-8 text-3xl font-medium tracking-tight">Settings</h1>
         {!loading && !profile && error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
-        {loading && <p className="mt-4 text-sm text-neutral-400">Loading…</p>}
+        {loading && <p className="mt-4 text-sm text-[var(--muted)]">Loading…</p>}
 
         {!loading && !user && (
           <Link href="/sign-up" className="mt-4 block text-sm underline underline-offset-2">
@@ -132,20 +132,20 @@ export default function Settings() {
 
         {!loading && user && (
           <div className="mt-8 flex flex-col gap-8">
-            <div className="flex flex-col gap-3 border-b border-neutral-100 pb-8">
-              <h2 className="text-sm font-medium text-neutral-700">Account</h2>
+            <div className="flex flex-col gap-3 border-b border-[var(--rule)] pb-8">
+              <h2 className="text-sm font-medium text-[var(--foreground)]">Account</h2>
               <button
                 onClick={() => signOutUser()}
-                className="w-fit text-sm text-neutral-600 underline underline-offset-2 hover:text-neutral-900"
+                className="w-fit text-sm text-[var(--muted)] underline underline-offset-2 hover:text-[var(--foreground)]"
               >
                 Sign out
               </button>
             </div>
 
             {profile && (
-              <div className="flex flex-col gap-3 border-b border-neutral-100 pb-8">
-                <h2 className="text-sm font-medium text-neutral-700">Profile visibility</h2>
-                <p className="text-sm text-neutral-500">
+              <div className="flex flex-col gap-3 border-b border-[var(--rule)] pb-8">
+                <h2 className="text-sm font-medium text-[var(--foreground)]">Profile visibility</h2>
+                <p className="text-sm text-[var(--muted)]">
                   {profile.paused
                     ? "Your profile is paused — no one can see it or like you right now."
                     : "Your profile is visible to other members whenever it's active."}
@@ -153,7 +153,7 @@ export default function Settings() {
                 <button
                   onClick={togglePause}
                   disabled={pausing}
-                  className="w-fit rounded-full border border-neutral-900 px-5 py-2 text-sm font-medium transition-colors hover:bg-neutral-900 hover:text-white disabled:opacity-50"
+                  className="w-fit rounded-full border border-[var(--foreground)] px-5 py-2 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-white disabled:opacity-50"
                 >
                   {pausing ? "…" : profile.paused ? "Unpause profile" : "Pause profile"}
                 </button>
@@ -166,9 +166,9 @@ export default function Settings() {
                 without a stripeCustomerId the portal route has nothing to
                 open and would just 404. */}
             {profile && (
-              <div className="flex flex-col gap-3 border-b border-neutral-100 pb-8">
-                <h2 className="text-sm font-medium text-neutral-700">Subscription</h2>
-                <p className="text-sm text-neutral-500">
+              <div className="flex flex-col gap-3 border-b border-[var(--rule)] pb-8">
+                <h2 className="text-sm font-medium text-[var(--foreground)]">Subscription</h2>
+                <p className="text-sm text-[var(--muted)]">
                   {profile.subscriptionStatus === "active"
                     ? `You have ${PAID_DAILY_LIKE_LIMIT} likes a day.`
                     : profile.subscriptionStatus === "past_due"
@@ -178,7 +178,7 @@ export default function Settings() {
                 <button
                   onClick={profile.stripeCustomerId ? openBillingPortal : startCheckout}
                   disabled={billingLoading}
-                  className="w-fit rounded-full border border-neutral-900 px-5 py-2 text-sm font-medium transition-colors hover:bg-neutral-900 hover:text-white disabled:opacity-50"
+                  className="w-fit rounded-full border border-[var(--foreground)] px-5 py-2 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-white disabled:opacity-50"
                 >
                   {billingLoading
                     ? "…"
@@ -191,47 +191,47 @@ export default function Settings() {
             )}
 
             {user && (
-              <div className="flex flex-col gap-3 border-b border-neutral-100 pb-8">
-                <h2 className="text-sm font-medium text-neutral-700">Notifications</h2>
+              <div className="flex flex-col gap-3 border-b border-[var(--rule)] pb-8">
+                <h2 className="text-sm font-medium text-[var(--foreground)]">Notifications</h2>
                 <NotificationSettings user={user} />
               </div>
             )}
 
             {user && profile && (
-              <div className="flex flex-col gap-3 border-b border-neutral-100 pb-8">
-                <h2 className="text-sm font-medium text-neutral-700">Verification</h2>
+              <div className="flex flex-col gap-3 border-b border-[var(--rule)] pb-8">
+                <h2 className="text-sm font-medium text-[var(--foreground)]">Verification</h2>
                 <SelfieVerification user={user} alreadyVerified={!!profile.selfieVerified} />
               </div>
             )}
 
-            <div className="flex flex-col gap-3 border-b border-neutral-100 pb-8">
-              <h2 className="text-sm font-medium text-neutral-700">Legal</h2>
+            <div className="flex flex-col gap-3 border-b border-[var(--rule)] pb-8">
+              <h2 className="text-sm font-medium text-[var(--foreground)]">Legal</h2>
               <div className="flex flex-col gap-1.5 text-sm">
-                <Link href="/terms" className="w-fit underline underline-offset-2 text-neutral-600 hover:text-neutral-900">
+                <Link href="/terms" className="w-fit underline underline-offset-2 text-[var(--muted)] hover:text-[var(--foreground)]">
                   Terms of Service
                 </Link>
-                <Link href="/privacy" className="w-fit underline underline-offset-2 text-neutral-600 hover:text-neutral-900">
+                <Link href="/privacy" className="w-fit underline underline-offset-2 text-[var(--muted)] hover:text-[var(--foreground)]">
                   Privacy Policy
                 </Link>
-                <Link href="/community-guidelines" className="w-fit underline underline-offset-2 text-neutral-600 hover:text-neutral-900">
+                <Link href="/community-guidelines" className="w-fit underline underline-offset-2 text-[var(--muted)] hover:text-[var(--foreground)]">
                   Community Guidelines
                 </Link>
-                <Link href="/safety" className="w-fit underline underline-offset-2 text-neutral-600 hover:text-neutral-900">
+                <Link href="/safety" className="w-fit underline underline-offset-2 text-[var(--muted)] hover:text-[var(--foreground)]">
                   Dating Safety
                 </Link>
               </div>
             </div>
 
             {user && (
-              <div className="flex flex-col gap-3 border-b border-neutral-100 pb-8">
-                <h2 className="text-sm font-medium text-neutral-700">Blocked &amp; hidden</h2>
+              <div className="flex flex-col gap-3 border-b border-[var(--rule)] pb-8">
+                <h2 className="text-sm font-medium text-[var(--foreground)]">Blocked &amp; hidden</h2>
                 <BlockedHiddenList user={user} />
               </div>
             )}
 
             <div className="flex flex-col gap-3">
               <h2 className="text-sm font-medium text-red-600">Delete account</h2>
-              <p className="text-sm text-neutral-500">
+              <p className="text-sm text-[var(--muted)]">
                 Permanently removes your profile, photos, and message history. This can&apos;t be undone.
               </p>
               {error && <p className="text-sm text-red-600">{error}</p>}
@@ -253,7 +253,7 @@ export default function Settings() {
                   </button>
                   <button
                     onClick={() => setConfirmingDelete(false)}
-                    className="text-sm text-neutral-400 hover:text-neutral-900"
+                    className="text-sm text-[var(--muted)] hover:text-[var(--foreground)]"
                   >
                     Cancel
                   </button>

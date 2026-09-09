@@ -6,6 +6,7 @@ import type { User } from "firebase/auth";
 import { watchAuthState } from "@/lib/firebase";
 import { AppNav } from "@/components/AppNav";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { MascotEmptyState } from "@/components/Mascot";
 import { getActivityStatus } from "@/lib/activity";
 import { capture } from "@/lib/analytics";
 
@@ -111,13 +112,13 @@ export default function LikedMe() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-white text-neutral-900">
+    <main className="flex min-h-screen flex-col text-[var(--foreground)]">
       <AppNav />
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
         <h1 className="pt-8 text-3xl font-medium tracking-tight">Likes</h1>
 
-        {loading && <p className="mt-4 text-sm text-neutral-400">Loading…</p>}
+        {loading && <p className="mt-4 text-sm text-[var(--muted)]">Loading…</p>}
 
         {!loading && !user && (
           <Link href="/sign-up" className="mt-4 block text-sm underline underline-offset-2">
@@ -135,7 +136,11 @@ export default function LikedMe() {
         )}
 
         {!loading && user && !loadError && count === 0 && (
-          <p className="mt-4 text-sm text-neutral-500">No likes yet — check back soon.</p>
+          <MascotEmptyState
+            pose="sitting"
+            title="No likes yet"
+            body="When someone likes you, they appear here. Profiles with more photos and a filled-in headline get seen more often."
+          />
         )}
 
         {/* The paywall. The count is real and matches what unlocking
@@ -145,18 +150,18 @@ export default function LikedMe() {
             not blurred photos. */}
         {!loading && user && !loadError && locked && count > 0 && (
           <div className="mt-8 flex flex-col gap-6">
-            <div className="flex flex-col items-start gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-6">
+            <div className="flex flex-col items-start gap-3 rounded-2xl border border-[var(--rule)] bg-[color-mix(in_srgb,var(--gold)_7%,var(--background))] p-6">
               <p className="text-xl font-medium tracking-tight">
                 {count === 1 ? "1 person likes you" : `${count} people like you`}
               </p>
-              <p className="max-w-md text-sm text-neutral-500">
+              <p className="max-w-md text-sm text-[var(--muted)]">
                 They&apos;ve already said yes. Subscribe to see who they are and like them back — a
                 match is one tap away.
               </p>
               <Link
                 href="/premium"
                 onClick={() => capture("upgrade_clicked", { source: "liked_me_paywall" })}
-                className="rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+                className="btn-gold px-6 py-2.5 text-sm"
               >
                 See who likes you
               </Link>
@@ -166,9 +171,9 @@ export default function LikedMe() {
               {Array.from({ length: Math.min(count, 6) }).map((_, i) => (
                 <div
                   key={i}
-                  className="flex aspect-square items-center justify-center rounded-xl bg-neutral-100"
+                  className="flex aspect-square items-center justify-center rounded-xl bg-[var(--rule)]"
                 >
-                  <span className="text-2xl text-neutral-300">?</span>
+                  <span className="text-2xl text-[var(--muted)]">?</span>
                 </div>
               ))}
             </div>
@@ -181,11 +186,11 @@ export default function LikedMe() {
               const status = backStatus[entry.likerId] ?? "idle";
               const activity = getActivityStatus(entry.lastActiveAt ?? undefined);
               return (
-                <div key={entry.id} className="flex flex-col gap-3 rounded-xl border border-neutral-200 p-5">
+                <div key={entry.id} className="flex flex-col gap-3 rounded-xl border border-[var(--rule)] p-5">
                   <div className="flex items-center gap-3">
                     <Link
                       href={`/profile/${entry.likerId}`}
-                      className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-neutral-100"
+                      className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-[var(--rule)]"
                     >
                       {entry.photoUrl && (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -198,26 +203,26 @@ export default function LikedMe() {
                         className="flex flex-wrap items-center gap-1.5 text-sm font-medium"
                       >
                         {entry.displayName}, {calculateAge(entry.birthdate)}
-                        <span className="text-xs font-normal text-neutral-400">{entry.city}</span>
+                        <span className="text-xs font-normal text-[var(--muted)]">{entry.city}</span>
                         <VerifiedBadge
                           approvedPhotoCount={entry.photoCount}
                           selfieVerified={entry.selfieVerified}
                         />
                       </Link>
-                      {entry.headline && <span className="text-xs text-neutral-500">{entry.headline}</span>}
-                      {activity && <span className="text-xs text-neutral-400">{activity.label}</span>}
+                      {entry.headline && <span className="text-xs text-[var(--muted)]">{entry.headline}</span>}
+                      {activity && <span className="text-xs text-[var(--muted)]">{activity.label}</span>}
                     </div>
                   </div>
 
                   {status === "limit-reached" ? (
                     <div className="flex flex-col items-start gap-1.5">
-                      <p className="text-sm text-neutral-600">
+                      <p className="text-sm text-[var(--muted)]">
                         You&apos;re out of likes for today — and {entry.displayName} already likes you.
                       </p>
                       <Link
                         href="/premium"
                         onClick={() => capture("upgrade_clicked", { source: "liked_me_limit" })}
-                        className="w-fit rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+                        className="w-fit btn-gold px-5 py-2 text-sm"
                       >
                         Match with {entry.displayName} now
                       </Link>
@@ -228,8 +233,8 @@ export default function LikedMe() {
                       disabled={status === "sending" || status === "matched"}
                       className={`w-fit rounded-full border px-5 py-2 text-sm font-medium transition-colors disabled:cursor-default ${
                         status === "matched"
-                          ? "border-neutral-900 bg-neutral-900 text-white"
-                          : "border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white"
+                          ? "border-[var(--foreground)] bg-[var(--foreground)] text-white"
+                          : "border-[var(--foreground)] text-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white"
                       }`}
                     >
                       {status === "matched"

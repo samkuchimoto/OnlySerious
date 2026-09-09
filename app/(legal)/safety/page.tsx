@@ -32,9 +32,9 @@ export default function Safety() {
 
       <div className="mt-2 flex flex-col gap-4">
         {SECTIONS.map((section) => (
-          <div key={section.title} className="rounded-xl border border-neutral-200 p-5">
-            <h2 className="text-base font-medium text-neutral-900">{section.title}</h2>
-            <ul className="mt-2 list-disc pl-5 text-sm leading-relaxed text-neutral-700">
+          <div key={section.title} className="rounded-xl border border-[var(--rule)] p-5">
+            <h2 className="text-base font-medium text-[var(--foreground)]">{section.title}</h2>
+            <ul className="mt-2 list-disc pl-5 text-sm leading-relaxed text-[var(--foreground)]">
               {section.items.map((item) => (
                 <li key={item}>{item}</li>
               ))}
@@ -42,25 +42,25 @@ export default function Safety() {
           </div>
         ))}
 
-        <div className="rounded-xl border border-neutral-200 p-5">
-          <h2 className="text-base font-medium text-neutral-900">If something goes wrong</h2>
-          <p className="mt-2 text-sm leading-relaxed text-neutral-700">
+        <div className="rounded-xl border border-[var(--rule)] p-5">
+          <h2 className="text-base font-medium text-[var(--foreground)]">If something goes wrong</h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--foreground)]">
             Report and Block are available on every profile (look for the ••• menu) and take effect immediately —
             Block also removes that person from your Browse right away. If you&apos;re ever in immediate danger,
             contact local emergency services first; reporting to us afterward helps us act on the account.
           </p>
         </div>
 
-        <div className="rounded-xl border border-neutral-200 p-5">
-          <h2 className="text-base font-medium text-neutral-900">More on this</h2>
+        <div className="rounded-xl border border-[var(--rule)] p-5">
+          <h2 className="text-base font-medium text-[var(--foreground)]">More on this</h2>
           <div className="mt-2 flex flex-col gap-1.5 text-sm">
-            <Link href="/community-guidelines" className="w-fit text-neutral-600 underline underline-offset-2 hover:text-neutral-900">
+            <Link href="/community-guidelines" className="w-fit text-[var(--muted)] underline underline-offset-2 hover:text-[var(--foreground)]">
               Community Guidelines
             </Link>
-            <Link href="/terms" className="w-fit text-neutral-600 underline underline-offset-2 hover:text-neutral-900">
+            <Link href="/terms" className="w-fit text-[var(--muted)] underline underline-offset-2 hover:text-[var(--foreground)]">
               Terms of Service
             </Link>
-            <Link href="/privacy" className="w-fit text-neutral-600 underline underline-offset-2 hover:text-neutral-900">
+            <Link href="/privacy" className="w-fit text-[var(--muted)] underline underline-offset-2 hover:text-[var(--foreground)]">
               Privacy Policy
             </Link>
           </div>

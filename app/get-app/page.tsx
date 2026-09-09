@@ -18,6 +18,7 @@ import { BRAND_CONFIG } from "@/config/brand";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { ApkDownloadLink } from "@/components/ApkDownloadLink";
 import { InAppBrowserWarning } from "@/components/InAppBrowserWarning";
+import { Mascot } from "@/components/Mascot";
 
 export const metadata: Metadata = {
   title: `Get the ${BRAND_CONFIG.appTitle} app`,
@@ -34,12 +35,12 @@ export default function GetApp() {
   const playUrl = process.env.NEXT_PUBLIC_PLAY_STORE_URL;
 
   return (
-    <main className="flex min-h-screen flex-col bg-white text-neutral-900">
+    <main className="flex min-h-screen flex-col text-[var(--foreground)]">
       <header className="mx-auto flex w-full max-w-2xl items-center justify-between px-6 py-8">
         <Link href="/" className="text-lg font-semibold tracking-tight">
           {BRAND_CONFIG.appTitle}
         </Link>
-        <Link href="/browse" className="text-sm text-neutral-400 transition-colors hover:text-neutral-900">
+        <Link href="/browse" className="text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]">
           Open in browser
         </Link>
       </header>
@@ -55,18 +56,21 @@ export default function GetApp() {
           <InAppBrowserWarning context="install" />
         </div>
 
-        <h1 className="text-3xl font-medium tracking-tight sm:text-4xl">
-          Get {BRAND_CONFIG.appTitle} on your phone
-        </h1>
-        <p className="mt-3 max-w-md text-neutral-500">
+        <div className="flex items-center gap-5">
+          <Mascot pose="heart" size="md" className="shrink-0" />
+          <h1 className="display text-3xl sm:text-4xl">
+            Get {BRAND_CONFIG.appTitle} on your phone
+          </h1>
+        </div>
+        <p className="mt-3 max-w-md text-[var(--muted)]">
           {BRAND_CONFIG.appTitle} installs straight from this page. It takes one tap and there&apos;s
           nothing to download.
         </p>
 
         <ul className="mt-8 flex flex-col gap-2.5">
           {BENEFITS.map((benefit) => (
-            <li key={benefit} className="flex items-start gap-2.5 text-sm text-neutral-600">
-              <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-neutral-900" />
+            <li key={benefit} className="flex items-start gap-2.5 text-sm text-[var(--muted)]">
+              <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--foreground)]" />
               {benefit}
             </li>
           ))}
@@ -77,13 +81,13 @@ export default function GetApp() {
         </div>
 
         {playUrl && (
-          <div className="mt-10 border-t border-neutral-100 pt-8">
-            <h2 className="text-sm font-medium text-neutral-700">Prefer Google Play?</h2>
+          <div className="mt-10 border-t border-[var(--rule)] pt-8">
+            <h2 className="text-sm font-medium text-[var(--foreground)]">Prefer Google Play?</h2>
             <a
               href={playUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 inline-block rounded-full border border-neutral-900 px-6 py-2.5 text-sm font-medium transition-colors hover:bg-neutral-900 hover:text-white"
+              className="mt-3 inline-block rounded-full border border-[var(--foreground)] px-6 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-white"
             >
               Get it on Google Play
             </a>
@@ -92,7 +96,7 @@ export default function GetApp() {
 
         <ApkDownloadLink />
 
-        <p className="mt-10 text-xs text-neutral-400">
+        <p className="mt-10 text-xs text-[var(--muted)]">
           Installing doesn&apos;t create a second account. It&apos;s the same {BRAND_CONFIG.appTitle},
           with your existing profile and matches.
         </p>

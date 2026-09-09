@@ -109,7 +109,7 @@ export function InstallAppButton({ className = "" }: { className?: string }) {
     return (
       <button
         onClick={handleInstall}
-        className={`rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02] ${className}`}
+        className={`btn-gold px-8 py-3.5 text-sm ${className}`}
       >
         Install the app
       </button>
@@ -118,9 +118,9 @@ export function InstallAppButton({ className = "" }: { className?: string }) {
 
   if (state === "ios") {
     return (
-      <p className={`text-sm text-neutral-500 ${className}`}>
-        To install: tap <span className="font-medium text-neutral-900">Share</span>, then{" "}
-        <span className="font-medium text-neutral-900">Add to Home Screen</span>.
+      <p className={`text-sm text-[var(--muted)] ${className}`}>
+        To install: tap <span className="font-medium text-[var(--foreground)]">Share</span>, then{" "}
+        <span className="font-medium text-[var(--foreground)]">Add to Home Screen</span>.
       </p>
     );
   }
@@ -128,7 +128,7 @@ export function InstallAppButton({ className = "" }: { className?: string }) {
   // Desktop and browsers that can't install. Saying so plainly beats a
   // button that does nothing.
   return (
-    <p className={`text-sm text-neutral-500 ${className}`}>
+    <p className={`text-sm text-[var(--muted)] ${className}`}>
       Open this page on your phone in Chrome to install the app.
     </p>
   );

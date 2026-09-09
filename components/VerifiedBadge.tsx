@@ -36,7 +36,7 @@ export function VerifiedBadge({
   if (approvedPhotoCount >= MIN_PROFILE_PHOTOS) {
     return (
       <span
-        className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-600"
+        className="inline-flex items-center gap-1 rounded-full bg-[var(--rule)] px-2 py-0.5 text-xs font-medium text-[var(--muted)]"
         title="Photos verified"
       >
         {CHECK_ICON}

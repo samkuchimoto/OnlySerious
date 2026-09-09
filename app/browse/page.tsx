@@ -7,6 +7,7 @@ import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } fro
 import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { MascotEmptyState } from "@/components/Mascot";
 import { getActivityStatus, isNewMember } from "@/lib/activity";
 import { withRetry } from "@/lib/retry";
 import { FREE_DAILY_LIKE_LIMIT, PAID_DAILY_LIKE_LIMIT, type UserProfile } from "@/lib/types";
@@ -186,18 +187,18 @@ export default function Browse() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-white text-neutral-900">
+    <main className="flex min-h-screen flex-col text-[var(--foreground)]">
       <AppNav meta={remaining !== null ? <span>{remaining} likes left today</span> : null} />
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
-        {loading && <p className="text-sm text-neutral-400">Loading…</p>}
+        {loading && <p className="text-sm text-[var(--muted)]">Loading…</p>}
 
         {!loading && !user && (
           <div className="flex flex-col items-start gap-4 pt-8">
             <h1 className="text-3xl font-medium tracking-tight">Sign in to browse</h1>
             <Link
               href="/sign-up"
-              className="rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+              className="btn-gold px-8 py-3.5 text-sm"
             >
               Get started
             </Link>
@@ -207,10 +208,10 @@ export default function Browse() {
         {!loading && user && loadError && (
           <div className="flex flex-col items-start gap-4 pt-8">
             <h1 className="text-3xl font-medium tracking-tight">Couldn&apos;t load Browse</h1>
-            <p className="max-w-md text-neutral-500">Something went wrong loading profiles. Please try again.</p>
+            <p className="max-w-md text-[var(--muted)]">Something went wrong loading profiles. Please try again.</p>
             <button
               onClick={() => window.location.reload()}
-              className="rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+              className="btn-gold px-8 py-3.5 text-sm"
             >
               Retry
             </button>
@@ -222,7 +223,7 @@ export default function Browse() {
             <h1 className="text-3xl font-medium tracking-tight">Finish your profile first</h1>
             <Link
               href="/sign-up"
-              className="rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+              className="btn-gold px-8 py-3.5 text-sm"
             >
               Create your profile
             </Link>
@@ -246,11 +247,11 @@ export default function Browse() {
                 so it reads as a state of the account rather than a dead
                 button discovered per-card. */}
             {remaining === 0 && ownProfile.subscriptionStatus !== "active" && (
-              <div className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 p-5">
+              <div className="mt-6 rounded-2xl border border-[var(--rule)] bg-[color-mix(in_srgb,var(--gold)_7%,var(--background))] p-5">
                 <p className="text-base font-medium">
                   You&apos;ve used all {FREE_DAILY_LIKE_LIMIT} likes for today
                 </p>
-                <p className="mt-1 text-sm text-neutral-500">
+                <p className="mt-1 text-sm text-[var(--muted)]">
                   Your likes reset tomorrow. Or get {PAID_DAILY_LIKE_LIMIT} likes a day — keep going now
                   instead of waiting.
                 </p>
@@ -262,11 +263,11 @@ export default function Browse() {
                 <Link
                   href="/premium"
                   onClick={() => capture("upgrade_clicked", { source: "browse_limit_banner" })}
-                  className="mt-4 inline-block w-fit rounded-full bg-neutral-900 px-6 py-2.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+                  className="mt-4 inline-block w-fit btn-gold px-6 py-2.5 text-sm"
                 >
                   Get more likes
                 </Link>
-                <p className="mt-3 text-xs text-neutral-400">Cancel any time from Settings.</p>
+                <p className="mt-3 text-xs text-[var(--muted)]">Cancel any time from Settings.</p>
               </div>
             )}
 
@@ -277,13 +278,13 @@ export default function Browse() {
                 all. Now it always confirms, and only the wording depends
                 on whether the unlock has landed yet. */}
             {justSubscribed && (
-              <div className="mt-6 rounded-2xl border border-neutral-900 bg-neutral-900 p-6 text-white">
+              <div className="mt-6 rounded-2xl border border-[var(--foreground)] bg-[var(--foreground)] p-6 text-white">
                 {ownProfile.subscriptionStatus === "active" ? (
                   <>
                     <p className="text-xl font-medium tracking-tight">
                       Welcome to {BRAND_CONFIG.premiumName}
                     </p>
-                    <p className="mt-1 text-sm text-neutral-300">
+                    <p className="mt-1 text-sm text-[var(--muted)]">
                       You&apos;re all set. Here&apos;s what changed:
                     </p>
                     <ul className="mt-4 flex flex-col gap-2">
@@ -292,7 +293,7 @@ export default function Browse() {
                         "Message without waiting between messages",
                         "See everyone who liked you",
                       ].map((line) => (
-                        <li key={line} className="flex items-start gap-2.5 text-sm text-neutral-200">
+                        <li key={line} className="flex items-start gap-2.5 text-sm text-[var(--rule)]">
                           <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white" />
                           {line}
                         </li>
@@ -301,13 +302,13 @@ export default function Browse() {
                     <div className="mt-5 flex flex-wrap gap-3">
                       <Link
                         href="/liked-me"
-                        className="rounded-full bg-white px-5 py-2.5 text-sm font-medium text-neutral-900 transition-transform hover:scale-[1.02]"
+                        className="rounded-full bg-white px-5 py-2.5 text-sm font-medium text-[var(--foreground)] transition-transform hover:scale-[1.02]"
                       >
                         See who liked you
                       </Link>
                       <Link
                         href="/settings"
-                        className="rounded-full border border-neutral-600 px-5 py-2.5 text-sm font-medium text-neutral-200 transition-colors hover:border-white hover:text-white"
+                        className="rounded-full border border-[var(--muted)] px-5 py-2.5 text-sm font-medium text-[var(--rule)] transition-colors hover:border-white hover:text-white"
                       >
                         Manage subscription
                       </Link>
@@ -316,7 +317,7 @@ export default function Browse() {
                 ) : (
                   <>
                     <p className="text-xl font-medium tracking-tight">Payment received — thank you</p>
-                    <p className="mt-1 text-sm text-neutral-300">
+                    <p className="mt-1 text-sm text-[var(--muted)]">
                       Your {BRAND_CONFIG.premiumName} benefits are switching on now. Refresh in a few
                       seconds if they aren&apos;t there yet.
                     </p>
@@ -325,9 +326,15 @@ export default function Browse() {
               </div>
             )}
             {profiles.length === 0 ? (
-              <p className="mt-4 text-sm text-neutral-500">
-                No one matching your preferences has an active profile yet — check back soon.
-              </p>
+              // An empty grid is the single most discouraging screen in a
+              // dating app — it reads as "nobody is here" when the truth
+              // is usually "your filters are narrow". Amara plus a reason
+              // turns a dead end into a next step.
+              <MascotEmptyState
+                pose="sitting"
+                title="No one here yet"
+                body="No one matching your preferences has an active profile right now. Widening your age or distance range usually helps — new members join every day."
+              />
             ) : (
               <div className="mt-8 flex flex-col gap-10">
                 {profiles.map((profile) => {
@@ -340,7 +347,7 @@ export default function Browse() {
                     <article key={profile.id} className="flex flex-col gap-3">
                       <Link
                         href={`/profile/${profile.id}`}
-                        className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-neutral-100"
+                        className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-[var(--rule)]"
                       >
                         {photo && (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -355,10 +362,10 @@ export default function Browse() {
                       <Link href={`/profile/${profile.id}`} className="flex flex-wrap items-center gap-2 text-lg font-medium">
                         {activity?.isOnline && <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" aria-hidden />}
                         {profile.displayName}, {calculateAge(profile.birthdate)}
-                        <span className="text-sm font-normal text-neutral-400">{profile.city}</span>
+                        <span className="text-sm font-normal text-[var(--muted)]">{profile.city}</span>
                         <VerifiedBadge approvedPhotoCount={profile.photos.length} selfieVerified={profile.selfieVerified} />
                       </Link>
-                      {activity && !activity.isOnline && <p className="-mt-2 text-xs text-neutral-400">{activity.label}</p>}
+                      {activity && !activity.isOnline && <p className="-mt-2 text-xs text-[var(--muted)]">{activity.label}</p>}
 
                       {profile.headline && <p className="text-base font-medium">{profile.headline}</p>}
                       {/* Clamped, not cut: a 500-char bio would otherwise
@@ -366,7 +373,7 @@ export default function Browse() {
                           scroll unevenly. line-clamp ends with a real
                           ellipsis, so a trailing "…" reads as "there's more
                           on the profile" rather than as broken text. */}
-                      {profile.bio && <p className="line-clamp-3 text-sm text-neutral-600">{profile.bio}</p>}
+                      {profile.bio && <p className="line-clamp-3 text-sm text-[var(--muted)]">{profile.bio}</p>}
 
                       <div className="flex items-center gap-4">
                         <button
@@ -374,12 +381,12 @@ export default function Browse() {
                           disabled={status === "sending" || isDone}
                           className={`w-fit rounded-full border px-6 py-2.5 text-sm font-medium transition-colors disabled:cursor-default ${
                             status === "matched"
-                              ? "border-neutral-900 bg-neutral-900 text-white"
+                              ? "border-[var(--foreground)] bg-[var(--foreground)] text-white"
                               : status === "liked"
-                                ? "border-neutral-300 text-neutral-400"
+                                ? "border-[var(--rule)] text-[var(--muted)]"
                                 : status === "limit-reached"
-                                  ? "border-neutral-200 text-neutral-300"
-                                  : "border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white"
+                                  ? "border-[var(--rule)] text-[var(--muted)]"
+                                  : "border-[var(--foreground)] text-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white"
                           }`}
                         >
                           {status === "matched"
@@ -397,7 +404,7 @@ export default function Browse() {
                         {!isDone && (
                           <button
                             onClick={() => handleHide(profile.id)}
-                            className="text-sm text-neutral-400 transition-colors hover:text-neutral-700"
+                            className="text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
                           >
                             Not interested
                           </button>

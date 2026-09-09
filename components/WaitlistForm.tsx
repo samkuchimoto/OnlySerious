@@ -41,7 +41,7 @@ export function WaitlistForm({ ctaLabel = "Get the link", align = "start" }: Wai
 
   if (status === "done") {
     return (
-      <p className={`text-sm font-medium text-neutral-900 ${align === "center" ? "text-center" : ""}`}>
+      <p className={`text-sm font-medium text-[var(--foreground)] ${align === "center" ? "text-center" : ""}`}>
         You&apos;re on the list — we&apos;ll email you the link the moment OSThai launches on Google Play.
       </p>
     );
@@ -56,12 +56,12 @@ export function WaitlistForm({ ctaLabel = "Get the link", align = "start" }: Wai
           placeholder="you@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="flex-1 rounded-full border border-neutral-300 px-5 py-3 text-sm focus:border-neutral-900 focus:outline-none"
+          className="flex-1 rounded-full border border-[var(--rule)] px-5 py-3 text-sm focus:border-[var(--foreground)] focus:outline-none"
         />
         <button
           type="submit"
           disabled={status === "submitting"}
-          className="rounded-full bg-neutral-900 px-6 py-3 text-sm font-medium text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
+          className="btn-gold px-6 py-3 text-sm disabled:opacity-50"
         >
           {status === "submitting" ? "Joining…" : ctaLabel}
         </button>

@@ -75,8 +75,8 @@ function OnboardingProgressBar({ stage }: { stage: Stage }) {
   if (index === -1) return null;
   const percent = ((index + 1) / FORM_STAGES.length) * 100;
   return (
-    <div className="h-[3px] w-full bg-neutral-100">
-      <div className="h-full bg-neutral-900 transition-all" style={{ width: `${percent}%` }} />
+    <div className="h-[3px] w-full bg-[var(--rule)]">
+      <div className="h-full bg-[var(--foreground)] transition-all" style={{ width: `${percent}%` }} />
     </div>
   );
 }
@@ -339,7 +339,7 @@ export default function SignUp() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-white text-neutral-900">
+    <main className="flex min-h-screen flex-col text-[var(--foreground)]">
       <header className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-y-2 px-6 py-8">
         <Link href="/" className="text-lg font-semibold tracking-tight">
           {BRAND_CONFIG.appTitle}
@@ -348,19 +348,19 @@ export default function SignUp() {
             components/AppNav — the wrapped version stranded "Sign out"
             alone on a second line on a phone. */}
         {user && (
-          <div className="flex items-center gap-x-4 overflow-x-auto whitespace-nowrap text-sm text-neutral-400 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex items-center gap-x-4 overflow-x-auto whitespace-nowrap text-sm text-[var(--muted)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {stage === "pending-review" && (
               <>
-                <Link href="/browse" className="shrink-0 transition-colors hover:text-neutral-900">
+                <Link href="/browse" className="shrink-0 transition-colors hover:text-[var(--foreground)]">
                   Browse
                 </Link>
-                <Link href="/matches" className="shrink-0 transition-colors hover:text-neutral-900">
+                <Link href="/matches" className="shrink-0 transition-colors hover:text-[var(--foreground)]">
                   Matches
                 </Link>
-                <Link href="/liked-me" className="shrink-0 transition-colors hover:text-neutral-900">
+                <Link href="/liked-me" className="shrink-0 transition-colors hover:text-[var(--foreground)]">
                   Likes
                 </Link>
-                <Link href="/settings" className="shrink-0 transition-colors hover:text-neutral-900">
+                <Link href="/settings" className="shrink-0 transition-colors hover:text-[var(--foreground)]">
                   Settings
                 </Link>
                 {/* Same Upgrade entry point as components/AppNav, inlined
@@ -372,7 +372,7 @@ export default function SignUp() {
                   <Link
                     href="/premium"
                     onClick={() => capture("upgrade_clicked", { source: "nav:/sign-up" })}
-                    className="rounded-full bg-neutral-900 px-4 py-1.5 text-xs font-medium text-white transition-transform hover:scale-[1.03]"
+                    className="btn-gold px-4 py-1.5 text-xs"
                   >
                     Upgrade
                   </Link>
@@ -382,7 +382,7 @@ export default function SignUp() {
             <button onClick={() => {
                 resetAnalytics();
                 signOutUser();
-              }} className="shrink-0 transition-colors hover:text-neutral-900">
+              }} className="shrink-0 transition-colors hover:text-[var(--foreground)]">
               Sign out
             </button>
           </div>
@@ -392,19 +392,19 @@ export default function SignUp() {
       <OnboardingProgressBar stage={stage} />
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
-        {stage === "loading" && <p className="text-sm text-neutral-400">Loading…</p>}
+        {stage === "loading" && <p className="text-sm text-[var(--muted)]">Loading…</p>}
 
         {stage === "signed-out" && (
           <div className="flex flex-col items-start gap-6 pt-8">
             <InAppBrowserWarning />
             <h1 className="text-4xl font-medium leading-tight tracking-tight">Create your profile</h1>
-            <p className="max-w-md text-neutral-500">{BRAND_CONFIG.heroSubheadline}</p>
+            <p className="max-w-md text-[var(--muted)]">{BRAND_CONFIG.heroSubheadline}</p>
             <button
               onClick={() => {
                 capture("signup_started");
                 signInWithGoogle();
               }}
-              className="rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+              className="btn-gold px-8 py-3.5 text-sm"
             >
               Continue with Google
             </button>
@@ -417,7 +417,7 @@ export default function SignUp() {
               <>
                 <div className="flex flex-col gap-2">
                   <h1 className="text-3xl font-medium tracking-tight">Quick question before we start</h1>
-                  <p className="max-w-md text-neutral-500">
+                  <p className="max-w-md text-[var(--muted)]">
                     {BRAND_CONFIG.appTitle} is opening to women first, so we can build a real, verified community
                     before general launch.
                   </p>
@@ -432,8 +432,8 @@ export default function SignUp() {
                         onClick={() => setGender(option)}
                         className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                           gender === option
-                            ? "border-neutral-900 bg-neutral-900 text-white"
-                            : "border-neutral-300 text-neutral-600"
+                            ? "border-[var(--foreground)] bg-[var(--foreground)] text-white"
+                            : "border-[var(--rule)] text-[var(--muted)]"
                         }`}
                       >
                         {option}
@@ -443,7 +443,7 @@ export default function SignUp() {
                 </fieldset>
                 <button
                   onClick={handleGenderGateContinue}
-                  className="w-fit rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+                  className="w-fit btn-gold px-8 py-3.5 text-sm"
                 >
                   Continue
                 </button>
@@ -452,7 +452,7 @@ export default function SignUp() {
               <>
                 <div className="flex flex-col gap-2">
                   <h1 className="text-3xl font-medium tracking-tight">Men&apos;s registration opens soon</h1>
-                  <p className="max-w-md text-neutral-500">
+                  <p className="max-w-md text-[var(--muted)]">
                     We&apos;re focused on building a real, verified community of women first. Leave your email and
                     we&apos;ll send you the link the moment OSThai launches on Google Play.
                   </p>
@@ -467,7 +467,7 @@ export default function SignUp() {
           <div className="flex flex-col items-start gap-6 pt-8">
             <div className="flex flex-col gap-2">
               <h1 className="text-3xl font-medium tracking-tight">Verify your phone number</h1>
-              <p className="max-w-md text-neutral-500">
+              <p className="max-w-md text-[var(--muted)]">
                 Required for every profile — it&apos;s how we can trace an account back to a real person
                 if something ever goes wrong, without collecting ID documents from anyone.
               </p>
@@ -482,15 +482,15 @@ export default function SignUp() {
                     placeholder="+66 81 234 5678"
                     value={phoneInput}
                     onChange={(e) => setPhoneInput(e.target.value)}
-                    className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
+                    className="rounded-lg border border-[var(--rule)] px-4 py-2.5 focus:border-[var(--foreground)] focus:outline-none"
                   />
                 </label>
-                <p className="text-xs text-neutral-400">Include your country code.</p>
+                <p className="text-xs text-[var(--muted)]">Include your country code.</p>
                 {phoneError && <p className="text-sm text-red-600">{phoneError}</p>}
                 <button
                   onClick={sendVerificationCode}
                   disabled={phoneSubmitting || !phoneInput.trim()}
-                  className="w-fit rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
+                  className="w-fit btn-gold px-8 py-3.5 text-sm disabled:opacity-50"
                 >
                   {phoneSubmitting ? "Sending…" : "Send code"}
                 </button>
@@ -504,14 +504,14 @@ export default function SignUp() {
                     inputMode="numeric"
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value)}
-                    className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
+                    className="rounded-lg border border-[var(--rule)] px-4 py-2.5 focus:border-[var(--foreground)] focus:outline-none"
                   />
                 </label>
                 {phoneError && <p className="text-sm text-red-600">{phoneError}</p>}
                 <button
                   onClick={confirmVerificationCode}
                   disabled={phoneSubmitting || !verificationCode.trim()}
-                  className="w-fit rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
+                  className="w-fit btn-gold px-8 py-3.5 text-sm disabled:opacity-50"
                 >
                   {phoneSubmitting ? "Verifying…" : "Confirm code"}
                 </button>
@@ -535,7 +535,7 @@ export default function SignUp() {
                 required
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
+                className="rounded-lg border border-[var(--rule)] px-4 py-2.5 focus:border-[var(--foreground)] focus:outline-none"
               />
             </label>
 
@@ -546,7 +546,7 @@ export default function SignUp() {
                 type="date"
                 value={birthdate}
                 onChange={(e) => setBirthdate(e.target.value)}
-                className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
+                className="rounded-lg border border-[var(--rule)] px-4 py-2.5 focus:border-[var(--foreground)] focus:outline-none"
               />
             </label>
 
@@ -555,7 +555,7 @@ export default function SignUp() {
               <select
                 value={gender}
                 onChange={(e) => setGender(e.target.value)}
-                className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
+                className="rounded-lg border border-[var(--rule)] px-4 py-2.5 focus:border-[var(--foreground)] focus:outline-none"
               >
                 {GENDER_OPTIONS.map((option) => (
                   <option key={option} value={option}>
@@ -575,8 +575,8 @@ export default function SignUp() {
                     onClick={() => selectInterestedIn(option)}
                     className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                       interestedIn.includes(option)
-                        ? "border-neutral-900 bg-neutral-900 text-white"
-                        : "border-neutral-300 text-neutral-600"
+                        ? "border-[var(--foreground)] bg-[var(--foreground)] text-white"
+                        : "border-[var(--rule)] text-[var(--muted)]"
                     }`}
                   >
                     {option}
@@ -592,7 +592,7 @@ export default function SignUp() {
                   required
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
+                  className="rounded-lg border border-[var(--rule)] px-4 py-2.5 focus:border-[var(--foreground)] focus:outline-none"
                 />
               </label>
               <label className="flex flex-1 flex-col gap-1.5 text-sm">
@@ -601,7 +601,7 @@ export default function SignUp() {
                   required
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
+                  className="rounded-lg border border-[var(--rule)] px-4 py-2.5 focus:border-[var(--foreground)] focus:outline-none"
                 />
               </label>
             </div>
@@ -614,7 +614,7 @@ export default function SignUp() {
                 placeholder="One line other members see first"
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
-                className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
+                className="rounded-lg border border-[var(--rule)] px-4 py-2.5 focus:border-[var(--foreground)] focus:outline-none"
               />
               {/* Without this, maxLength just stops accepting keystrokes with
                   nothing on screen to explain it — which is how a real profile
@@ -624,7 +624,7 @@ export default function SignUp() {
               {headline.length >= MAX_HEADLINE_LENGTH - 20 && (
                 <span
                   className={`text-xs ${
-                    headline.length >= MAX_HEADLINE_LENGTH ? "text-red-600" : "text-neutral-400"
+                    headline.length >= MAX_HEADLINE_LENGTH ? "text-red-600" : "text-[var(--muted)]"
                   }`}
                 >
                   {headline.length >= MAX_HEADLINE_LENGTH
@@ -643,7 +643,7 @@ export default function SignUp() {
                 placeholder="A bit about you and what you're looking for"
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                className="rounded-lg border border-neutral-300 px-4 py-2.5 focus:border-neutral-900 focus:outline-none"
+                className="rounded-lg border border-[var(--rule)] px-4 py-2.5 focus:border-[var(--foreground)] focus:outline-none"
               />
             </label>
 
@@ -653,7 +653,7 @@ export default function SignUp() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02] disabled:opacity-50"
+                className="btn-gold px-8 py-3.5 text-sm disabled:opacity-50"
               >
                 {submitting ? "Saving…" : stage === "editing" ? "Save changes" : "Create profile"}
               </button>
@@ -664,7 +664,7 @@ export default function SignUp() {
                     setError(null);
                     setStage("pending-review");
                   }}
-                  className="text-sm text-neutral-400 transition-colors hover:text-neutral-900"
+                  className="text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
                 >
                   Cancel
                 </button>
@@ -682,12 +682,12 @@ export default function SignUp() {
                 </h1>
                 <button
                   onClick={startEditing}
-                  className="text-sm text-neutral-400 underline-offset-2 transition-colors hover:text-neutral-900 hover:underline"
+                  className="text-sm text-[var(--muted)] underline-offset-2 transition-colors hover:text-[var(--foreground)] hover:underline"
                 >
                   Edit profile
                 </button>
               </div>
-              <p className="max-w-md text-neutral-500">
+              <p className="max-w-md text-[var(--muted)]">
                 {existingProfile?.status === "active"
                   ? "Other members can now see your profile."
                   : `Live as soon as you have ${MIN_PROFILE_PHOTOS} approved photos.`}
@@ -704,10 +704,10 @@ export default function SignUp() {
                 );
                 return (
                   <div className="flex w-full max-w-xs items-center gap-2">
-                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-100">
-                      <div className="h-full bg-neutral-900 transition-all" style={{ width: `${percent}%` }} />
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--rule)]">
+                      <div className="h-full bg-[var(--foreground)] transition-all" style={{ width: `${percent}%` }} />
                     </div>
-                    <span className="text-xs text-neutral-400">{percent}%</span>
+                    <span className="text-xs text-[var(--muted)]">{percent}%</span>
                   </div>
                 );
               })()}
@@ -720,13 +720,13 @@ export default function SignUp() {
                 <button
                   type="button"
                   onClick={() => setPreviewOpen((v) => !v)}
-                  className="w-fit text-sm text-neutral-500 underline underline-offset-2 hover:text-neutral-900"
+                  className="w-fit text-sm text-[var(--muted)] underline underline-offset-2 hover:text-[var(--foreground)]"
                 >
                   {previewOpen ? "Hide preview" : "Preview how others will see you"}
                 </button>
                 {previewOpen && (
-                  <div className="flex flex-col gap-3 rounded-2xl border border-neutral-200 p-5">
-                    <div className="aspect-[4/5] w-full max-w-xs overflow-hidden rounded-xl bg-neutral-100">
+                  <div className="flex flex-col gap-3 rounded-2xl border border-[var(--rule)] p-5">
+                    <div className="aspect-[4/5] w-full max-w-xs overflow-hidden rounded-xl bg-[var(--rule)]">
                       {existingProfile.photos[0] && (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={existingProfile.photos[0].url} alt="" className="h-full w-full object-cover" />
@@ -736,15 +736,15 @@ export default function SignUp() {
                       <span className="text-lg font-medium">
                         {existingProfile.displayName || "Your name"}, {calculateAge(existingProfile.birthdate)}
                       </span>
-                      <span className="text-sm text-neutral-400">{existingProfile.city}</span>
+                      <span className="text-sm text-[var(--muted)]">{existingProfile.city}</span>
                       <VerifiedBadge
                         approvedPhotoCount={existingProfile.photos.length}
                         selfieVerified={existingProfile.selfieVerified}
                       />
                     </div>
                     {existingProfile.headline && <p className="text-base font-medium">{existingProfile.headline}</p>}
-                    {existingProfile.bio && <p className="text-sm text-neutral-600">{existingProfile.bio}</p>}
-                    <p className="text-xs text-neutral-400">
+                    {existingProfile.bio && <p className="text-sm text-[var(--muted)]">{existingProfile.bio}</p>}
+                    <p className="text-xs text-[var(--muted)]">
                       This is exactly what other members see once your profile is live.
                     </p>
                   </div>
@@ -753,8 +753,8 @@ export default function SignUp() {
             )}
 
             <div className="flex flex-col gap-2">
-              <h2 className="text-sm font-medium text-neutral-700">Photos</h2>
-              <p className="text-sm text-neutral-500">
+              <h2 className="text-sm font-medium text-[var(--foreground)]">Photos</h2>
+              <p className="text-sm text-[var(--muted)]">
                 At least {MIN_PROFILE_PHOTOS} real photos are required — no AI-generated images.
               </p>
               <PhotoUploader user={user} onSubmissionsChange={setPhotoSubmissions} />
@@ -762,7 +762,7 @@ export default function SignUp() {
             {photoSubmissions.length >= MIN_PROFILE_PHOTOS && (
               <Link
                 href="/browse"
-                className="rounded-full bg-neutral-900 px-8 py-3.5 text-sm font-medium text-white transition-transform hover:scale-[1.02]"
+                className="btn-gold px-8 py-3.5 text-sm"
               >
                 Continue to browse
               </Link>

@@ -76,23 +76,23 @@ export function SelfieVerification({ user, alreadyVerified }: { user: User; alre
   }
 
   if (stage === "verified") {
-    return <p className="text-sm text-neutral-600">✓ Your selfie is verified.</p>;
+    return <p className="text-sm text-[var(--muted)]">✓ Your selfie is verified.</p>;
   }
 
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-neutral-500">
+      <p className="text-sm text-[var(--muted)]">
         Take a live selfie to get a Verified badge — compared against your approved photos so people know
         it&apos;s really you.
       </p>
 
       {stage === "camera" && (
         <div className="flex flex-col gap-3">
-          <video ref={videoRef} autoPlay playsInline className="aspect-square w-48 rounded-xl bg-neutral-900 object-cover" />
+          <video ref={videoRef} autoPlay playsInline className="aspect-square w-48 rounded-xl bg-[var(--foreground)] object-cover" />
           <div className="flex gap-3">
             <button
               onClick={captureAndSubmit}
-              className="rounded-full bg-neutral-900 px-5 py-2 text-sm font-medium text-white"
+              className="rounded-full bg-[var(--foreground)] px-5 py-2 text-sm font-medium text-white"
             >
               Capture
             </button>
@@ -101,7 +101,7 @@ export function SelfieVerification({ user, alreadyVerified }: { user: User; alre
                 stopCamera();
                 setStage("idle");
               }}
-              className="text-sm text-neutral-400 hover:text-neutral-900"
+              className="text-sm text-[var(--muted)] hover:text-[var(--foreground)]"
             >
               Cancel
             </button>
@@ -112,13 +112,13 @@ export function SelfieVerification({ user, alreadyVerified }: { user: User; alre
       {(stage === "idle" || stage === "failed") && (
         <button
           onClick={startCamera}
-          className="w-fit rounded-full border border-neutral-900 px-5 py-2 text-sm font-medium transition-colors hover:bg-neutral-900 hover:text-white"
+          className="w-fit rounded-full border border-[var(--foreground)] px-5 py-2 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-white"
         >
           {stage === "failed" ? "Try again" : "Get Verified"}
         </button>
       )}
 
-      {stage === "submitting" && <p className="text-sm text-neutral-400">Verifying…</p>}
+      {stage === "submitting" && <p className="text-sm text-[var(--muted)]">Verifying…</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );

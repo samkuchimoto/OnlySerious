@@ -4,7 +4,7 @@ export default function Terms() {
   return (
     <>
       <h1>Terms of Service</h1>
-      <p className="text-xs text-neutral-400">
+      <p className="text-xs text-[var(--muted)]">
         Draft — this is a real first version, not placeholder text, but hasn&apos;t had a legal review yet.
       </p>
 

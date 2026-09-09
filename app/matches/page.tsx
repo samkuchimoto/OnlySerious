@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { AppNav } from "@/components/AppNav";
+import { MascotEmptyState } from "@/components/Mascot";
 import { withRetry } from "@/lib/retry";
 import type { Match, UserProfile } from "@/lib/types";
 
@@ -69,13 +69,13 @@ export default function Matches() {
   }, []);
 
   return (
-    <main className="flex min-h-screen flex-col bg-white text-neutral-900">
+    <main className="flex min-h-screen flex-col text-[var(--foreground)]">
       <AppNav />
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
         <h1 className="pt-8 text-3xl font-medium tracking-tight">Matches</h1>
 
-        {loading && <p className="mt-4 text-sm text-neutral-400">Loading…</p>}
+        {loading && <p className="mt-4 text-sm text-[var(--muted)]">Loading…</p>}
 
         {!loading && !user && (
           <Link href="/sign-up" className="mt-4 block text-sm underline underline-offset-2">
@@ -93,15 +93,11 @@ export default function Matches() {
         )}
 
         {!loading && user && !loadError && matches.length === 0 && (
-          <div className="mt-6 flex flex-col gap-4">
-            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl">
-              <Image src="/images/hero-couple-rooftop.png" alt="" fill className="object-cover" />
-              <div className="absolute inset-0 bg-black/10" />
-            </div>
-            <p className="text-sm text-neutral-500">
-              No matches yet — a mutual like turns into a match automatically.
-            </p>
-          </div>
+          <MascotEmptyState
+            pose="heart"
+            title="No matches yet"
+            body="A mutual like turns into a match automatically — there is nothing else you need to do here."
+          />
         )}
 
         {!loading && matches.length > 0 && (
@@ -110,9 +106,9 @@ export default function Matches() {
               <Link
                 key={match.id}
                 href={`/matches/${match.id}`}
-                className="flex items-center gap-4 rounded-xl px-2 py-3 transition-colors hover:bg-neutral-50"
+                className="flex items-center gap-4 rounded-xl px-2 py-3 transition-colors hover:bg-[color-mix(in_srgb,var(--gold)_7%,var(--background))]"
               >
-                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-neutral-100">
+                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-[var(--rule)]">
                   {other.photos[0] && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={other.photos[0].url} alt="" className="h-full w-full object-cover" />

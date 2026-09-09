@@ -19,16 +19,16 @@ export function ApkDownloadLink() {
   if (!apkUrl) return null;
 
   return (
-    <div className="mt-10 border-t border-neutral-100 pt-8">
-      <h2 className="text-sm font-medium text-neutral-700">Download the APK directly</h2>
-      <p className="mt-2 max-w-md text-sm text-neutral-500">
+    <div className="mt-10 border-t border-[var(--rule)] pt-8">
+      <h2 className="text-sm font-medium text-[var(--foreground)]">Download the APK directly</h2>
+      <p className="mt-2 max-w-md text-sm text-[var(--muted)]">
         For installing without Google Play. Android will ask you to allow installs from this source —
         that&apos;s expected for any app not installed through the Play Store.
       </p>
       <a
         href={apkUrl}
         onClick={() => capture("apk_downloaded")}
-        className="mt-3 inline-block rounded-full border border-neutral-900 px-6 py-2.5 text-sm font-medium transition-colors hover:bg-neutral-900 hover:text-white"
+        className="mt-3 inline-block rounded-full border border-[var(--foreground)] px-6 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-white"
       >
         Download {BRAND_CONFIG.appTitle} for Android
       </a>

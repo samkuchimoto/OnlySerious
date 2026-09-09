@@ -70,26 +70,26 @@ export function BlockedHiddenList({ user }: { user: User }) {
     setRemovingId(null);
   }
 
-  if (loading) return <p className="text-sm text-neutral-400">Loading…</p>;
+  if (loading) return <p className="text-sm text-[var(--muted)]">Loading…</p>;
   if (loadError) return <p className="text-sm text-red-600">Couldn&apos;t load this list. Try refreshing.</p>;
   if (blocked.length === 0 && hidden.length === 0) {
-    return <p className="text-sm text-neutral-500">You haven&apos;t blocked or hidden anyone.</p>;
+    return <p className="text-sm text-[var(--muted)]">You haven&apos;t blocked or hidden anyone.</p>;
   }
 
   function EntryRow({ entry, collectionName }: { entry: Entry; collectionName: "blocks" | "hides" }) {
     return (
       <div className="flex items-center justify-between gap-3">
         {entry.name ? (
-          <Link href={`/profile/${entry.otherId}`} className="text-sm text-neutral-700 hover:underline">
+          <Link href={`/profile/${entry.otherId}`} className="text-sm text-[var(--foreground)] hover:underline">
             {entry.name}
           </Link>
         ) : (
-          <span className="text-sm text-neutral-400">Deleted profile</span>
+          <span className="text-sm text-[var(--muted)]">Deleted profile</span>
         )}
         <button
           onClick={() => remove(collectionName, entry)}
           disabled={removingId === entry.docId}
-          className="text-xs text-neutral-400 underline underline-offset-2 hover:text-neutral-900 disabled:opacity-50"
+          className="text-xs text-[var(--muted)] underline underline-offset-2 hover:text-[var(--foreground)] disabled:opacity-50"
         >
           {collectionName === "blocks" ? "Unblock" : "Unhide"}
         </button>
@@ -101,7 +101,7 @@ export function BlockedHiddenList({ user }: { user: User }) {
     <div className="flex flex-col gap-4">
       {blocked.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">Blocked ({blocked.length})</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Blocked ({blocked.length})</p>
           {blocked.map((entry) => (
             <EntryRow key={entry.docId} entry={entry} collectionName="blocks" />
           ))}
@@ -109,7 +109,7 @@ export function BlockedHiddenList({ user }: { user: User }) {
       )}
       {hidden.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">Hidden ({hidden.length})</p>
+          <p className="text-xs font-medium uppercase tracking-wide text-[var(--muted)]">Hidden ({hidden.length})</p>
           {hidden.map((entry) => (
             <EntryRow key={entry.docId} entry={entry} collectionName="hides" />
           ))}
