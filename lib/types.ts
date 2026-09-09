@@ -108,6 +108,22 @@ export function intentLabel(value: string | undefined): string | null {
   return RELATIONSHIP_INTENTS.find((i) => i.value === value)?.label ?? null;
 }
 
+/**
+ * Age from an ISO birthdate. Lives here because age is never stored — it
+ * would be wrong within a year of being written — so every surface that
+ * shows it has to derive it, and three of them had grown their own copy
+ * of this function.
+ */
+export function calculateAge(birthdate: string): number {
+  const dob = new Date(birthdate);
+  const now = new Date();
+  let age = now.getFullYear() - dob.getFullYear();
+  const hadBirthdayThisYear =
+    now.getMonth() > dob.getMonth() || (now.getMonth() === dob.getMonth() && now.getDate() >= dob.getDate());
+  if (!hadBirthdayThisYear) age -= 1;
+  return age;
+}
+
 export interface UserProfile {
   id: string; // Firebase Auth uid
   displayName: string;

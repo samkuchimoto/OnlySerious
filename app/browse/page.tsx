@@ -8,9 +8,16 @@ import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { MascotEmptyState } from "@/components/Mascot";
+import { BrowseGrid, QuickLook } from "@/components/BrowseGrid";
 import { getActivityStatus, isNewMember } from "@/lib/activity";
 import { withRetry } from "@/lib/retry";
-import { FREE_DAILY_LIKE_LIMIT, PAID_DAILY_LIKE_LIMIT, type UserProfile } from "@/lib/types";
+import {
+  FREE_DAILY_LIKE_LIMIT,
+  PAID_DAILY_LIKE_LIMIT,
+  calculateAge,
+  intentLabel,
+  type UserProfile,
+} from "@/lib/types";
 import { capture } from "@/lib/analytics";
 import { AppNav } from "@/components/AppNav";
 import { BRAND_CONFIG } from "@/config/brand";
@@ -36,17 +43,47 @@ function heroImageFor(interestedIn: string[] | undefined): string | null {
   return null;
 }
 
-function calculateAge(birthdate: string): number {
-  const dob = new Date(birthdate);
-  const now = new Date();
-  let age = now.getFullYear() - dob.getFullYear();
-  const hadBirthdayThisYear =
-    now.getMonth() > dob.getMonth() || (now.getMonth() === dob.getMonth() && now.getDate() >= dob.getDate());
-  if (!hadBirthdayThisYear) age -= 1;
-  return age;
+type LikeStatus = "idle" | "sending" | "liked" | "matched" | "limit-reached" | "error";
+
+// ---------------------------------------------------------------------
+// Persisted browse view. Read through useSyncExternalStore rather than a
+// useState seeded inside an effect: the server snapshot is the default,
+// so SSR and hydration agree, and there is no setState-in-effect for the
+// React Compiler to reject (it already rejected that twice on this page).
+//
+// Default is the grid. The paying audience is the one that wants density,
+// and someone who prefers to read gets a one-tap switch that then sticks.
+// ---------------------------------------------------------------------
+
+type BrowseView = "grid" | "curated";
+const VIEW_KEY = "browse-view";
+let viewListeners: Array<() => void> = [];
+
+function subscribeView(cb: () => void) {
+  viewListeners.push(cb);
+  return () => {
+    viewListeners = viewListeners.filter((l) => l !== cb);
+  };
 }
 
-type LikeStatus = "idle" | "sending" | "liked" | "matched" | "limit-reached" | "error";
+function readView(): BrowseView {
+  try {
+    return localStorage.getItem(VIEW_KEY) === "curated" ? "curated" : "grid";
+  } catch {
+    // Private windows and blocked site data throw on access rather than
+    // returning null — a preference is not worth a crashed page.
+    return "grid";
+  }
+}
+
+function writeView(next: BrowseView) {
+  try {
+    localStorage.setItem(VIEW_KEY, next);
+  } catch {
+    /* preference simply doesn't persist */
+  }
+  viewListeners.forEach((l) => l());
+}
 
 export default function Browse() {
   const [user, setUser] = useState<User | null>(null);
@@ -68,6 +105,10 @@ export default function Browse() {
     () => new URLSearchParams(window.location.search).get("subscribed") === "1",
     () => false,
   );
+
+  const view = useSyncExternalStore(subscribeView, readView, () => "grid" as BrowseView);
+  // Which profile the quick-look is showing. Null means closed.
+  const [quickLook, setQuickLook] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     return watchAuthState(async (nextUser) => {
@@ -239,7 +280,38 @@ export default function Browse() {
                 <p className="absolute bottom-4 left-5 text-lg font-medium text-white">Someone serious is out there.</p>
               </div>
             )}
-            <h1 className="pt-8 text-3xl font-medium tracking-tight">Browse</h1>
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-8">
+              <h1 className="display text-3xl">Browse</h1>
+
+              {/* The mode switch. Labelled by what you get rather than by
+                  an icon: a grid glyph and a list glyph are the same
+                  affordance to someone who has never seen this pattern,
+                  and half this audience is on their first dating app. */}
+              <div
+                role="group"
+                aria-label="View"
+                className="flex items-center gap-1 rounded-full border border-[var(--rule)] p-1"
+              >
+                {([
+                  ["grid", "Grid"],
+                  ["curated", "Detailed"],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={view === value}
+                    onClick={() => writeView(value)}
+                    className={`label rounded-full px-3.5 py-1.5 transition-colors ${
+                      view === value
+                        ? "bg-[var(--foreground)] text-white"
+                        : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* The conversion moment. Browsing itself stays unlimited (a
                 cap on visibility would just advertise how small the pool
@@ -335,6 +407,16 @@ export default function Browse() {
                 title="No one here yet"
                 body="No one matching your preferences has an active profile right now. Widening your age or distance range usually helps — new members join every day."
               />
+            ) : view === "grid" ? (
+              <>
+                <BrowseGrid profiles={profiles} likeStatus={likeStatus} onSelect={setQuickLook} />
+                <QuickLook
+                  profile={quickLook}
+                  status={quickLook ? (likeStatus[quickLook.id] ?? "idle") : "idle"}
+                  onLike={handleLike}
+                  onClose={() => setQuickLook(null)}
+                />
+              </>
             ) : (
               <div className="mt-8 flex flex-col gap-10">
                 {profiles.map((profile) => {
@@ -366,6 +448,16 @@ export default function Browse() {
                         <VerifiedBadge approvedPhotoCount={profile.photos.length} selfieVerified={profile.selfieVerified} />
                       </Link>
                       {activity && !activity.isOnline && <p className="-mt-2 text-xs text-[var(--muted)]">{activity.label}</p>}
+
+                      {/* Intent Banner. The one fact that separates this
+                          product from the grid it competes with, so it
+                          sits above the headline rather than below the
+                          fold on a profile page nobody opened. */}
+                      {intentLabel(profile.relationshipIntent) && (
+                        <p className="label w-fit rounded-full bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] px-3 py-1.5">
+                          {intentLabel(profile.relationshipIntent)}
+                        </p>
+                      )}
 
                       {profile.headline && <p className="text-base font-medium">{profile.headline}</p>}
                       {/* Clamped, not cut: a 500-char bio would otherwise
