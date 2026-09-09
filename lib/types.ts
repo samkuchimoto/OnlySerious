@@ -224,6 +224,69 @@ export interface Message {
   flagged: boolean;
 }
 
+// ---------------------------------------------------------------------
+// The Safe Connect Bridge.
+//
+// Blueprint Step 3. Cross-border couples always end up on LINE or
+// WhatsApp — pretending otherwise just means the handoff happens
+// anyway, in an unmoderated blur, usually as a phone number typed into
+// a message where nobody consented and nothing is logged.
+//
+// So the handoff is a first-class flow instead of something the product
+// refuses to acknowledge. Three properties matter and each is enforced,
+// not merely encouraged:
+//
+//   Earned      Contact details cannot be requested before both people
+//               have actually talked. The threshold is mutual, not a
+//               total: five messages one person sent into silence is
+//               not a conversation, and that asymmetry is precisely the
+//               pattern a spammer produces.
+//   Consented   The recipient accepts or declines. Nothing is revealed
+//               by the act of asking, and a decline is silent — it
+//               neither notifies nor shames.
+//   Logged      Timestamps survive the handoff, so a report made a week
+//               later still has something to investigate. This is the
+//               part that makes it a safety feature rather than a
+//               convenience.
+// ---------------------------------------------------------------------
+
+/** Mutual messages each side must have sent before contact can be
+ *  requested. Shared so the chat UI and the API agree — a client that
+ *  believed a different number would either hide a legitimate button or
+ *  offer one the server rejects. */
+export const CONTACT_EXCHANGE_MIN_MESSAGES = 5;
+
+export type ContactChannel = "line" | "whatsapp" | "telegram";
+
+export const CONTACT_CHANNELS: { value: ContactChannel; label: string }[] = [
+  { value: "line", label: "LINE" },
+  { value: "whatsapp", label: "WhatsApp" },
+  { value: "telegram", label: "Telegram" },
+];
+
+export function isContactChannel(value: unknown): value is ContactChannel {
+  return value === "line" || value === "whatsapp" || value === "telegram";
+}
+
+export interface ContactExchange {
+  id: string; // deterministic: `${matchId}` — one live exchange per match
+  matchId: string;
+  requesterId: string;
+  recipientId: string;
+  channel: ContactChannel;
+  /** The requester's handle. Only ever revealed to the recipient after
+   *  they accept — held server-side until then, so a pending request
+   *  leaks nothing if it is declined or ignored. */
+  requesterHandle: string;
+  /** Filled when the recipient accepts and shares theirs back. An
+   *  exchange is mutual by construction: accepting means sharing, which
+   *  is what stops it becoming a one-way harvest. */
+  recipientHandle?: string;
+  status: "pending" | "accepted" | "declined";
+  createdAt: string;
+  respondedAt?: string;
+}
+
 export interface Report {
   id: string;
   reportedUserId: string;

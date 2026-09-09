@@ -10,6 +10,7 @@ import { BRAND_CONFIG } from "@/config/brand";
 import { withRetry } from "@/lib/retry";
 import { getActivityStatus } from "@/lib/activity";
 import { capture } from "@/lib/analytics";
+import { SafeConnectBridge } from "@/components/SafeConnectBridge";
 import { FREE_MESSAGE_COOLDOWN_MS, type Match, type Message, type UserProfile } from "@/lib/types";
 
 // mm:ss, because a bare "412 seconds left" is unreadable at a glance.
@@ -219,6 +220,16 @@ export default function MatchChat() {
                   </div>
                 );
               })}
+              {/* The Safe Connect Bridge sits at the foot of the thread,
+                  after the last message — it is the natural next step of
+                  a conversation, not a banner above one. */}
+              <SafeConnectBridge
+                user={user}
+                matchId={matchId}
+                otherName={other?.displayName ?? "They"}
+                messageCount={messages.length}
+              />
+
               <div ref={bottomRef} />
             </div>
 
