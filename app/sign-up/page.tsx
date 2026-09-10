@@ -19,6 +19,7 @@ import {
   type UserProfile,
 } from "@/lib/types";
 import { PhotoUploader, type PhotoSubmission } from "@/components/PhotoUploader";
+import { VoiceIntroRecorder } from "@/components/VoiceIntro";
 import { WaitlistForm } from "@/components/WaitlistForm";
 import { PushPrimer } from "@/components/PushPrimer";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
@@ -876,6 +877,23 @@ export default function SignUp() {
               </p>
               <PhotoUploader user={user} onSubmissionsChange={setPhotoSubmissions} />
             </div>
+
+            {/* The voice introduction, after photos rather than before.
+                It is the strongest single trust signal on a cross-border
+                profile and it is also the most intimidating thing on
+                this form — putting it ahead of the photo step would
+                stall people at the point where they have invested least
+                and are most likely to close the tab. */}
+            <div className="border-t border-[var(--rule)] pt-6">
+              <VoiceIntroRecorder
+                user={user}
+                existing={existingProfile?.voiceIntro}
+                onChange={(intro) =>
+                  setExistingProfile((prev) => (prev ? { ...prev, voiceIntro: intro } : prev))
+                }
+              />
+            </div>
+
             {photoSubmissions.length >= MIN_PROFILE_PHOTOS && (
               <Link
                 href="/browse"

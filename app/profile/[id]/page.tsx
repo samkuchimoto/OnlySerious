@@ -8,6 +8,7 @@ import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { VoiceIntroPlayer } from "@/components/VoiceIntro";
 import { PrivateNote } from "@/components/PrivateNote";
 import { getActivityStatus } from "@/lib/activity";
 import { withRetry } from "@/lib/retry";
@@ -212,10 +213,12 @@ export default function ProfileDetail() {
                   return (
                     <span
                       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        activity.isOnline ? "bg-green-50 text-green-700" : "bg-[var(--rule)] text-[var(--muted)]"
+                        activity.isOnline
+                          ? "bg-[color-mix(in_srgb,var(--celadon)_12%,transparent)] text-[var(--celadon)]"
+                          : "bg-[var(--rule)] text-[var(--muted)]"
                       }`}
                     >
-                      {activity.isOnline && <span className="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden />}
+                      {activity.isOnline && <span className="dot-online dot-online-pulse h-1.5 w-1.5" aria-hidden />}
                       {activity.label}
                     </span>
                   );
@@ -224,6 +227,21 @@ export default function ProfileDetail() {
             </div>
 
             {user && profile.id !== user.uid && <PrivateNote user={user} aboutUserId={profile.id} />}
+
+            {/* The voice introduction sits above the written profile.
+                It is the strongest trust signal on a cross-border
+                profile and the one thing a fake account cannot cheaply
+                produce, so burying it under the bio would waste it.
+
+                Only an approved recording is shown: a pending one has
+                not been transcribed and checked yet, and the owner sees
+                its status on their own editor instead. */}
+            {profile.voiceIntro?.moderationStatus === "approved" && (
+              <VoiceIntroPlayer
+                intro={profile.voiceIntro}
+                label={`${profile.displayName}'s introduction`}
+              />
+            )}
 
             {(profile.headline || profile.bio) && (
               <div className="flex flex-col gap-1.5">

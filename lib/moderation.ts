@@ -294,3 +294,73 @@ export function moderateText(text: string): TextModerationResult {
   const matchedTerms = SOLICITATION_TERMS.filter((term) => lower.includes(term));
   return { flagged: matchedTerms.length > 0, matchedTerms };
 }
+
+// ---------------------------------------------------------------------
+// Voice intro moderation.
+//
+// A recording cannot go through the vision path, and there is no audio
+// classifier here. What there is, is a transcript: Groq hosts Whisper,
+// the key is already configured for photo moderation, and a transcript
+// runs through exactly the same solicitation filter every message does.
+//
+// That is the honest scope of this check — it reads what was *said*, not
+// how it sounded. It will not catch tone, background, or a recording of
+// someone else's voice. It is still worth doing: the failure mode this
+// product actually has to prevent is a phone number or a price read
+// aloud into a profile that then plays to every visitor, and a
+// transcript catches that cleanly.
+//
+// Same posture as everywhere else in this file: an unavailable or failed
+// check returns "pending", never "approved". A voice note that could not
+// be transcribed does not go live by default.
+// ---------------------------------------------------------------------
+
+const GROQ_TRANSCRIBE_MODEL = "whisper-large-v3-turbo";
+
+export interface VoiceModerationResult {
+  status: "approved" | "rejected" | "pending";
+  transcript: string | null;
+  reason?: string;
+}
+
+export async function moderateVoice(
+  audio: Buffer,
+  contentType: string,
+): Promise<VoiceModerationResult> {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) return { status: "pending", transcript: null, reason: "transcription unavailable" };
+
+  try {
+    const form = new FormData();
+    form.append("file", new Blob([new Uint8Array(audio)], { type: contentType }), "intro.webm");
+    form.append("model", GROQ_TRANSCRIBE_MODEL);
+    // Left to auto-detect: the whole point is that a Thai or Vietnamese
+    // speaker records in her own language, and forcing "en" would return
+    // a phonetic transliteration that no filter can read.
+    form.append("response_format", "json");
+
+    const res = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}` },
+      body: form,
+    });
+    if (!res.ok) {
+      return { status: "pending", transcript: null, reason: "transcription failed" };
+    }
+    const data = (await res.json()) as { text?: string };
+    const transcript = (data.text ?? "").trim();
+    if (!transcript) {
+      // Silence, or speech the model could not resolve. Held rather than
+      // published: an empty voice note on a profile is a broken feature
+      // to whoever presses play.
+      return { status: "pending", transcript: null, reason: "nothing audible" };
+    }
+
+    const { flagged, matchedTerms } = moderateText(transcript);
+    return flagged
+      ? { status: "rejected", transcript, reason: `mentions ${matchedTerms[0]}` }
+      : { status: "approved", transcript };
+  } catch {
+    return { status: "pending", transcript: null, reason: "transcription unavailable" };
+  }
+}

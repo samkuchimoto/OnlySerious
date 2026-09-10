@@ -232,6 +232,35 @@ export interface UserProfile {
   // if coarse, signal rather than a live presence system. See
   // lib/activity.ts for how this becomes "Online now" / "Active 2d ago".
   lastActiveAt?: string;
+  // The 15-second voice introduction. Written only by
+  // app/api/voice-intro, which is also the only place its
+  // moderationStatus is decided.
+  voiceIntro?: VoiceIntro | null;
+}
+
+// ---------------------------------------------------------------------
+// Voice introductions.
+//
+// The audit's Phase 2 opener and the brief's "15-Second Voice Sparks".
+// Fifteen seconds is the whole specification and it is a real
+// constraint, not a default: long enough for a name, a city and a
+// sentence about what someone wants, short enough that a stranger
+// actually presses play, and short enough that nobody records a
+// monologue that then needs moderating like an essay.
+// ---------------------------------------------------------------------
+export const VOICE_INTRO_MAX_SECONDS = 15;
+// Below this it is a cough, not an introduction.
+export const VOICE_INTRO_MIN_SECONDS = 3;
+
+export interface VoiceIntro {
+  url: string;
+  durationSeconds: number;
+  // Decided server-side from a transcript (see lib/moderation's
+  // moderateVoice) — never client-asserted, and never "approved" by
+  // default when transcription is unavailable. Only an approved intro is
+  // shown to anyone but its owner.
+  moderationStatus: "pending" | "approved" | "rejected";
+  createdAt: string;
 }
 
 export interface Like {

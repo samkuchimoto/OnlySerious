@@ -27,7 +27,13 @@ service cloud.firestore {
         // The free tier's twelve-hour opening gate reads this. Without
         // it here a client could clear its own cooldown with one
         // updateDoc, which is the whole gate.
-        'lastOpenedConversationAt'
+        'lastOpenedConversationAt',
+        // The voice intro carries its own moderationStatus, and only an
+        // 'approved' one is played to anyone else. Client-writable, that
+        // is a one-line bypass of transcript moderation — and the object
+        // it points at is a public blob URL, so the bypass would be
+        // audible to every visitor.
+        'voiceIntro'
       ];
       return request.resource.data.diff(resource.data).affectedKeys().hasAny(lockedFields);
     }

@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { BrowseGrid, QuickLook } from "@/components/BrowseGrid";
 import { CountryHub } from "@/components/CountryHub";
 import { LiveLounge } from "@/components/LiveLounge";
+import { VoiceIntroPlayer } from "@/components/VoiceIntro";
 import { getActivityStatus, isNewMember } from "@/lib/activity";
 import { countLive, partitionByFreshness } from "@/lib/discovery";
 import { isInMarket, MARKET_TABS, type MarketId } from "@/lib/markets";
@@ -481,6 +482,19 @@ export default function Browse() {
                         <p className="label w-fit rounded-full bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] px-3 py-1.5 text-[var(--gold-deep)]">
                           {intentLabel(profile.relationshipIntent)}
                         </p>
+                      )}
+
+                      {/* "To bridge linguistic and cultural distances,
+                          this view integrates a 15-second recorded Voice
+                          Introduction." The audit puts it in the
+                          Editorial mode specifically, and that is the
+                          right place: the grid is for scanning, this is
+                          for deciding, and a voice is a deciding signal. */}
+                      {profile.voiceIntro?.moderationStatus === "approved" && (
+                        <VoiceIntroPlayer
+                          intro={profile.voiceIntro}
+                          label={`${profile.displayName}'s introduction`}
+                        />
                       )}
 
                       {profile.headline && <p className="text-base font-medium">{profile.headline}</p>}
