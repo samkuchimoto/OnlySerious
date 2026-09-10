@@ -24,11 +24,9 @@
 
 :root {
   /* Canvas and ink */
-  --background: #f7f3ee; /* unbleached linen — warmer and less "web cream" */
-  --foreground: #1f1610; /* oiled dark teak, for headings and deep darks */
-  --body-ink: #3e2f23; /* a softer teak for running text — pure teak at
-                          body size reads as harsh on linen */
-  --surface: #fcfaf7; /* raw-silk card face */
+  --background: #fff8f0; /* warm amber silk — natural linen, the page */
+  --foreground: #1c130e; /* dark teak — aged wood, all primary type */
+  --surface: #fffdfa; /* card face, a half-step lighter than the page */
   --muted: #7a6a5c; /* teak at reading weight for secondary copy */
 
   /* Brand */
@@ -39,14 +37,8 @@
   --glow: #ffd180; /* candlelight — focus rings, unread, aura */
 
   /* Structure */
-  --rule: #e6ddd2; /* hairline that belongs to the palette, not grey */
-  --radius: 28px; /* generous curvature — 16px reads as a web card, this
-                     reads as an object. */
-
-  /* One easing curve for the whole app. A long, decelerating ease is
-     what separates "a page changed" from "something moved" — the
-     default browser ease is linear enough to feel mechanical. */
-  --ease-silk: cubic-bezier(0.16, 1, 0.3, 1);
+  --rule: #e8dccd; /* hairline that belongs to the palette, not grey */
+  --radius: 16px; /* every card, per the spec */
 
   /* Depth. Warm-tinted rather than neutral black: a grey shadow over an
      amber page reads as dirt, not as light. */
@@ -72,38 +64,9 @@
    neutral dark inversion would throw away the one thing that separates
    this from every other app in the category. */
 
-/* ---------------------------------------------------------------------
-   Atmosphere.
-
-   A flat fill is what makes a warm palette still read as a web template.
-   Two layers fix it, both cheap: a fine grain so the linen has a surface
-   rather than being a colour, and two wide amber pools so the light in
-   the room appears to come from somewhere. Fixed rather than scrolling —
-   light does not scroll with the page.
-
-   The grain is an inline SVG turbulence, so there is no image request
-   and nothing to cache-bust. Kept very low contrast: visible as texture,
-   invisible as noise.
-   --------------------------------------------------------------------- */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    radial-gradient(60rem 40rem at 12% -10%, color-mix(in srgb, var(--glow) 26%, transparent), transparent 70%),
-    radial-gradient(50rem 36rem at 100% 8%, color-mix(in srgb, var(--terracotta) 12%, transparent), transparent 72%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.32'/%3E%3C/svg%3E");
-  background-repeat: no-repeat, no-repeat, repeat;
-  /* soft-light keeps the grain as texture on the linen rather than as a
-     grey film sitting on top of it. */
-  mix-blend-mode: soft-light;
-}
-
 body {
   background: var(--background);
-  color: var(--body-ink);
+  color: var(--foreground);
   /* Thai sits in the stack after the Latin face rather than replacing
      it: the browser reaches for it only for glyphs the first face has
      no coverage for, so a bilingual profile renders in one visual voice
@@ -123,8 +86,6 @@ body {
   font-weight: 500;
   letter-spacing: -0.015em;
   line-height: 1.08;
-  /* Headings take the deepest teak; body text uses the softer one. */
-  color: var(--foreground);
 }
 
 .label {
@@ -220,20 +181,14 @@ body {
    plain.
    --------------------------------------------------------------------- */
 
-/* Frosted linen, not a dark block.
-   The dark teak bar was a mistake in context: the rest of the app is an
-   airy cream editorial surface, so a heavy dark ceiling read as a
-   different template pasted on top, pinned the eye to the top of the
-   screen, and pushed the secondary links to a contrast level that was
-   genuinely hard to scan. Teak stays the ink, not the ground. */
-.nav-glass {
-  background: color-mix(in srgb, var(--background) 94%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--foreground) 7%, transparent);
+.nav-teak {
+  background: color-mix(in srgb, var(--foreground) 92%, transparent);
+  color: #f7efe6;
 }
 @supports (backdrop-filter: blur(1px)) {
-  .nav-glass {
-    background: color-mix(in srgb, var(--background) 72%, transparent);
-    backdrop-filter: blur(18px) saturate(1.15);
+  .nav-teak {
+    background: color-mix(in srgb, var(--foreground) 72%, transparent);
+    backdrop-filter: blur(14px) saturate(1.2);
   }
 }
 
