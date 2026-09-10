@@ -65,20 +65,19 @@ export function AppNav({ meta }: AppNavProps) {
     // the likes counter cannot fit 360px, and letting them wrap produced
     // a ragged break mid-list ("...My profile" / "Settings [Upgrade]")
     // that read as broken rather than designed. Most traffic is phones.
-    // Translucent teak, per the design spec, and sticky. Photographs
-    // scroll under it instead of being cut off by an opaque bar, and on a
-    // browse page that is mostly photographs that is the difference
-    // between a chrome and a frame. The solid fallback in globals.css
-    // matters: without backdrop-filter this renders near-transparent teak
-    // with white type on it, which is unreadable rather than merely plain.
-    <header className="nav-teak sticky top-0 z-30 w-full">
+    // The bar takes the page's own ground, not a dark block. A solid
+    // brown ceiling on an otherwise airy cream app read as a different
+    // template pasted on top and pinned the eye away from the
+    // photographs the page exists for. Sticky and translucent so content
+    // scrolls under it; a hairline rule is all the separation it needs.
+    <header className="sticky top-0 z-30 w-full border-b border-[var(--rule)] bg-[color-mix(in_srgb,var(--background)_88%,transparent)] backdrop-blur-md">
       <div className="mx-auto w-full max-w-2xl px-6 py-4 sm:py-5">
       <div className="flex items-center justify-between gap-4">
         {/* The wordmark goes home, not to Browse. It pointed at /browse,
             which meant that on the Browse page — where most signed-in
             time is spent — clicking the logo did nothing at all. A
             wordmark that does nothing reads as a broken page. */}
-        <Link href="/" className="display text-xl text-white">
+        <Link href="/" className="display text-xl">
           {BRAND_CONFIG.appTitle}
         </Link>
         {/* Pinned to the top row on every width, so the one commercial
@@ -98,13 +97,13 @@ export function AppNav({ meta }: AppNavProps) {
           a single tidy line beats a second ragged one. The scrollbar is
           hidden because the row is short enough that it reads as a row,
           not as a scroller. */}
-      <div className="mt-2.5 flex items-center gap-x-4 overflow-x-auto whitespace-nowrap text-sm text-white/60 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {meta && <span className="shrink-0 text-[var(--glow)]">{meta}</span>}
+      <div className="mt-2.5 flex items-center gap-x-4 overflow-x-auto whitespace-nowrap text-sm text-[var(--muted)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {meta && <span className="shrink-0 text-[var(--accent,var(--terracotta))]">{meta}</span>}
         {LINKS.filter((link) => link.href !== pathname).map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className="shrink-0 transition-colors hover:text-white"
+            className="shrink-0 transition-colors hover:text-[var(--foreground)]"
           >
             {link.label}
           </Link>
