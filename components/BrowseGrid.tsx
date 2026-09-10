@@ -87,13 +87,14 @@ export function BrowseGrid({
                   <p className="truncate text-[0.65rem] text-white/70">{profile.city}</p>
                 </div>
 
+                {/* Understated markers rather than stickers. A filled
+                    badge on a tile of faces competes with the face,
+                    which is the one thing the tile exists to show. */}
                 {isNewMember(profile.createdAt) && (
-                  <span className="label absolute left-1.5 top-1.5 rounded bg-[var(--gold)] px-1.5 py-0.5 text-[0.55rem] text-[var(--foreground)]">
-                    New
-                  </span>
+                  <span className="absolute left-2 top-2 h-1.5 w-1.5 rounded-full bg-[var(--gold)] shadow-[0_0_0_2px_rgba(31,22,16,0.35)]" title="Recently joined" />
                 )}
                 {liked && (
-                  <span className="absolute right-1.5 top-1.5 rounded-full bg-[var(--terracotta)] px-1.5 py-0.5 text-[0.6rem] font-bold text-white">
+                  <span className="like absolute right-2 top-2 text-sm drop-shadow-[0_1px_3px_rgba(31,22,16,0.8)]">
                     ♥
                   </span>
                 )}

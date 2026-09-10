@@ -51,8 +51,12 @@ type LikeStatus = "idle" | "sending" | "liked" | "matched" | "limit-reached" | "
 // so SSR and hydration agree, and there is no setState-in-effect for the
 // React Compiler to reject (it already rejected that twice on this page).
 //
-// Default is the grid. The paying audience is the one that wants density,
-// and someone who prefers to read gets a one-tap switch that then sticks.
+// Default is now the editorial view. A three-column thumbnail grid is
+// the layout of a product catalogue, and on a page of people it frames
+// them as inventory — which is exactly the register a serious
+// matchmaking service cannot afford. The grid remains one tap away for
+// the power-searcher who genuinely wants forty profiles a minute, and
+// the choice sticks.
 // ---------------------------------------------------------------------
 
 type BrowseView = "grid" | "curated";
@@ -68,11 +72,11 @@ function subscribeView(cb: () => void) {
 
 function readView(): BrowseView {
   try {
-    return localStorage.getItem(VIEW_KEY) === "curated" ? "curated" : "grid";
+    return localStorage.getItem(VIEW_KEY) === "grid" ? "grid" : "curated";
   } catch {
     // Private windows and blocked site data throw on access rather than
     // returning null — a preference is not worth a crashed page.
-    return "grid";
+    return "curated";
   }
 }
 
@@ -106,7 +110,7 @@ export default function Browse() {
     () => false,
   );
 
-  const view = useSyncExternalStore(subscribeView, readView, () => "grid" as BrowseView);
+  const view = useSyncExternalStore(subscribeView, readView, () => "curated" as BrowseView);
   // Which profile the quick-look is showing. Null means closed.
   const [quickLook, setQuickLook] = useState<UserProfile | null>(null);
 
@@ -229,7 +233,19 @@ export default function Browse() {
 
   return (
     <main className="flex min-h-screen flex-col text-[var(--foreground)]">
-      <AppNav meta={remaining !== null ? <span>{remaining} likes left today</span> : null} />
+      {/* The counter is shown only when it is nearly spent. A running
+          "100 likes left today" is an arcade score: it frames the whole
+          page as a budget being drawn down and makes a serious product
+          feel transactional. It becomes useful information exactly once —
+          when running out is imminent — and that is the only time it
+          appears now. The server stays authoritative either way. */}
+      <AppNav
+        meta={
+          remaining !== null && remaining <= 5 ? (
+            <span>{remaining === 0 ? "No likes left today" : `${remaining} likes left today`}</span>
+          ) : null
+        }
+      />
 
       <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
         {loading && <p className="text-sm text-[var(--muted)]">Loading…</p>}
@@ -435,9 +451,13 @@ export default function Browse() {
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={photo.url} alt="" className="h-full w-full object-cover" />
                         )}
+                        {/* A typographic tag rather than a sticker. The
+                            bright blue NEW pill was the loudest thing on
+                            a page of faces, and it made a person look
+                            like stock. */}
                         {isNew && (
-                          <span className="absolute bottom-3 right-3 rounded-md bg-blue-600 px-2 py-0.5 text-xs font-bold text-white">
-                            NEW
+                          <span className="label absolute bottom-3 right-3 text-[0.6rem] text-white drop-shadow-[0_1px_3px_rgba(31,22,16,0.9)]">
+                            · Recently joined
                           </span>
                         )}
                       </Link>
