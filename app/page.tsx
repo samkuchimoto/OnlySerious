@@ -50,31 +50,37 @@ export default function Home() {
         <InAppBrowserWarning />
       </div>
 
-      <section className="relative flex min-h-[86vh] flex-col overflow-hidden">
-        {/* An intercultural couple at golden hour over Halong Bay.
-            It states the platform's whole proposition in under a second
-            — who is here, and what it is for — which a solo portrait or
-            a generic park bench does not.
+      {/* -----------------------------------------------------------------
+          Asymmetrical hero. Copy occupies the left, the couple the right,
+          and the two never overlap.
 
-            object-right keeps the couple in frame when a phone crops
-            this 2.9:1 strip to a tall viewport; the bay and the sunset
-            are the part that can be lost, and they are also the part
-            that gives the headline somewhere quiet to sit on desktop. */}
+          The previous version centred the headline over the photograph,
+          which put text across both faces — hiding the expressions that
+          are the entire emotional argument, and making the type harder to
+          read at the same time. It was also soft, because the source was
+          a 1105px crop stretched to 2200. This is a 2560px WebP with no
+          upscaling anywhere.
+          ----------------------------------------------------------------- */}
+      <section className="relative flex min-h-[86vh] flex-col overflow-hidden">
+        {/* object-[70%] holds the couple in the right portion at every
+            width. On a phone the frame crops toward them, which is the
+            correct thing to lose the bay for; on desktop the bay and the
+            railing become the quiet ground the copy sits on. */}
         <Image
-          src="/images/hero-amora-couple.jpg"
+          src="/images/hero-amora.webp"
           alt=""
           fill
           priority
           sizes="100vw"
-          className="object-cover object-right"
+          className="object-cover object-[70%_center]"
         />
-        {/* Two stacked overlays: a mild wash across the whole photo so the
-            nav stays legible without flattening the image, plus an extra
-            bottom-weighted gradient concentrated where the headline sits.
-            Both are teak-tinted rather than neutral black — a grey scrim
-            over a warm photograph drains it. */}
-        <div className="absolute inset-0 bg-[#1c130e]/30" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1c130e]/80 via-[#1c130e]/15 to-transparent" />
+
+        {/* Directional scrim. Left-to-right on desktop so the copy side
+            darkens and the faces stay untouched; bottom-up on a phone,
+            where the layout stacks and there is no left column. Teak-
+            tinted rather than neutral black — grey over a golden-hour
+            photograph drains it. */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1c130e]/85 via-[#1c130e]/25 to-transparent sm:bg-gradient-to-r sm:from-[#1c130e]/85 sm:via-[#1c130e]/40 sm:to-transparent" />
 
         <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-8 sm:px-10">
           <span className="display text-2xl text-white">{BRAND_CONFIG.appTitle}</span>
@@ -86,31 +92,32 @@ export default function Home() {
           </Link>
         </header>
 
-        <div className="relative z-10 mx-auto flex w-full max-w-4xl flex-1 flex-col justify-end px-6 pb-16 text-center sm:px-10 sm:pb-24">
-          <h1 className="display text-5xl leading-[1.03] text-white sm:text-7xl">
-            {BRAND_CONFIG.heroHeadline}
-          </h1>
-          <p className="mx-auto mt-6 max-w-xl text-lg text-white/85 sm:text-xl">
-            {BRAND_CONFIG.heroSubheadline}
-          </p>
-          <div className="mt-10 flex flex-col items-center gap-3">
-            <Link href="/sign-up" className="btn-gold px-9 py-4 text-base">
-              Create your profile
-            </Link>
-            <p className="text-sm text-white/70">Free to join · {BRAND_CONFIG.tagline}</p>
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-end px-6 pb-16 sm:px-10 sm:pb-24">
+          <div className="max-w-xl text-center sm:text-left">
+            <h1 className="display text-5xl leading-[1.03] text-white sm:text-6xl lg:text-7xl">
+              {BRAND_CONFIG.heroHeadline}
+            </h1>
+            <p className="mt-6 text-lg text-white/85 sm:text-xl">
+              {BRAND_CONFIG.heroSubheadline}
+            </p>
+            <div className="mt-10 flex flex-col items-center gap-3 sm:items-start">
+              <Link href="/sign-up" className="btn-gold px-9 py-4 text-base">
+                Create your profile
+              </Link>
+              <p className="text-sm text-white/70">Free to join · {BRAND_CONFIG.tagline}</p>
+            </div>
           </div>
         </div>
 
-        {/* Amara, greeting from the corner of the hero. Deliberately at
-            the edge and behind the copy's stacking order — she is the
-            first warm signal on the page, not the subject of it. Hidden
-            below sm because on a phone the hero is already a face, a
-            headline and a button, and a fourth element is one too many. */}
+        {/* Amara, kept but moved out of the photograph's way. She sat over
+            the man's arm before, which is what made her read as clutter
+            against realistic imagery. Small, low, on the copy side, and
+            desktop-only — a phone hero is already a face, a headline and
+            a button, and a fourth element is one too many. */}
         <Mascot
           pose="heart"
-          size="xl"
-          priority
-          className="absolute bottom-0 right-2 z-0 hidden drop-shadow-2xl sm:block lg:right-10"
+          size="md"
+          className="absolute bottom-0 left-2 z-0 hidden drop-shadow-2xl lg:block"
         />
       </section>
 
