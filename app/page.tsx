@@ -51,12 +51,23 @@ export default function Home() {
       </div>
 
       <section className="relative flex min-h-[86vh] flex-col overflow-hidden">
-        {/* A woman, not a couple. The paying audience is a Western man
-            deciding in four seconds whether the people he wants to meet
-            are on this app; a couple already together answers a question
-            he did not ask. Every competitor that converts this audience
-            leads with members, not with outcomes. */}
-        <Image src="/images/hero-woman.png" alt="" fill priority className="object-cover" />
+        {/* An intercultural couple at golden hour over Halong Bay.
+            It states the platform's whole proposition in under a second
+            — who is here, and what it is for — which a solo portrait or
+            a generic park bench does not.
+
+            object-right keeps the couple in frame when a phone crops
+            this 2.9:1 strip to a tall viewport; the bay and the sunset
+            are the part that can be lost, and they are also the part
+            that gives the headline somewhere quiet to sit on desktop. */}
+        <Image
+          src="/images/hero-amora-couple.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-right"
+        />
         {/* Two stacked overlays: a mild wash across the whole photo so the
             nav stays legible without flattening the image, plus an extra
             bottom-weighted gradient concentrated where the headline sits.
