@@ -109,16 +109,20 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Amara, kept but moved out of the photograph's way. She sat over
-            the man's arm before, which is what made her read as clutter
-            against realistic imagery. Small, low, on the copy side, and
-            desktop-only — a phone hero is already a face, a headline and
-            a button, and a fourth element is one too many. */}
-        <Mascot
-          pose="heart"
-          size="md"
-          className="absolute bottom-0 left-2 z-0 hidden drop-shadow-2xl lg:block"
-        />
+        {/* Amara is deliberately absent from the hero.
+
+            She is still the brand mascot and still appears throughout the
+            app — the onboarding screens, the empty states, the upgrade
+            page, the early-access card below. But this is the one surface
+            where a realistic cinematic photograph carries the entire
+            message, and a 3D character over it did two bad things at
+            once: it clipped the primary call to action, and it undercut
+            the mature read the photography exists to establish.
+
+            The rule that falls out: she belongs where there is no
+            competing photograph and where she has a job — welcoming,
+            explaining an empty result, softening a wait. Not floating
+            over the hero as decoration. */}
       </section>
 
       <section className="border-t border-[var(--rule)] px-6 py-20 sm:px-10 sm:py-28">
