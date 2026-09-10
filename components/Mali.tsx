@@ -46,8 +46,8 @@ import Image from "next/image";
 export type MaliPose = "wai" | "seal" | "lantern";
 
 const POSE_SRC: Record<MaliPose, string> = {
-  wai: "/mascots/mali-wai.webp",
-  seal: "/mascots/mali-seal.webp",
+  wai: "/mascots/mali-wai-cut.webp",
+  seal: "/mascots/mali-seal-cut.webp",
   lantern: "/mascots/mali-lantern.webp",
 };
 

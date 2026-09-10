@@ -141,7 +141,7 @@ export function MaliConciergeModal({ open, onClose }: { open: boolean; onClose: 
                   pose, which is the right register for a page about
                   vetting rather than romance. */}
               <Image
-                src="/mascots/mali-seal.webp"
+                src="/mascots/mali-seal-cut.webp"
                 alt=""
                 aria-hidden
                 width={96}

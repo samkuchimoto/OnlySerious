@@ -229,7 +229,7 @@ export function PublicShowcaseConsent({
       {eligible && !on && expanded && (
         <div className="flex items-start gap-3">
           <Image
-            src="/mascots/mali-seal.webp"
+            src="/mascots/mali-seal-cut.webp"
             alt=""
             aria-hidden
             width={48}

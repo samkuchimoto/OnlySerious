@@ -173,34 +173,8 @@ export function DiscoveryGrid({ onGate }: { onGate: () => void }) {
   const showMembers = members.length > 0;
 
   return (
-    <section className="canvas pb-14 pt-8">
-      {/* Compact hero. One line, one sentence, then people. */}
-      <h1 className="display max-w-3xl text-3xl leading-[1.08] sm:text-4xl lg:text-5xl">
-        Curated, Meaningful Connections Between the West and Asia.
-      </h1>
-      <p className="measure mt-3 text-base leading-relaxed text-[var(--muted)]">
-        A private, vetted sanctuary for verified professionals, cultured singles, and intentional
-        cross-cultural love.
-      </p>
-
-      {/* Mali, inline and small — a hostess greeting you at the door,
-          not a billboard standing in front of the room. */}
-      <div className="mt-5 flex items-center gap-3">
-        <Image
-          src="/mascots/mali-wai.webp"
-          alt=""
-          aria-hidden
-          width={72}
-          height={108}
-          className="h-auto w-12 shrink-0 sm:w-14"
-        />
-        <p className="text-sm italic leading-relaxed text-[var(--muted)]">
-          &ldquo;Sawasdee ka! Welcome to AmoraAsia. Let me introduce you to our private
-          community.&rdquo;
-        </p>
-      </div>
-
-      <div className="mt-7 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+    <section id="directory" className="canvas scroll-mt-20 pb-14">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <p className="label text-[var(--gold-deep)]">
           {showMembers ? "Verified Founding Members" : "Inside AmoraAsia"}
         </p>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { BRAND_CONFIG } from "@/config/brand";
 import { InAppBrowserWarning } from "@/components/InAppBrowserWarning";
 import { LiveHeader } from "@/components/LiveHeader";
+import { Hero } from "@/components/Hero";
 import { DiscoveryGrid } from "@/components/DiscoveryGrid";
 import { MaliConciergeModal } from "@/components/MaliConciergeModal";
 import { Lanterns } from "@/components/Lanterns";
@@ -53,6 +54,8 @@ export default function Home() {
       <div className="canvas pt-4">
         <InAppBrowserWarning />
       </div>
+
+      <Hero />
 
       <DiscoveryGrid onGate={openConcierge} />
 

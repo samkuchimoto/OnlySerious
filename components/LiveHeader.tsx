@@ -28,39 +28,17 @@
 // full says something much worse, and says it to exactly the sceptical
 // audience this page is written for.
 // ---------------------------------------------------------------------
-
 "use client";
-
 import Image from "next/image";
 import Link from "next/link";
 import { BRAND_CONFIG } from "@/config/brand";
-
-const CITIES = "Bangkok, Cebu & Da Nang";
-
 export function LiveHeader() {
   return (
     <header className="sticky top-0 z-40">
-      {/* The cohort bar.
-          It used to print the real member count, which was accurate and
-          commercially suicidal: "4 verified members" tells a prospective
-          subscriber the room is empty, and no amount of design recovers
-          from that. Not stating a number is not a lie — every word here
-          is true, the markets really are open for applications, and the
-          founding cohort really is forming. Numbers come back when they
-          are numbers worth printing. */}
-      <div className="bg-[var(--teak)] text-[var(--cream)]">
-        <div className="canvas flex items-center justify-center gap-2.5 py-2 text-center">
-          <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--celadon)] opacity-70" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--celadon)]" />
-          </span>
-          <p className="text-xs sm:text-sm">
-            <span className="font-semibold">Private Founding Cohort</span>{" "}
-            <span className="text-[var(--cream)]/70">· {CITIES} now open for applications</span>
-          </p>
-        </div>
-      </div>
-
+      {/* The cohort ribbon used to live here. It has moved into the
+          hero as a gold eyebrow pill: two statements of the same fact a
+          hundred pixels apart is clutter, and the pill is the better
+          placed of the two. */}
       {/* The navbar. Translucent cream over the hero, so the photograph
           scrolls under it instead of being cut off by an opaque bar. */}
       <div className="nav-sanctuary">
@@ -80,7 +58,6 @@ export function LiveHeader() {
             />
             <span className="display text-xl">{BRAND_CONFIG.appTitle}</span>
           </Link>
-
           {/* Two actions, and they answer different questions.
               "Create your profile" next to "Private Access" made the
               site ambiguous — open platform, login portal, or closed
