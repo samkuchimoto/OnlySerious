@@ -143,6 +143,20 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    match /waitlist_applications/{applicationId} {
+      // Velvet Rope applications (app/api/apply). Every document holds
+      // an email address or a phone number, so this is the one
+      // collection where an accidental read rule is a data breach
+      // rather than a leak of preferences.
+      //
+      // Unreachable from any client in both directions: the route
+      // writes with the Admin SDK, which bypasses rules entirely, and
+      // nothing in the app ever reads the list back. Firestore already
+      // default-denies an unmatched path — this block exists to say so
+      // out loud, so a later wildcard cannot quietly widen it.
+      allow read, write: if false;
+    }
+
     match /hides/{hideId} {
       // Lighter-weight than blocks/{blockId} above — same deterministic-
       // id shape, but reads are hider-only (the hidden person never sees

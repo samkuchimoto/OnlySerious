@@ -232,6 +232,13 @@ export interface UserProfile {
   // if coarse, signal rather than a live presence system. See
   // lib/activity.ts for how this becomes "Online now" / "Active 2d ago".
   lastActiveAt?: string;
+  // Consent to appear on the public homepage. Absent means no, which
+  // is what every member created before this existed is: showing a
+  // profile to signed-out visitors reverses firestore.rules' deliberate
+  // "an active profile isn't meant to be scraped by anyone without an
+  // account", and a photograph plus a city is personal data. Only
+  // /api/showcase reads it.
+  publicShowcase?: boolean;
   // The 15-second voice introduction. Written only by
   // app/api/voice-intro, which is also the only place its
   // moderationStatus is decided.
