@@ -150,13 +150,37 @@ export function MaliConciergeModal({ open, onClose }: { open: boolean; onClose: 
               />
               <div className="min-w-0">
                 <h2 id="concierge-heading" className="display text-2xl">
-                  AmoraAsia is a Private, Curated Community.
+                  Join our verified members.
                 </h2>
                 <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
-                  To ensure safety, dignity, and real intent, profiles and conversations are
-                  unlocked exclusively for approved members.
+                  Create your private profile in 60 seconds to see full profiles, hear voice
+                  introductions, and start connecting.
                 </p>
+                {/* The suggested copy was "Join Ploi and 100+ verified
+                    members". The number is the only part omitted: there
+                    are not 100, and a figure invented at the exact
+                    moment someone decides to trust you is the worst
+                    possible place to put one. Everything else about the
+                    trigger is unchanged. */}
               </div>
+            </div>
+
+            {/* Primary path: registration, which is open. The visitor
+                got here by tapping a profile — the thing they want is
+                to see her, not to join a queue. */}
+            <div className="mt-6 flex flex-col gap-2">
+              <Link href="/sign-up" className="btn-gold w-full px-6 py-3.5 text-center text-sm">
+                Create Your Profile — 60 Seconds
+              </Link>
+              <p className="text-center text-xs text-[var(--muted)]">
+                Free. Google or email. Browse everyone once you&apos;re in.
+              </p>
+            </div>
+
+            <div className="mt-7 flex items-center gap-3">
+              <span className="h-px flex-1 bg-[var(--rule)]" aria-hidden />
+              <span className="label text-[var(--muted)]">or request an invitation</span>
+              <span className="h-px flex-1 bg-[var(--rule)]" aria-hidden />
             </div>
 
             <form onSubmit={submit} className="mt-7 flex flex-col gap-5">
@@ -216,21 +240,6 @@ export function MaliConciergeModal({ open, onClose }: { open: boolean; onClose: 
               >
                 {sending ? "Sending…" : "Apply for Private Invitation — 60 Seconds"}
               </button>
-
-              {/* The other door, offered at the exact moment someone has
-                  decided they want in. Registration is open; making a
-                  ready visitor wait for a cohort they don't need is a
-                  lost member, not an exclusive one. */}
-              <p className="text-center text-sm text-[var(--muted)]">
-                Ready now?{" "}
-                <Link
-                  href="/sign-up"
-                  className="font-semibold text-[var(--foreground)] underline underline-offset-4"
-                >
-                  Create your profile
-                </Link>{" "}
-                instead — it&apos;s open and free.
-              </p>
 
               {/* This collects a contact detail from EU visitors and
                   then mails them. Saying what it is used for, and

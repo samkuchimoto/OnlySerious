@@ -48,7 +48,7 @@ export default function Home() {
 
   return (
     <main className="flex-1">
-      <LiveHeader onPrivateAccess={openConcierge} />
+      <LiveHeader />
 
       <div className="canvas pt-4">
         <InAppBrowserWarning />
@@ -77,11 +77,11 @@ export default function Home() {
             </h2>
             <p className="mt-5 text-lg text-[var(--cream)]/85">{BRAND_CONFIG.heroSubheadline}</p>
             <div className="mt-8 flex flex-col items-center gap-3 sm:items-start">
-              <button type="button" onClick={openConcierge} className="btn-gold px-9 py-4 text-base">
-                Apply for Private Invitation
-              </button>
+              <Link href="/sign-up" className="btn-gold px-9 py-4 text-base">
+                Create Your Profile
+              </Link>
               <p className="text-sm text-[var(--cream)]/70">
-                Free to apply · {BRAND_CONFIG.tagline}
+                Free to join · {BRAND_CONFIG.tagline}
               </p>
             </div>
           </div>
@@ -105,9 +105,13 @@ export default function Home() {
           the application. */}
       <section className="border-t border-[var(--rule)] py-14">
         <div className="canvas flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-center text-sm text-[var(--muted)]">
-          <Link href="/sign-up" className="underline underline-offset-4 hover:text-[var(--foreground)]">
-            Already approved? Sign in
-          </Link>
+          <button
+            type="button"
+            onClick={openConcierge}
+            className="underline underline-offset-4 hover:text-[var(--foreground)]"
+          >
+            Request a private invitation
+          </button>
           <Link href="/get-app" className="underline underline-offset-4 hover:text-[var(--foreground)]">
             Install the app
           </Link>

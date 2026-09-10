@@ -31,65 +31,35 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { BRAND_CONFIG } from "@/config/brand";
 
 const CITIES = "Bangkok, Cebu & Da Nang";
 
-export function LiveHeader({ onPrivateAccess }: { onPrivateAccess: () => void }) {
-  const [liveCount, setLiveCount] = useState<number | null>(null);
-  const [memberCount, setMemberCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/showcase")
-      .then((r) => r.json())
-      .then((d) => {
-        if (cancelled) return;
-        setLiveCount(d.liveCount ?? 0);
-        setMemberCount(d.memberCount ?? 0);
-      })
-      // A failed count is simply no bar. It is decoration on a marketing
-      // page, not something worth an error state.
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const showPresence = (liveCount ?? 0) > 0;
-  const showRegistry = !showPresence && (memberCount ?? 0) > 0;
-
+export function LiveHeader() {
   return (
     <header className="sticky top-0 z-40">
-      {/* The ambient presence bar. Teak ground so it reads as a ribbon
-          above the page rather than as part of the hero photograph. */}
-      {(showPresence || showRegistry) && (
-        <div className="bg-[var(--teak)] text-[var(--cream)]" aria-live="polite">
-          <div className="canvas flex items-center justify-center gap-2.5 py-2 text-center">
-            <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--celadon)] opacity-70" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--celadon)]" />
-            </span>
-            <p className="text-xs sm:text-sm">
-              {showPresence ? (
-                <>
-                  <span className="font-semibold tabular-nums">{liveCount}</span>{" "}
-                  {liveCount === 1 ? "member" : "members"} active right now
-                </>
-              ) : (
-                <>
-                  <span className="font-semibold tabular-nums">{memberCount}</span> verified{" "}
-                  {memberCount === 1 ? "member" : "members"}
-                </>
-              )}{" "}
-              <span className="text-[var(--cream)]/70">across {CITIES}</span>
-            </p>
-          </div>
+      {/* The cohort bar.
+          It used to print the real member count, which was accurate and
+          commercially suicidal: "4 verified members" tells a prospective
+          subscriber the room is empty, and no amount of design recovers
+          from that. Not stating a number is not a lie — every word here
+          is true, the markets really are open for applications, and the
+          founding cohort really is forming. Numbers come back when they
+          are numbers worth printing. */}
+      <div className="bg-[var(--teak)] text-[var(--cream)]">
+        <div className="canvas flex items-center justify-center gap-2.5 py-2 text-center">
+          <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--celadon)] opacity-70" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--celadon)]" />
+          </span>
+          <p className="text-xs sm:text-sm">
+            <span className="font-semibold">Private Founding Cohort</span>{" "}
+            <span className="text-[var(--cream)]/70">· {CITIES} now open for applications</span>
+          </p>
         </div>
-      )}
+      </div>
 
       {/* The navbar. Translucent cream over the hero, so the photograph
           scrolls under it instead of being cut off by an opaque bar. */}
@@ -111,17 +81,22 @@ export function LiveHeader({ onPrivateAccess }: { onPrivateAccess: () => void })
             <span className="display text-xl">{BRAND_CONFIG.appTitle}</span>
           </Link>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {/* Registration is open, so the nav offers it. Hidden on the
-                narrowest phones only because two buttons plus the
-                wordmark do not fit 360px — the same choice appears
-                below the grid, where there is room for both. */}
-            <Link href="/sign-up" className="hidden text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)] sm:inline">
-              Create your profile
+          {/* Two actions, and they answer different questions.
+              "Create your profile" next to "Private Access" made the
+              site ambiguous — open platform, login portal, or closed
+              waitlist? A quiet Sign in for people who already have an
+              account, and one gold CTA for everyone else, removes the
+              question entirely. */}
+          <div className="flex items-center gap-4 sm:gap-5">
+            <Link
+              href="/sign-up"
+              className="text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]"
+            >
+              Sign in
             </Link>
-            <button type="button" onClick={onPrivateAccess} className="btn-gold px-5 py-2 text-sm">
-              Private Access
-            </button>
+            <Link href="/sign-up" className="btn-gold px-5 py-2 text-sm">
+              Get Started Free
+            </Link>
           </div>
         </div>
       </div>
