@@ -65,6 +65,12 @@ export async function GET(request: Request) {
             amount: p.unit_amount,
             currency: p.currency.toUpperCase(),
             interval: p.recurring?.interval ?? null,
+            // Stripe stores "every 3 months" as interval=month with
+            // interval_count=3, so without this a quarterly plan is
+            // indistinguishable from a monthly one at the same amount —
+            // which is exactly the mistake this listing exists to catch
+            // when a new tier is wired up.
+            intervalCount: p.recurring?.interval_count ?? null,
           })),
       });
     } catch (err) {
@@ -145,6 +151,7 @@ export async function GET(request: Request) {
           amount: p.unit_amount,
           currency: p.currency.toUpperCase(),
           interval: p.recurring?.interval ?? null,
+          intervalCount: p.recurring?.interval_count ?? null,
         }));
       } catch (listErr) {
         const e = listErr as { type?: string; code?: string };
