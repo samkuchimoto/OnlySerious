@@ -6,7 +6,7 @@ import type { User } from "firebase/auth";
 import { watchAuthState } from "@/lib/firebase";
 import { AppNav } from "@/components/AppNav";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
-import { MascotEmptyState } from "@/components/Mascot";
+import { EmptyState } from "@/components/EmptyState";
 import { getActivityStatus } from "@/lib/activity";
 import { capture } from "@/lib/analytics";
 
@@ -146,8 +146,7 @@ export default function LikedMe() {
         )}
 
         {!loading && user && !loadError && count === 0 && (
-          <MascotEmptyState
-            pose="sitting"
+          <EmptyState
             title="No likes yet"
             body="When someone likes you, they appear here. Profiles with more photos and a filled-in headline get seen more often."
           />

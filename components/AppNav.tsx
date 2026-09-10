@@ -70,8 +70,8 @@ export function AppNav({ meta }: AppNavProps) {
     // template pasted on top and pinned the eye away from the
     // photographs the page exists for. Sticky and translucent so content
     // scrolls under it; a hairline rule is all the separation it needs.
-    <header className="sticky top-0 z-30 w-full border-b border-[var(--rule)] bg-[color-mix(in_srgb,var(--background)_88%,transparent)] backdrop-blur-md">
-      <div className="mx-auto w-full max-w-2xl px-6 py-4 sm:py-5">
+    <header className="nav-sanctuary sticky top-0 z-30 w-full">
+      <div className="canvas py-4 sm:py-5">
       <div className="flex items-center justify-between gap-4">
         {/* The wordmark goes home, not to Browse. It pointed at /browse,
             which meant that on the Browse page — where most signed-in
@@ -98,7 +98,7 @@ export function AppNav({ meta }: AppNavProps) {
           hidden because the row is short enough that it reads as a row,
           not as a scroller. */}
       <div className="mt-2.5 flex items-center gap-x-4 overflow-x-auto whitespace-nowrap text-sm text-[var(--muted)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {meta && <span className="shrink-0 text-[var(--accent,var(--terracotta))]">{meta}</span>}
+        {meta && <span className="shrink-0 text-[var(--gold-deep)]">{meta}</span>}
         {LINKS.filter((link) => link.href !== pathname).map((link) => (
           <Link
             key={link.href}

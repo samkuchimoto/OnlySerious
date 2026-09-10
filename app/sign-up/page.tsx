@@ -7,7 +7,7 @@ import { RecaptchaVerifier, linkWithPhoneNumber, type ConfirmationResult, type U
 import { FirebaseError } from "firebase/app";
 import { auth, db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
-import { Mascot } from "@/components/Mascot";
+import { Mali } from "@/components/Mali";
 import {
   MAX_BIO_LENGTH,
   MAX_HEADLINE_LENGTH,
@@ -736,20 +736,26 @@ export default function SignUp() {
 
         {stage === "pending-review" && user && (
           <div className="flex flex-col items-start gap-6 pt-8">
-            {/* Amara, at the one moment in the whole product that is
-                unambiguously good news. A screen that says "your profile
-                is live" and then immediately asks for notifications reads
-                as a system talking; a welcome reads as a house. She is
-                also useful on the review state, where the honest message
-                is "wait", and waiting is easier with a face on it. */}
+            {/* Mali, at the one moment in the whole product that is
+                unambiguously good news — and squarely inside the
+                onboarding flow, which is the one habitat the audit
+                reserves for her. A screen that says "your profile is
+                live" and then immediately asks for notifications reads as
+                a system talking; a welcome reads as a house. She is also
+                useful on the review state, where the honest message is
+                "wait", and waiting is easier with a face on it.
+
+                The lantern is the brief's Lantern Matchmaker, lit for the
+                good outcome. The wai is a greeting, which is the right
+                register for "we are still checking". */}
             <div className="flex items-center gap-4">
-              <Mascot
-                pose={existingProfile?.status === "active" ? "heart" : "sitting"}
+              <Mali
+                pose={existingProfile?.status === "active" ? "lantern" : "wai"}
                 size="md"
                 className="shrink-0"
               />
               <div>
-                <p className="label text-[var(--madder,var(--gold))]">
+                <p className="label text-[var(--gold-deep)]">
                   {existingProfile?.status === "active" ? "Welcome in" : "Almost there"}
                 </p>
                 <p className="mt-1 max-w-xs text-sm leading-relaxed text-[var(--muted)]">

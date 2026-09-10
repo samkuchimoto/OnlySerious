@@ -53,10 +53,21 @@ export const metadata: Metadata = {
   },
 };
 
+// Stamps the day/night ambience on <html> before first paint.
+//
+// It has to be an inline blocking script rather than an effect: an
+// effect runs after hydration, so the page would paint in daylight and
+// then visibly shift to candlelight a frame later. It writes an
+// attribute React never renders, so there is nothing for hydration to
+// mismatch on, and if the script is blocked the :root defaults already
+// carry a complete palette.
+const AMBIENT_SCRIPT = `(function(){try{var h=new Date().getHours();
+document.documentElement.setAttribute('data-ambient',h>=18||h<6?'evening':h<11?'morning':'day');}catch(e){}})();`;
+
 export const viewport: Viewport = {
   // Matches the manifest's theme_color so the Android status bar is the
   // app's own teak rather than browser grey.
-  themeColor: "#1c130e",
+  themeColor: "#20140e",
   width: "device-width",
   initialScale: 1,
   // Not locked: pinch-zoom is an accessibility affordance, and a dating
@@ -69,8 +80,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      // The server has no idea what time it is where the reader is, so
+      // it emits neutral daylight and the inline script below corrects
+      // it during parsing. suppressHydrationWarning is what lets the
+      // DOM win that correction instead of React reverting it.
+      data-ambient="day"
+      suppressHydrationWarning
       className={`${display.variable} ${body.variable} ${thai.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: AMBIENT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <ServiceWorkerRegistrar />
         {children}

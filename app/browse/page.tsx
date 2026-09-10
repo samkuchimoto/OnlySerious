@@ -1,15 +1,18 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
-import Image from "next/image";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
-import { MascotEmptyState } from "@/components/Mascot";
+import { EmptyState } from "@/components/EmptyState";
 import { BrowseGrid, QuickLook } from "@/components/BrowseGrid";
+import { CountryHub } from "@/components/CountryHub";
+import { LiveLounge } from "@/components/LiveLounge";
 import { getActivityStatus, isNewMember } from "@/lib/activity";
+import { countLive, partitionByFreshness } from "@/lib/discovery";
+import { isInMarket, MARKET_TABS, type MarketId } from "@/lib/markets";
 import { withRetry } from "@/lib/retry";
 import {
   FREE_DAILY_LIKE_LIMIT,
@@ -33,16 +36,6 @@ function likesRemainingFor(profile: UserProfile): number {
   return Math.max(0, limit - used);
 }
 
-// Decorative only — reflects who the viewer said they're interested in,
-// never tied to any real or fake profile. "Other"/unset falls back to
-// no banner rather than guessing.
-function heroImageFor(interestedIn: string[] | undefined): string | null {
-  if (!interestedIn?.length) return null;
-  if (interestedIn.includes("woman")) return "/images/hero-woman.png";
-  if (interestedIn.includes("man")) return "/images/hero-man.png";
-  return null;
-}
-
 type LikeStatus = "idle" | "sending" | "liked" | "matched" | "limit-reached" | "error";
 
 // ---------------------------------------------------------------------
@@ -51,11 +44,13 @@ type LikeStatus = "idle" | "sending" | "liked" | "matched" | "limit-reached" | "
 // so SSR and hydration agree, and there is no setState-in-effect for the
 // React Compiler to reject (it already rejected that twice on this page).
 //
-// Default is the grid. The paying audience is the one that wants density,
-// and someone who prefers to read gets a one-tap switch that then sticks.
+// The default is the grid, and the audit is explicit that it must be:
+// "The default experience must be the Luxury Grid View." Someone who
+// prefers to read gets a one-tap switch to the Editorial Narrative view
+// that then sticks.
 // ---------------------------------------------------------------------
 
-type BrowseView = "grid" | "curated";
+type BrowseView = "grid" | "editorial";
 const VIEW_KEY = "browse-view";
 let viewListeners: Array<() => void> = [];
 
@@ -68,7 +63,12 @@ function subscribeView(cb: () => void) {
 
 function readView(): BrowseView {
   try {
-    return localStorage.getItem(VIEW_KEY) === "curated" ? "curated" : "grid";
+    // "curated" was this value's name before the audit renamed the mode
+    // to Editorial Narrative. Mapped rather than dropped so anyone who
+    // had chosen it keeps their choice instead of being silently
+    // reset to the grid.
+    const stored = localStorage.getItem(VIEW_KEY);
+    return stored === "editorial" || stored === "curated" ? "editorial" : "grid";
   } catch {
     // Private windows and blocked site data throw on access rather than
     // returning null — a preference is not worth a crashed page.
@@ -93,6 +93,8 @@ export default function Browse() {
   const [likeStatus, setLikeStatus] = useState<Record<string, LikeStatus>>({});
   const [remaining, setRemaining] = useState<number | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [market, setMarket] = useState<MarketId>("all");
+  const [showDeepCatalog, setShowDeepCatalog] = useState(false);
 
   // The ?subscribed=1 flag Stripe Checkout sends us back with. Read as
   // external browser state rather than copied into a useState inside an
@@ -178,6 +180,26 @@ export default function Browse() {
     });
   }, []);
 
+  // Per-hub counts, over the whole loaded feed rather than the filtered
+  // view — a tab has to be able to say how many people it holds while
+  // you are standing in a different tab.
+  const counts = useMemo(() => {
+    const out = {} as Record<MarketId, number>;
+    for (const tab of MARKET_TABS) {
+      out[tab.id] = profiles.filter((p) => isInMarket(p.country, tab.id)).length;
+    }
+    return out;
+  }, [profiles]);
+
+  // The audit's recency decay, applied after the hub filter: freshest
+  // first, and anyone unseen for more than 72 hours moved out of the
+  // primary feed into the deep catalog below it.
+  const { primary, deepCatalog, live } = useMemo(() => {
+    const inMarket = profiles.filter((p) => isInMarket(p.country, market));
+    const split = partitionByFreshness(inMarket);
+    return { ...split, live: countLive(inMarket) };
+  }, [profiles, market]);
+
   // Plain like — no per-prompt targeting or comment (ThaiFriendly's
   // model, per direct feedback: simpler than Hinge's "like a specific
   // card + optional reply" mechanic).
@@ -215,7 +237,7 @@ export default function Browse() {
 
   // One-tap, no confirmation — a deliberately lighter alternative to
   // Block (see lib/types.ts's Hide comment) available right from the
-  // grid, not just the profile-detail menu.
+  // feed, not just the profile-detail menu.
   async function handleHide(profileId: string) {
     if (!user) return;
     await setDoc(doc(db, "hides", `${user.uid}_${profileId}`), {
@@ -231,16 +253,13 @@ export default function Browse() {
     <main className="flex min-h-screen flex-col text-[var(--foreground)]">
       <AppNav meta={remaining !== null ? <span>{remaining} likes left today</span> : null} />
 
-      <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
-        {loading && <p className="text-sm text-[var(--muted)]">Loading…</p>}
+      <section className="canvas flex-1 pb-20">
+        {loading && <p className="pt-8 text-sm text-[var(--muted)]">Loading…</p>}
 
         {!loading && !user && (
           <div className="flex flex-col items-start gap-4 pt-8">
-            <h1 className="text-3xl font-medium tracking-tight">Sign in to browse</h1>
-            <Link
-              href="/sign-up"
-              className="btn-gold px-8 py-3.5 text-sm"
-            >
+            <h1 className="display text-3xl">Sign in to browse</h1>
+            <Link href="/sign-up" className="btn-gold px-8 py-3.5 text-sm">
               Get started
             </Link>
           </div>
@@ -248,12 +267,9 @@ export default function Browse() {
 
         {!loading && user && loadError && (
           <div className="flex flex-col items-start gap-4 pt-8">
-            <h1 className="text-3xl font-medium tracking-tight">Couldn&apos;t load Browse</h1>
+            <h1 className="display text-3xl">Couldn&apos;t load Browse</h1>
             <p className="max-w-md text-[var(--muted)]">Something went wrong loading profiles. Please try again.</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="btn-gold px-8 py-3.5 text-sm"
-            >
+            <button onClick={() => window.location.reload()} className="btn-gold px-8 py-3.5 text-sm">
               Retry
             </button>
           </div>
@@ -261,11 +277,8 @@ export default function Browse() {
 
         {!loading && user && !loadError && !ownProfile && (
           <div className="flex flex-col items-start gap-4 pt-8">
-            <h1 className="text-3xl font-medium tracking-tight">Finish your profile first</h1>
-            <Link
-              href="/sign-up"
-              className="btn-gold px-8 py-3.5 text-sm"
-            >
+            <h1 className="display text-3xl">Finish your profile first</h1>
+            <Link href="/sign-up" className="btn-gold px-8 py-3.5 text-sm">
               Create your profile
             </Link>
           </div>
@@ -273,13 +286,6 @@ export default function Browse() {
 
         {!loading && user && !loadError && ownProfile && (
           <>
-            {heroImageFor(ownProfile.interestedIn) && (
-              <div className="relative mt-8 aspect-[16/7] w-full overflow-hidden rounded-2xl">
-                <Image src={heroImageFor(ownProfile.interestedIn) as string} alt="" fill className="object-cover" priority />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                <p className="absolute bottom-4 left-5 text-lg font-medium text-white">Someone serious is out there.</p>
-              </div>
-            )}
             <div className="flex flex-wrap items-center justify-between gap-3 pt-8">
               <h1 className="display text-3xl">Browse</h1>
 
@@ -294,7 +300,7 @@ export default function Browse() {
               >
                 {([
                   ["grid", "Grid"],
-                  ["curated", "Detailed"],
+                  ["editorial", "Editorial"],
                 ] as const).map(([value, label]) => (
                   <button
                     key={value}
@@ -303,7 +309,7 @@ export default function Browse() {
                     onClick={() => writeView(value)}
                     className={`label rounded-full px-3.5 py-1.5 transition-colors ${
                       view === value
-                        ? "bg-[var(--foreground)] text-white"
+                        ? "bg-[var(--teak)] text-[var(--cream)]"
                         : "text-[var(--muted)] hover:text-[var(--foreground)]"
                     }`}
                   >
@@ -313,13 +319,16 @@ export default function Browse() {
               </div>
             </div>
 
+            <CountryHub value={market} counts={counts} onChange={setMarket} />
+            <LiveLounge count={live} market={market} />
+
             {/* The conversion moment. Browsing itself stays unlimited (a
                 cap on visibility would just advertise how small the pool
                 is); what's limited is the action. Shown once, at the top,
                 so it reads as a state of the account rather than a dead
                 button discovered per-card. */}
             {remaining === 0 && ownProfile.subscriptionStatus !== "active" && (
-              <div className="mt-6 rounded-2xl border border-[var(--rule)] bg-[color-mix(in_srgb,var(--gold)_7%,var(--background))] p-5">
+              <div className="card-gold mt-6 p-5">
                 <p className="text-base font-medium">
                   You&apos;ve used all {FREE_DAILY_LIKE_LIMIT} likes for today
                 </p>
@@ -345,18 +354,16 @@ export default function Browse() {
 
             {/* Returning from Checkout. This used to render ONLY while
                 the webhook was still catching up, so a fast webhook — the
-                normal case — meant paying $10 and being dropped back onto
-                an ordinary Browse page with nothing acknowledging it at
-                all. Now it always confirms, and only the wording depends
-                on whether the unlock has landed yet. */}
+                normal case — meant paying and being dropped back onto an
+                ordinary Browse page with nothing acknowledging it at all.
+                Now it always confirms, and only the wording depends on
+                whether the unlock has landed yet. */}
             {justSubscribed && (
-              <div className="mt-6 rounded-2xl border border-[var(--foreground)] bg-[var(--foreground)] p-6 text-white">
+              <div className="mt-6 rounded-[var(--radius)] bg-[var(--teak)] p-6 text-[var(--cream)]">
                 {ownProfile.subscriptionStatus === "active" ? (
                   <>
-                    <p className="text-xl font-medium tracking-tight">
-                      Welcome to {BRAND_CONFIG.premiumName}
-                    </p>
-                    <p className="mt-1 text-sm text-[var(--muted)]">
+                    <p className="display text-xl">Welcome to {BRAND_CONFIG.premiumName}</p>
+                    <p className="mt-1 text-sm text-[var(--cream)]/70">
                       You&apos;re all set. Here&apos;s what changed:
                     </p>
                     <ul className="mt-4 flex flex-col gap-2">
@@ -365,22 +372,19 @@ export default function Browse() {
                         "Message without waiting between messages",
                         "See everyone who liked you",
                       ].map((line) => (
-                        <li key={line} className="flex items-start gap-2.5 text-sm text-[var(--rule)]">
-                          <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-white" />
+                        <li key={line} className="flex items-start gap-2.5 text-sm text-[var(--cream)]/85">
+                          <span aria-hidden className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--gold)]" />
                           {line}
                         </li>
                       ))}
                     </ul>
                     <div className="mt-5 flex flex-wrap gap-3">
-                      <Link
-                        href="/liked-me"
-                        className="rounded-full bg-white px-5 py-2.5 text-sm font-medium text-[var(--foreground)] transition-transform hover:scale-[1.02]"
-                      >
+                      <Link href="/liked-me" className="btn-gold px-5 py-2.5 text-sm">
                         See who liked you
                       </Link>
                       <Link
                         href="/settings"
-                        className="rounded-full border border-[var(--muted)] px-5 py-2.5 text-sm font-medium text-[var(--rule)] transition-colors hover:border-white hover:text-white"
+                        className="rounded-full border border-[var(--cream)]/40 px-5 py-2.5 text-sm font-medium text-[var(--cream)]/85 transition-colors hover:border-[var(--cream)] hover:text-[var(--cream)]"
                       >
                         Manage subscription
                       </Link>
@@ -388,8 +392,8 @@ export default function Browse() {
                   </>
                 ) : (
                   <>
-                    <p className="text-xl font-medium tracking-tight">Payment received — thank you</p>
-                    <p className="mt-1 text-sm text-[var(--muted)]">
+                    <p className="display text-xl">Payment received — thank you</p>
+                    <p className="mt-1 text-sm text-[var(--cream)]/70">
                       Your {BRAND_CONFIG.premiumName} benefits are switching on now. Refresh in a few
                       seconds if they aren&apos;t there yet.
                     </p>
@@ -397,19 +401,31 @@ export default function Browse() {
                 )}
               </div>
             )}
-            {profiles.length === 0 ? (
-              // An empty grid is the single most discouraging screen in a
-              // dating app — it reads as "nobody is here" when the truth
-              // is usually "your filters are narrow". Amara plus a reason
-              // turns a dead end into a next step.
-              <MascotEmptyState
-                pose="sitting"
+
+            {primary.length === 0 && deepCatalog.length === 0 ? (
+              <EmptyState
                 title="No one here yet"
-                body="No one matching your preferences has an active profile right now. Widening your age or distance range usually helps — new members join every day."
+                body={
+                  market === "all"
+                    ? "No one matching your preferences has an active profile right now. Widening your age or distance range usually helps — new members join every day."
+                    : "Nobody in this country matches your preferences yet. Try the All tab, or check back — this is a launch market and it fills quickly."
+                }
+                action={
+                  market !== "all" ? (
+                    <button type="button" onClick={() => setMarket("all")} className="btn-quiet px-6 py-2.5 text-sm">
+                      Show everyone
+                    </button>
+                  ) : null
+                }
               />
             ) : view === "grid" ? (
               <>
-                <BrowseGrid profiles={profiles} likeStatus={likeStatus} onSelect={setQuickLook} />
+                <BrowseGrid
+                  profiles={primary}
+                  likeStatus={likeStatus}
+                  onSelect={setQuickLook}
+                  onLike={handleLike}
+                />
                 <QuickLook
                   profile={quickLook}
                   status={quickLook ? (likeStatus[quickLook.id] ?? "idle") : "idle"}
@@ -418,8 +434,12 @@ export default function Browse() {
                 />
               </>
             ) : (
-              <div className="mt-8 flex flex-col gap-10">
-                {profiles.map((profile) => {
+              /* Editorial Narrative view. A single column at a reading
+                 measure inside the 1280 canvas — the audit asks for "an
+                 expanded single-column format reminiscent of a high-end
+                 publication", which a 1280px-wide column is not. */
+              <div className="measure mt-8 flex flex-col gap-12">
+                {primary.map((profile) => {
                   const status = likeStatus[profile.id] ?? "idle";
                   const photo = profile.photos[0];
                   const isDone = status === "liked" || status === "matched" || status === "limit-reached";
@@ -429,20 +449,24 @@ export default function Browse() {
                     <article key={profile.id} className="flex flex-col gap-3">
                       <Link
                         href={`/profile/${profile.id}`}
-                        className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-[var(--rule)]"
+                        className={`relative aspect-[4/5] w-full overflow-hidden rounded-[var(--radius)] bg-[var(--rule)] ${
+                          profile.selfieVerified ? "glimmer" : ""
+                        }`}
                       >
                         {photo && (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={photo.url} alt="" className="h-full w-full object-cover" />
+                          <img src={photo.url} alt="" className="h-full w-full object-cover object-top" />
                         )}
                         {isNew && (
-                          <span className="absolute bottom-3 right-3 rounded-md bg-blue-600 px-2 py-0.5 text-xs font-bold text-white">
-                            NEW
+                          <span className="label absolute bottom-3 right-3 rounded bg-[var(--gold)] px-2 py-0.5 text-[0.55rem] text-[var(--teak)]">
+                            New
                           </span>
                         )}
                       </Link>
                       <Link href={`/profile/${profile.id}`} className="flex flex-wrap items-center gap-2 text-lg font-medium">
-                        {activity?.isOnline && <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" aria-hidden />}
+                        {activity?.isOnline && (
+                          <span className="dot-online dot-online-pulse h-2 w-2 shrink-0" aria-hidden />
+                        )}
                         {profile.displayName}, {calculateAge(profile.birthdate)}
                         <span className="text-sm font-normal text-[var(--muted)]">{profile.city}</span>
                         <VerifiedBadge approvedPhotoCount={profile.photos.length} selfieVerified={profile.selfieVerified} />
@@ -454,7 +478,7 @@ export default function Browse() {
                           sits above the headline rather than below the
                           fold on a profile page nobody opened. */}
                       {intentLabel(profile.relationshipIntent) && (
-                        <p className="label w-fit rounded-full bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] px-3 py-1.5">
+                        <p className="label w-fit rounded-full bg-[color-mix(in_srgb,var(--gold)_22%,transparent)] px-3 py-1.5 text-[var(--gold-deep)]">
                           {intentLabel(profile.relationshipIntent)}
                         </p>
                       )}
@@ -471,14 +495,8 @@ export default function Browse() {
                         <button
                           onClick={() => handleLike(profile)}
                           disabled={status === "sending" || isDone}
-                          className={`w-fit rounded-full border px-6 py-2.5 text-sm font-medium transition-colors disabled:cursor-default ${
-                            status === "matched"
-                              ? "border-[var(--foreground)] bg-[var(--foreground)] text-white"
-                              : status === "liked"
-                                ? "border-[var(--rule)] text-[var(--muted)]"
-                                : status === "limit-reached"
-                                  ? "border-[var(--rule)] text-[var(--muted)]"
-                                  : "border-[var(--foreground)] text-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white"
+                          className={`w-fit px-6 py-2.5 text-sm disabled:cursor-default ${
+                            isDone ? "btn-quiet text-[var(--muted)]" : "btn-gold"
                           }`}
                         >
                           {status === "matched"
@@ -505,6 +523,43 @@ export default function Browse() {
                     </article>
                   );
                 })}
+              </div>
+            )}
+
+            {/* The deep catalog.
+
+                The audit requires profiles unseen for >72h to leave the
+                primary feed. They are folded here rather than deleted:
+                at current registry size a hard cut would empty the grid,
+                and an empty grid is a louder "this platform is dead"
+                signal than a stale profile is. See lib/discovery.ts. */}
+            {deepCatalog.length > 0 && (
+              <div className="mt-12 border-t border-[var(--rule)] pt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowDeepCatalog((v) => !v)}
+                  aria-expanded={showDeepCatalog}
+                  className="flex w-full items-center justify-between gap-4 text-left"
+                >
+                  <span>
+                    <span className="display text-lg">Deep catalog</span>
+                    <span className="ml-2 text-sm text-[var(--muted)]">
+                      {deepCatalog.length} {deepCatalog.length === 1 ? "member" : "members"} not seen in
+                      the last three days
+                    </span>
+                  </span>
+                  <span aria-hidden className="text-sm text-[var(--muted)]">
+                    {showDeepCatalog ? "Hide" : "Show"}
+                  </span>
+                </button>
+                {showDeepCatalog && (
+                  <BrowseGrid
+                    profiles={deepCatalog}
+                    likeStatus={likeStatus}
+                    onSelect={setQuickLook}
+                    onLike={handleLike}
+                  />
+                )}
               </div>
             )}
           </>

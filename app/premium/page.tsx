@@ -15,7 +15,6 @@ import type { User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
-import { Mascot } from "@/components/Mascot";
 import { TIERS, type TierId } from "@/lib/tiers";
 import { FREE_DAILY_LIKE_LIMIT, PAID_DAILY_LIKE_LIMIT, type UserProfile } from "@/lib/types";
 import { capture } from "@/lib/analytics";
@@ -175,12 +174,14 @@ export default function Premium() {
 
         {!loading && user && profile && profile.subscriptionStatus !== "active" && (
           <div className="flex flex-col items-start gap-8 pt-8">
-            {/* Amara on the upgrade screen. This is the one page where a
-                warm face genuinely helps: an upgrade prompt with nothing
-                but a price and a benefit list reads as a toll gate, and
-                a toll gate is what people close. */}
+            {/* No mascot on the upgrade screen. It genuinely reads as a
+                warmer page with her on it, and it is still the wrong
+                call: this is the exact surface where a mature Western
+                subscriber decides whether the registry behind the paywall
+                is real, and the audit is explicit that a 3D character
+                there primes him to suspect it is not. Photography and
+                verification language carry the warmth instead. */}
             <div className="flex items-center gap-5">
-              <Mascot pose="heart" size="md" className="shrink-0" />
               <div className="flex flex-col gap-2">
                 <h1 className="display text-3xl">More likes, every day</h1>
                 <p className="max-w-md text-[var(--muted)]">

@@ -79,16 +79,25 @@ export const RELATIONSHIP_INTENTS = [
   {
     value: "marriage",
     label: "Seeking marriage",
+    // The audit's Intent Badge wording, verbatim ("Marriage Oriented",
+    // "Relocation Ready"). Separate from `label` because the two are
+    // read in different places and want different grammar: `label` is a
+    // sentence a person picks about themselves during sign-up, `badge`
+    // is a chip on someone else's card that has to survive being
+    // scanned at 3-across on a phone.
+    badge: "Marriage Oriented",
     description: "I want to marry. I would rather be clear about that now than in a year.",
   },
   {
     value: "long_term",
     label: "Long-term relationship",
+    badge: "Long-Term",
     description: "Something real and lasting. Marriage is possible if it becomes right.",
   },
   {
     value: "life_partner",
     label: "Relocation & life partner",
+    badge: "Relocation Ready",
     description: "I am open to building a life across borders, including moving country.",
   },
 ] as const;
@@ -106,6 +115,11 @@ export function isRelationshipIntent(value: unknown): value is RelationshipInten
 
 export function intentLabel(value: string | undefined): string | null {
   return RELATIONSHIP_INTENTS.find((i) => i.value === value)?.label ?? null;
+}
+
+/** The short chip form, for card faces and grid tiles. */
+export function intentBadge(value: string | undefined): string | null {
+  return RELATIONSHIP_INTENTS.find((i) => i.value === value)?.badge ?? null;
 }
 
 /**

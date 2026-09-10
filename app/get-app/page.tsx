@@ -18,7 +18,6 @@ import { BRAND_CONFIG } from "@/config/brand";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { ApkDownloadLink } from "@/components/ApkDownloadLink";
 import { InAppBrowserWarning } from "@/components/InAppBrowserWarning";
-import { Mascot } from "@/components/Mascot";
 
 export const metadata: Metadata = {
   title: `Get the ${BRAND_CONFIG.appTitle} app`,
@@ -56,12 +55,12 @@ export default function GetApp() {
           <InAppBrowserWarning context="install" />
         </div>
 
-        <div className="flex items-center gap-5">
-          <Mascot pose="heart" size="md" className="shrink-0" />
-          <h1 className="display text-3xl sm:text-4xl">
-            Get {BRAND_CONFIG.appTitle} on your phone
-          </h1>
-        </div>
+        {/* No mascot here. An install page is a conversion funnel, which
+            the audit groups with the marketing surfaces the 3D character
+            is barred from — see components/Mali.tsx. */}
+        <h1 className="display mt-2 text-3xl sm:text-4xl">
+          Get {BRAND_CONFIG.appTitle} on your phone
+        </h1>
         <p className="mt-3 max-w-md text-[var(--muted)]">
           {BRAND_CONFIG.appTitle} installs straight from this page. It takes one tap and there&apos;s
           nothing to download.

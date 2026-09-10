@@ -1,49 +1,109 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------
-   AmoraAsia — the Sanctuary design system.
+   AmoraAsia — the Thai Sanctuary design system.
 
-   Replaces a committed #ffffff / #111111 minimalism that was correct for
-   a Western product and wrong for this one. The old note called it
-   "Mac minimalist"; the accurate description is that it looked like an
-   unstyled prototype, and in a market where the competition is either
-   a 2005 desktop grid or a cold Silicon Valley card stack, looking
-   unfinished is the one thing that reads as untrustworthy.
+   The palette is the audit's token table, taken literally rather than
+   approximated. The previous system was the right idea in the wrong
+   values: warm, but uncalibrated, and the CTA fill (#D4A343) was a flat
+   mustard that the audit singled out for both flatness and contrast.
 
-   The palette is drawn from Southeast Asian resort interiors — aged
-   teak, raw silk, brass, indigo dusk — because that is the register the
-   product is actually promising: a sanctuary rather than a marketplace.
-   Warmth here is not decoration. Women choose this app on whether it
-   feels safe and considered, and a stark white grid of faces feels like
-   neither.
+   Every hex below is prescribed:
 
-   Light surfaces stay light on purpose. Teak is the frame, the nav and
-   the type; amber silk is the page. A fully dark dating app fights its
-   own photography, and photographs of people are the entire product.
+     Deep Teak Wood     #20140E  structure, primary type, borders
+     Silk Cream         #FBF9F5  global canvas, input fill
+     Warm Antique Gold  #C5A059  CTAs, VIP seals, verified badges
+     Thai Herb Celadon  #3D5A45  online pings, safety checkmarks
+     Deep Lotus         #7E2238  high-intent likes, match banners
+
+   Teak on antique gold measures 7.3:1, so the primary button clears AA
+   for body text and AAA at button sizes — the specific failure the
+   audit called out is fixed by the palette itself, not by a workaround.
+
+   Layered on top is the "Vibrant Dream" brief: depth instead of
+   flatness. The canvas is not a single tone but a set of very low-
+   opacity radial washes; cards are glass over that ground rather than
+   opaque rectangles; and the whole thing shifts warmth with the
+   viewer's local time.
    --------------------------------------------------------------------- */
 
 :root {
-  /* Canvas and ink */
-  --background: #fff8f0; /* warm amber silk — natural linen, the page */
-  --foreground: #1c130e; /* dark teak — aged wood, all primary type */
-  --surface: #fffdfa; /* card face, a half-step lighter than the page */
-  --muted: #7a6a5c; /* teak at reading weight for secondary copy */
+  /* --- The five prescribed tokens ------------------------------------ */
+  --teak: #20140e;
+  --cream: #fbf9f5;
+  --gold: #c5a059;
+  --celadon: #3d5a45;
+  --lotus: #7e2238;
 
-  /* Brand */
-  --gold: #d4af37; /* royal Thai gold — CTAs, verification, premium */
-  --gold-deep: #b08d22; /* the far end of the CTA gradient */
-  --emerald: #1e3326; /* deep palm — active states, online, success */
-  --terracotta: #c86d51; /* sunset clay — likes, hearts, warm accents */
-  --glow: #ffd180; /* candlelight — focus rings, unread, aura */
+  /* --- Semantic aliases ---------------------------------------------- */
+  --background: var(--cream);
+  --foreground: var(--teak);
+  /* Cards are glass, so "surface" is a tint rather than a fill. The
+     opaque fallback below @supports keeps it readable where backdrop
+     filters are unavailable. */
+  --surface: rgba(251, 249, 245, 0.85);
+  --surface-solid: #fdfcfa;
+  /* Teak at reading weight. Derived from the token rather than picked
+     separately, so secondary copy can never drift off-palette. */
+  --muted: color-mix(in srgb, var(--teak) 58%, var(--cream));
+  --gold-deep: #a8853f; /* the far end of the CTA gradient */
+  --glow: #e8c987; /* candlelight — focus rings, glimmer, aura */
+  --rule: color-mix(in srgb, var(--teak) 14%, var(--cream));
 
-  /* Structure */
-  --rule: #e8dccd; /* hairline that belongs to the palette, not grey */
-  --radius: 16px; /* every card, per the spec */
+  /* Kept as aliases because a lot of surface copy still reaches for
+     these names. They now resolve to prescribed tokens rather than to
+     the off-palette emerald and terracotta they used to hold. */
+  --emerald: var(--celadon);
+  --terracotta: var(--lotus);
 
-  /* Depth. Warm-tinted rather than neutral black: a grey shadow over an
-     amber page reads as dirt, not as light. */
-  --shadow-card: 0 1px 2px rgba(28, 19, 14, 0.04), 0 8px 24px rgba(28, 19, 14, 0.06);
-  --shadow-lift: 0 2px 4px rgba(28, 19, 14, 0.06), 0 16px 40px rgba(28, 19, 14, 0.1);
+  /* --- Structure ------------------------------------------------------ */
+  --radius: 16px;
+  /* The audit's bounded luxury canvas. One number, referenced by the
+     .canvas utility, so widening it later is a one-line change rather
+     than a sweep through fourteen page files. */
+  --canvas: 1280px;
+
+  /* Warm-tinted depth. A grey shadow over a cream page reads as dirt
+     rather than as light. */
+  --shadow-card: 0 1px 2px rgba(32, 20, 14, 0.05), 0 8px 24px rgba(32, 20, 14, 0.07);
+  --shadow-lift: 0 2px 4px rgba(32, 20, 14, 0.07), 0 18px 44px rgba(32, 20, 14, 0.12);
+
+  /* --- Ambient atmosphere --------------------------------------------
+     Three radial washes and a vertical grade, all under 8% opacity.
+     Individually invisible; together they are the difference between a
+     page that has air in it and one that is a flat fill. Overridden
+     below by the day/night attribute. */
+  --amb-1: color-mix(in srgb, var(--gold) 7%, transparent);
+  --amb-2: color-mix(in srgb, var(--celadon) 4%, transparent);
+  --amb-3: color-mix(in srgb, var(--lotus) 3%, transparent);
+  --amb-floor: color-mix(in srgb, var(--teak) 4%, transparent);
+}
+
+/* ---------------------------------------------------------------------
+   Dynamic day/night ambience.
+
+   `data-ambient` is stamped on <html> by an inline script in the layout
+   before first paint, so there is no flash and no hydration mismatch —
+   React never renders the attribute, it only ever reads the ground.
+
+   Morning is champagne and cool-bright. Evening pulls toward candlelit
+   amber and teak: warmer washes, a deeper floor, a hotter glow. The
+   page structure does not change at all, only the light on it.
+   --------------------------------------------------------------------- */
+
+[data-ambient="evening"] {
+  --amb-1: color-mix(in srgb, var(--gold) 13%, transparent);
+  --amb-2: color-mix(in srgb, var(--lotus) 6%, transparent);
+  --amb-3: color-mix(in srgb, var(--gold) 8%, transparent);
+  --amb-floor: color-mix(in srgb, var(--teak) 9%, transparent);
+  --glow: #f0d091;
+}
+
+[data-ambient="morning"] {
+  --amb-1: color-mix(in srgb, var(--gold) 5%, transparent);
+  --amb-2: color-mix(in srgb, var(--celadon) 5%, transparent);
+  --amb-3: color-mix(in srgb, var(--celadon) 2%, transparent);
+  --amb-floor: transparent;
 }
 
 @theme inline {
@@ -51,34 +111,84 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-muted: var(--muted);
+  --color-teak: var(--teak);
+  --color-cream: var(--cream);
   --color-gold: var(--gold);
-  --color-emerald: var(--emerald);
-  --color-terracotta: var(--terracotta);
+  --color-celadon: var(--celadon);
+  --color-lotus: var(--lotus);
   --color-glow: var(--glow);
   --color-rule: var(--rule);
   --font-sans: var(--font-body);
   --font-display: var(--font-display);
 }
 
-/* No prefers-color-scheme override. The warm palette is the brand, and a
-   neutral dark inversion would throw away the one thing that separates
-   this from every other app in the category. */
+/* No prefers-color-scheme override. The warm palette is the brand, and
+   a neutral dark inversion would throw away the one thing separating
+   this from every other app in the category. Night is handled by the
+   ambient attribute above, which warms the light rather than inverting
+   it — a dark app fights its own photography, and photographs of people
+   are the entire product. */
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  /* The atmospheric layer. `background-attachment: fixed` keeps the
+     washes anchored to the viewport so content scrolls through the
+     light rather than dragging it along, which is what makes it read as
+     a room rather than as a texture. */
+  background-image:
+    radial-gradient(70rem 45rem at 78% -8%, var(--amb-1), transparent 62%),
+    radial-gradient(55rem 40rem at 4% 22%, var(--amb-2), transparent 58%),
+    radial-gradient(45rem 45rem at 92% 88%, var(--amb-3), transparent 60%),
+    linear-gradient(180deg, transparent 55%, var(--amb-floor) 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--foreground);
-  /* Thai sits in the stack after the Latin face rather than replacing
-     it: the browser reaches for it only for glyphs the first face has
-     no coverage for, so a bilingual profile renders in one visual voice
-     instead of two. */
+  /* Thai sits after the Latin face rather than replacing it: the
+     browser reaches for it only for glyphs the first face lacks, so a
+     bilingual profile renders in one visual voice instead of two. */
   font-family: var(--font-body), var(--font-thai), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* ---------------------------------------------------------------------
-   Type. Serif headings carry the editorial prestige the category never
-   uses; the sans keeps chat and UI legible at small sizes in Thai,
-   Vietnamese and Tagalog, which is why the body face is a broad-coverage
-   grotesque rather than a display face pressed into service.
+   The bounded luxury canvas.
+
+   The audit's first structural finding: at 1920px and wider the app had
+   no container at all, so forms and cards floated unanchored across an
+   empty field. This is that container — 1280px capped, centred, with
+   real side gutters, going edge-to-edge on a phone.
+
+   It is a class rather than a component because it has to apply to the
+   nav bar's inner row, every page section and the footer alike, and a
+   wrapper component around all of those would have fought the sticky
+   header's full-bleed background.
+   --------------------------------------------------------------------- */
+
+.canvas {
+  width: 100%;
+  max-width: var(--canvas);
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+@media (min-width: 640px) {
+  .canvas {
+    padding-inline: 2rem;
+  }
+}
+
+/* A reading measure inside the canvas. Long-form pages (terms, the
+   editorial browse mode, settings) need the 1280 frame for their
+   chrome but must not set 1280px-wide paragraphs — around 70 characters
+   is where prose stops being a wall. */
+.measure {
+  width: 100%;
+  max-width: 44rem;
+}
+
+/* ---------------------------------------------------------------------
+   Type. A high-contrast serif for display, per the audit: it is what
+   makes a profile read as a fine-art publication rather than a
+   directory row. The sans keeps chat and UI legible at small sizes in
+   Thai, Vietnamese and Tagalog.
    --------------------------------------------------------------------- */
 
 .display {
@@ -96,23 +206,49 @@ body {
 }
 
 /* ---------------------------------------------------------------------
-   Surfaces.
+   Surfaces — glassmorphic, per the "Vibrant Dream" brief.
+
+   Semi-transparent Silk Cream over the atmospheric ground, with a soft
+   backdrop blur and a teak hairline. The fallback matters: without an
+   opaque `background` first, a browser with no backdrop-filter renders
+   85%-transparent cream over gradients, which is unreadable rather than
+   merely plain.
    --------------------------------------------------------------------- */
 
 .card {
-  background: var(--surface);
+  background: var(--surface-solid);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
   box-shadow: var(--shadow-card);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .card {
+    background: var(--surface);
+    backdrop-filter: blur(14px) saturate(1.15);
+  }
 }
 
 /* Premium and verified surfaces earn the brass edge. Used sparingly —
    if every card has a gold border, none of them mean anything. */
 .card-gold {
-  background: var(--surface);
-  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--rule));
+  background: var(--surface-solid);
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, var(--rule));
   border-radius: var(--radius);
   box-shadow: var(--shadow-card);
+}
+@supports (backdrop-filter: blur(1px)) {
+  .card-gold {
+    background: var(--surface);
+    backdrop-filter: blur(14px) saturate(1.15);
+  }
+}
+
+/* Deep teak framing, for the container borders the audit asks for on
+   structural elements — the members'-lounge joinery rather than a
+   hairline. */
+.frame-teak {
+  border: 1px solid color-mix(in srgb, var(--teak) 45%, transparent);
+  border-radius: var(--radius);
 }
 
 .lift {
@@ -126,20 +262,19 @@ body {
 }
 
 /* ---------------------------------------------------------------------
-   Actions. A gold gradient with dark teak type and a candlelight aura,
-   replacing a solid black fill. The aura is deliberately weak — at full
-   strength it reads as a 2010 web button, and at this strength it reads
-   as brass catching light.
+   Actions. Antique gold with teak type — 7.3:1, and a candlelight aura
+   deliberately kept weak: at full strength it reads as a 2010 web
+   button, and at this strength it reads as brass catching light.
    --------------------------------------------------------------------- */
 
 .btn-gold {
   background: linear-gradient(180deg, var(--gold) 0%, var(--gold-deep) 100%);
-  color: var(--foreground);
+  color: var(--teak);
   border-radius: 999px;
   font-weight: 600;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.35) inset,
-    0 6px 18px color-mix(in srgb, var(--glow) 55%, transparent);
+    0 1px 0 rgba(255, 255, 255, 0.3) inset,
+    0 6px 18px color-mix(in srgb, var(--glow) 50%, transparent);
   transition:
     transform 0.15s ease,
     box-shadow 0.2s ease,
@@ -147,10 +282,10 @@ body {
 }
 .btn-gold:hover {
   transform: translateY(-1px);
-  filter: saturate(1.06);
+  filter: saturate(1.06) brightness(1.03);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.4) inset,
-    0 10px 26px color-mix(in srgb, var(--glow) 70%, transparent);
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 10px 26px color-mix(in srgb, var(--glow) 65%, transparent);
 }
 .btn-gold:disabled {
   opacity: 0.45;
@@ -174,34 +309,35 @@ body {
 }
 
 /* ---------------------------------------------------------------------
-   Navigation. Translucent teak with a blur, so photographs scroll under
-   it rather than being cut off by an opaque bar. The solid fallback
-   matters: without it, browsers with no backdrop-filter render white
-   type on near-transparent teak, which is unreadable rather than merely
-   plain.
+   Navigation. The page's own ground, not a dark block — a solid teak
+   ceiling over an airy cream app reads as a different template pasted
+   on top and pins the eye away from the photographs the page exists
+   for. Sticky and translucent so content scrolls under it.
    --------------------------------------------------------------------- */
 
-.nav-teak {
-  background: color-mix(in srgb, var(--foreground) 92%, transparent);
-  color: #f7efe6;
+.nav-sanctuary {
+  background: color-mix(in srgb, var(--cream) 92%, transparent);
+  border-bottom: 1px solid var(--rule);
 }
 @supports (backdrop-filter: blur(1px)) {
-  .nav-teak {
-    background: color-mix(in srgb, var(--foreground) 72%, transparent);
-    backdrop-filter: blur(14px) saturate(1.2);
+  .nav-sanctuary {
+    background: color-mix(in srgb, var(--cream) 72%, transparent);
+    backdrop-filter: blur(16px) saturate(1.2);
   }
 }
 
 /* ---------------------------------------------------------------------
-   Verification. The single most important visual in the product: it is
-   the whole reason a woman trusts the grid and the whole reason a man
-   believes the profile is real. A brass medallion with a slow pulse,
-   not a plain text string.
+   Verification and presence.
+
+   The verified badge is the single most important visual in the
+   product: it is the whole reason a woman trusts the grid and the whole
+   reason a man believes the profile is real. Brass medallion, slow
+   pulse, never a plain text string.
    --------------------------------------------------------------------- */
 
 .badge-verified {
   background: linear-gradient(180deg, var(--gold) 0%, var(--gold-deep) 100%);
-  color: var(--foreground);
+  color: var(--teak);
   border-radius: 999px;
   font-weight: 700;
   box-shadow: 0 0 0 0 color-mix(in srgb, var(--glow) 70%, transparent);
@@ -217,24 +353,115 @@ body {
   }
 }
 
-/* Online / active. Emerald rather than the usual green-dot, so it sits
-   inside the palette instead of on top of it. */
+/* The Golden Glimmer. Wraps an avatar whose owner is verified or online
+   so the glow tracks the photograph's own rounding. Applied to the
+   frame, never to the image, so it can never dim a face. */
+.glimmer {
+  position: relative;
+}
+.glimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--gold) 70%, transparent),
+    0 0 16px 0 color-mix(in srgb, var(--glow) 55%, transparent);
+  animation: glimmer 3.6s ease-in-out infinite;
+}
+@keyframes glimmer {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Celadon rather than the usual green-dot, so presence sits inside the
+   palette instead of on top of it. */
 .dot-online {
-  background: var(--emerald);
-  box-shadow: 0 0 0 2px var(--surface);
+  background: var(--celadon);
+  box-shadow: 0 0 0 2px var(--cream);
   border-radius: 999px;
 }
 
-/* Likes and hearts take terracotta, not red. Red in this palette reads
-   as an error state; clay reads as warmth. */
+/* A slow pulse on the presence ping — the audit's "real-time online
+   green dots pulsing", which is what separates a live directory from a
+   screenshot of one. */
+.dot-online-pulse {
+  animation: ping 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes ping {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px var(--cream),
+      0 0 0 0 color-mix(in srgb, var(--celadon) 55%, transparent);
+  }
+  70% {
+    box-shadow:
+      0 0 0 2px var(--cream),
+      0 0 0 6px transparent;
+  }
+}
+
+/* Likes and matches take Deep Lotus. Red in this palette reads as an
+   error state; lotus reads as high intent, which is what a like on this
+   product actually is. */
 .like {
-  color: var(--terracotta);
+  color: var(--lotus);
+}
+
+/* ---------------------------------------------------------------------
+   Lantern drift.
+
+   Ambient upward motion on hero sections, per the brief. Deliberately
+   sparse and slow: warm points that rise and fade over half a minute.
+   Purely decorative, so the container is aria-hidden and the whole
+   effect is dropped under reduced-motion.
+   --------------------------------------------------------------------- */
+
+.lanterns {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.lantern {
+  position: absolute;
+  bottom: -6%;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: radial-gradient(circle, var(--glow) 0%, transparent 70%);
+  box-shadow: 0 0 12px 2px color-mix(in srgb, var(--glow) 45%, transparent);
+  opacity: 0;
+  animation: drift linear infinite;
+}
+@keyframes drift {
+  0% {
+    transform: translateY(0) translateX(0) scale(0.7);
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.85;
+  }
+  80% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-110vh) translateX(3rem) scale(1.15);
+    opacity: 0;
+  }
 }
 
 /* Focus. Candlelight, and never removed — an outline-none with no
    replacement locks out keyboard and switch users entirely. */
 :where(a, button, input, textarea, select, [tabindex]):focus-visible {
-  outline: 2px solid var(--glow);
+  outline: 2px solid var(--gold);
   outline-offset: 2px;
   border-radius: 6px;
 }
@@ -245,5 +472,8 @@ body {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+  .lanterns {
+    display: none;
   }
 }

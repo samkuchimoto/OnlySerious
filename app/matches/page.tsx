@@ -6,7 +6,7 @@ import { collection, doc, getDoc, getDocs, query, where } from "firebase/firesto
 import type { User } from "firebase/auth";
 import { db, watchAuthState } from "@/lib/firebase";
 import { AppNav } from "@/components/AppNav";
-import { MascotEmptyState } from "@/components/Mascot";
+import { EmptyState } from "@/components/EmptyState";
 import { withRetry } from "@/lib/retry";
 import type { Match, UserProfile } from "@/lib/types";
 
@@ -100,8 +100,7 @@ export default function Matches() {
         )}
 
         {!loading && user && !loadError && matches.length === 0 && (
-          <MascotEmptyState
-            pose="heart"
+          <EmptyState
             title="No matches yet"
             body="A mutual like turns into a match automatically — there is nothing else you need to do here."
           />
