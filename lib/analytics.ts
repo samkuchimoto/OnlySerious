@@ -30,6 +30,11 @@ export type AnalyticsEvent =
   | "daily_limit_reached"
   | "message_sent"
   | "message_cooldown_hit"
+  // Courtship tokens and the icebreaker. Both exist to move a matched
+  // pair from silence into a conversation, so their ratio against
+  // message_sent is the only read on whether they actually do that.
+  | "gift_sent"
+  | "lanterns_played"
   | "upgrade_clicked"
   | "checkout_started"
   | "waitlist_joined"

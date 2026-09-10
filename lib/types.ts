@@ -19,18 +19,43 @@ export const MIN_PROFILE_PHOTOS = 3;
 export const FREE_DAILY_LIKE_LIMIT = 5;
 export const PAID_DAILY_LIKE_LIMIT = 100;
 
-// ThaiFriendly's messaging model, adopted deliberately: the free tier is
-// throttled on *speed*, not volume — one message every ten minutes, and
-// paying removes the wait entirely. Nothing caps how many messages a
-// free member can send in total.
+// ---------------------------------------------------------------------
+// The messaging gate.
 //
-// The distinction matters. A daily message quota tells someone "you have
-// run out, come back tomorrow", which ends the conversation and often
-// the session. A cooldown says "wait, or pay to skip the wait" while a
-// live conversation is in progress — the moment when paying is worth
-// most to them. It is also the gentler failure mode: nobody is ever
-// locked out of replying to someone who wrote to them.
-export const FREE_MESSAGE_COOLDOWN_MS = 10 * 60 * 1000;
+// The audit: "standard male accounts should be restricted to sending one
+// outbound message every 12 hours... The monetization gate must trigger
+// precisely at the moment of peak outbound intent: communication."
+//
+// Twelve hours is implemented. Two things about *how* are deliberate
+// departures from the literal wording, and both exist to deliver the
+// mechanic the audit is actually after rather than the sentence it used.
+//
+// 1. It is not applied by gender.
+//
+//    The report's model is "free for local women, paywalled for foreign
+//    men". The commercial logic is sound; charging for a service on the
+//    basis of sex is not something this operator can do — EU Directive
+//    2004/113/EC prohibits exactly that in access to goods and services,
+//    and the business is a French micro-entreprise squarely inside its
+//    scope. It also contradicts this file's own standing rule that no
+//    field encodes gender as a pricing or matching input.
+//
+// 2. It applies only to *opening* a conversation, never to replying.
+//
+//    This is what makes a gender-neutral rule land where the audit
+//    wants it. A flat 12-hour cooldown on every free account would
+//    throttle women too — and women are the supply side nobody is
+//    asking to pay, so slowing them down damages the exact liquidity
+//    the paywall is meant to monetise. Gating cold opens instead
+//    throttles unreciprocated outbound volume, which is the behaviour
+//    the report is describing when it says "men send messages into a
+//    void". Anyone who has been written to can always write back, free,
+//    instantly.
+//
+// The result: a free member may open one new conversation every twelve
+// hours and reply to anyone, always. Paying removes the wait entirely.
+// ---------------------------------------------------------------------
+export const FREE_OPENING_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 
 // "Who liked you" is a paid feature (ThaiFriendly's model). Enforced in
 // app/api/liked-me, not in the UI — firestore.rules stops a client
@@ -187,6 +212,12 @@ export interface UserProfile {
   // only, like the like counters above: a client that could set this
   // could clear its own cooldown.
   lastMessageAt?: string; // ISO timestamp
+  // When this person last *opened* a conversation — the only input to
+  // the free tier's twelve-hour gate. Distinct from lastMessageAt on
+  // purpose: replying must not consume the opening window, or a single
+  // active conversation would lock someone out of starting another.
+  // Server-written only, like the counters above.
+  lastOpenedConversationAt?: string; // ISO timestamp
   // Set only by app/api/verify-selfie/route.ts after a real Groq vision
   // comparison against an approved profile photo returns a confident
   // match — never client-settable, and never set on an uncertain result

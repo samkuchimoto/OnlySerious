@@ -23,7 +23,11 @@ service cloud.firestore {
     function touchesServerOnlyFields() {
       let lockedFields = [
         'status', 'subscriptionStatus', 'stripeCustomerId', 'stripeSubscriptionId',
-        'photos', 'dailyLikesUsed', 'dailyLikesDate', 'selfieVerified', 'lastMessageAt'
+        'photos', 'dailyLikesUsed', 'dailyLikesDate', 'selfieVerified', 'lastMessageAt',
+        // The free tier's twelve-hour opening gate reads this. Without
+        // it here a client could clear its own cooldown with one
+        // updateDoc, which is the whole gate.
+        'lastOpenedConversationAt'
       ];
       return request.resource.data.diff(resource.data).affectedKeys().hasAny(lockedFields);
     }
