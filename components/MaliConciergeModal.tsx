@@ -217,6 +217,21 @@ export function MaliConciergeModal({ open, onClose }: { open: boolean; onClose: 
                 {sending ? "Sending…" : "Apply for Private Invitation — 60 Seconds"}
               </button>
 
+              {/* The other door, offered at the exact moment someone has
+                  decided they want in. Registration is open; making a
+                  ready visitor wait for a cohort they don't need is a
+                  lost member, not an exclusive one. */}
+              <p className="text-center text-sm text-[var(--muted)]">
+                Ready now?{" "}
+                <Link
+                  href="/sign-up"
+                  className="font-semibold text-[var(--foreground)] underline underline-offset-4"
+                >
+                  Create your profile
+                </Link>{" "}
+                instead — it&apos;s open and free.
+              </p>
+
               {/* This collects a contact detail from EU visitors and
                   then mails them. Saying what it is used for, and
                   linking the policy, is the minimum GDPR asks and it

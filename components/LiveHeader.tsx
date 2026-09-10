@@ -111,9 +111,18 @@ export function LiveHeader({ onPrivateAccess }: { onPrivateAccess: () => void })
             <span className="display text-xl">{BRAND_CONFIG.appTitle}</span>
           </Link>
 
-          <button type="button" onClick={onPrivateAccess} className="btn-gold px-5 py-2 text-sm">
-            Private Access
-          </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Registration is open, so the nav offers it. Hidden on the
+                narrowest phones only because two buttons plus the
+                wordmark do not fit 360px — the same choice appears
+                below the grid, where there is room for both. */}
+            <Link href="/sign-up" className="hidden text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)] sm:inline">
+              Create your profile
+            </Link>
+            <button type="button" onClick={onPrivateAccess} className="btn-gold px-5 py-2 text-sm">
+              Private Access
+            </button>
+          </div>
         </div>
       </div>
     </header>

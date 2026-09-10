@@ -40,6 +40,8 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+import { EXAMPLE_PROFILES } from "@/lib/exampleProfiles";
 
 interface ShowcaseMember {
   id: string;
@@ -51,26 +53,6 @@ interface ShowcaseMember {
   verified: boolean;
   voiceIntroSeconds: number | null;
 }
-
-// The fallback. Places and moments, never invented people — each is a
-// setting the community actually spans, captioned as such.
-// `market` ties a tile to a launch market so it can show that market's
-// real member count. The scenes without one are atmosphere for a city
-// inside a market already represented above, so they carry no number
-// rather than repeating one.
-const SANCTUARY_SCENES: {
-  src: string;
-  place: string;
-  note: string;
-  market?: "th" | "ph" | "vn";
-}[] = [
-  { src: "/scenes/market-thailand.webp", place: "Bangkok", note: "Rooftop, Thong Lo", market: "th" },
-  { src: "/scenes/market-philippines.webp", place: "Metro Manila", note: "Coffee in BGC", market: "ph" },
-  { src: "/scenes/market-vietnam.webp", place: "Da Nang", note: "The bay at dusk", market: "vn" },
-  { src: "/scenes/terrace-seated.webp", place: "Chao Phraya", note: "A terrace at golden hour" },
-  { src: "/scenes/villa-breakfast.webp", place: "Chiang Mai", note: "Breakfast, unhurried" },
-  { src: "/scenes/sanctuary-interior.webp", place: "Cebu", note: "Teak and quiet" },
-];
 
 function LotusVerified() {
   return (
@@ -104,6 +86,8 @@ export function DiscoveryGrid({ onGate }: { onGate: () => void }) {
   }, []);
 
   const showMembers = members.length > 0;
+  const realMemberCount =
+    (cityCounts.th ?? 0) + (cityCounts.ph ?? 0) + (cityCounts.vn ?? 0);
 
   return (
     <section className="canvas pb-16 pt-10 sm:pt-14">
@@ -144,6 +128,25 @@ export function DiscoveryGrid({ onGate }: { onGate: () => void }) {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Frames the grid before anyone reads a card. One of the four
+          layers that keeps the example profiles honest — see
+          lib/exampleProfiles.ts for the other three. */}
+      <div className="mt-10 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+        <p className="label text-[var(--gold-deep)]">
+          {showMembers ? "Members" : "How profiles appear · illustrative examples"}
+        </p>
+        {/* Only ever rendered with a number above zero. "0 real members
+            already inside" is the single worst sentence this page could
+            produce — it is the honest fallback turned into an
+            advertisement against itself — and it is exactly what shows
+            whenever the count cannot be read. */}
+        {!showMembers && realMemberCount > 0 && (
+          <p className="text-xs text-[var(--muted)]">
+            {realMemberCount} real {realMemberCount === 1 ? "member" : "members"} already inside
+          </p>
+        )}
       </div>
 
       {/* ----- The grid -----
@@ -221,49 +224,70 @@ export function DiscoveryGrid({ onGate }: { onGate: () => void }) {
                 </div>
               </li>
             ))
-          : SANCTUARY_SCENES.map((scene) => (
-              <li key={scene.src} className="w-[72vw] shrink-0 snap-start sm:w-auto">
-                <button
-                  type="button"
-                  onClick={onGate}
-                  className="card lift group block h-full w-full overflow-hidden text-left"
-                >
-                  <div className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--rule)]">
-                    <Image
-                      src={scene.src}
-                      alt=""
-                      fill
-                      sizes="(max-width: 640px) 72vw, 33vw"
-                      className="object-cover object-center transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[var(--teak)]/85 via-[var(--teak)]/10 to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 p-4">
-                      <p className="display text-lg text-[var(--cream)]">{scene.place}</p>
-                      <p className="mt-0.5 text-xs text-[var(--cream)]/75">{scene.note}</p>
+          : EXAMPLE_PROFILES.map((example) => (
+              <li key={example.id} className="w-[72vw] shrink-0 snap-start sm:w-auto">
+                <div className="card lift group h-full overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={onGate}
+                    aria-label={`Example profile — ${example.name}, ${example.age}, ${example.city}. Apply for private access.`}
+                    className="relative block w-full text-left"
+                  >
+                    <div className="relative aspect-[4/5] w-full overflow-hidden bg-[var(--rule)]">
+                      <Image
+                        src={example.photo}
+                        alt=""
+                        fill
+                        sizes="(max-width: 640px) 72vw, 33vw"
+                        className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.04]"
+                      />
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between gap-2 p-4">
-                    <span className="text-xs text-[var(--muted)]">
-                      {/* A real count, or "Opening soon" at zero.
-                          Rendering a literal "0 members" is accurate and
-                          reads as a dead market rather than an early
-                          one — and it is the number a visitor sees
-                          before the registry has had any chance to
-                          fill. "Opening soon" is equally true of a
-                          launch market with nobody in it yet, and it
-                          still never claims a quantity that isn't
-                          there. */}
-                      {scene.market
-                        ? (cityCounts[scene.market] ?? 0) > 0
-                          ? `${cityCounts[scene.market]} ${
-                              cityCounts[scene.market] === 1 ? "member" : "members"
-                            }`
-                          : "Opening soon"
-                        : "Illustration"}
+                    {/* The chip that does the honest work. Always on the
+                        card, never on hover, never behind a tooltip —
+                        a disclosure a visitor has to discover is not a
+                        disclosure. */}
+                    <span className="label absolute left-2 top-2 rounded-full bg-[color-mix(in_srgb,var(--teak)_85%,transparent)] px-2 py-1 text-[0.5rem] text-[var(--gold)] backdrop-blur-sm">
+                      Example
                     </span>
-                    <span className="label text-[var(--gold-deep)]">Private</span>
+                  </button>
+
+                  <div className="flex flex-col gap-2.5 p-4">
+                    <div>
+                      <p className="text-sm font-semibold">
+                        {example.name}, {example.age}
+                      </p>
+                      <p className="text-xs text-[var(--muted)]">
+                        {example.city} · {example.occupation}
+                      </p>
+                    </div>
+
+                    {/* Deliberately no Lotus Verified here. That badge
+                        asserts a real selfie passed a real check, and
+                        none of these did. It is the one card element
+                        from the brief that cannot appear on an example. */}
+
+                    <button type="button" onClick={onGate} className="btn-quiet w-full px-3 py-2 text-xs">
+                      ▶ Listen to Voice Intro (0:{String(example.voiceSeconds).padStart(2, "0")})
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={onGate}
+                      title="Send Jasmine Garland"
+                      className="flex w-full items-center justify-center gap-2 rounded-full border border-[var(--rule)] px-3 py-2 text-xs font-semibold transition-colors hover:border-[color-mix(in_srgb,var(--gold)_50%,var(--rule))]"
+                    >
+                      <Image
+                        src="/gifts/jasmine-garland.webp"
+                        alt=""
+                        aria-hidden
+                        width={16}
+                        height={16}
+                        className="h-4 w-4 object-contain"
+                      />
+                      Send Jasmine Garland
+                    </button>
                   </div>
-                </button>
+                </div>
               </li>
             ))}
       </ul>
@@ -278,17 +302,29 @@ export function DiscoveryGrid({ onGate }: { onGate: () => void }) {
         // because a disclosure in the footer is a disclosure nobody
         // reads next to the thing it is disclosing.
         <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
-          Cities our members are in, with live member counts. Photography is AI-generated
-          illustration, not members — real profiles are visible to approved members only.
+          These are illustrative examples, not members. The portraits are AI-generated and the
+          details are invented — real profiles are visible to approved members only.
         </p>
       )}
 
-      <div className="mt-9 flex flex-wrap items-center gap-4">
+      {/* Both doors, side by side.
+          The velvet rope is the primary path, but registration is
+          genuinely open and someone ready to join now should not have to
+          apply for permission to do a thing they can already do. Hiding
+          the real signup behind a waitlist would lose exactly the
+          high-intent visitor the page is written to attract. */}
+      <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
         <button type="button" onClick={onGate} className="btn-gold px-8 py-3.5 text-base">
           Apply for Private Invitation
         </button>
-        <p className="text-sm text-[var(--muted)]">Takes 60 seconds. Reviewed in weekly cohorts.</p>
+        <Link href="/sign-up" className="btn-quiet px-8 py-3.5 text-center text-base">
+          Create your profile
+        </Link>
       </div>
+      <p className="mt-3 text-sm text-[var(--muted)]">
+        Applications take 60 seconds and are reviewed in weekly cohorts. Creating a profile is open
+        now and free.
+      </p>
     </section>
   );
 }
