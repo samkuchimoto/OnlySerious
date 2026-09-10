@@ -40,6 +40,58 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "billing is not configured" }, { status: 503 });
   }
 
+  // ?verify=1 — resolves each tier's *configured* price id against
+  // Stripe and reports what that id actually is.
+  //
+  // The `plans` map returned below only says whether an env var is set.
+  // That is enough for the upgrade page (it decides whether a button is
+  // clickable) and useless for checking the wiring: paste the Gold
+  // quarterly id into the Platinum annual slot and every plan still
+  // reports configured, while the page offers $179.99/yr and Stripe
+  // charges $89.99 every three months.
+  //
+  // This closes that. It is the difference between "a price id is
+  // present" and "the price behind it is the one this tier advertises",
+  // and it means confirming a new ladder costs a page load rather than
+  // a real subscription on a real card.
+  if (new URL(request.url).searchParams.get("verify") === "1") {
+    const stripe = getStripe();
+    const rows = [];
+    for (const tier of TIERS) {
+      for (const price of tier.prices) {
+        const id = process.env[price.priceEnv];
+        if (!id) {
+          rows.push({ tier: tier.id, interval: price.interval, expected: price.display, status: "not configured" });
+          continue;
+        }
+        try {
+          const live = await stripe.prices.retrieve(id);
+          const divisor = live.currency === "jpy" ? 1 : 100;
+          rows.push({
+            tier: tier.id,
+            interval: price.interval,
+            expected: price.display,
+            // What Stripe will actually charge for the id this tier holds.
+            actual:
+              live.unit_amount === null
+                ? null
+                : `${live.currency.toUpperCase()} ${(live.unit_amount / divisor).toFixed(2)}`,
+            actualInterval: live.recurring
+              ? `every ${live.recurring.interval_count} ${live.recurring.interval}${live.recurring.interval_count === 1 ? "" : "s"}`
+              : "one-off",
+            active: live.active,
+            id: live.id,
+          });
+        } catch {
+          // A configured id Stripe cannot resolve is the worst case of
+          // all: the button looks live and 503s on click.
+          rows.push({ tier: tier.id, interval: price.interval, expected: price.display, status: "id not found in Stripe" });
+        }
+      }
+    }
+    return NextResponse.json({ verify: rows });
+  }
+
   // ?list=1 — every active recurring price this key can see, with the
   // product name attached. Previously this information only appeared
   // inside an error path, which meant the only way to find out what the
