@@ -50,8 +50,15 @@ export default function Matches() {
               const match = d.data() as Match;
               const otherId = match.userIds.find((id) => id !== nextUser.uid);
               if (!otherId || blockedIds.has(otherId)) return null;
-              const otherSnap = await getDoc(doc(db, "users", otherId));
-              if (!otherSnap.exists()) return null;
+              // firestore.rules only exposes a profile to others while it
+              // is 'active', so this read is genuinely permission-denied
+              // whenever the other side is suspended, pending re-review,
+              // or deleted. That is a normal state, not a failure — but
+              // it threw, and one unreadable profile took the entire page
+              // down with "Couldn't load your matches". Skip that row and
+              // keep the rest of the conversation list.
+              const otherSnap = await getDoc(doc(db, "users", otherId)).catch(() => null);
+              if (!otherSnap?.exists()) return null;
               return { match, other: otherSnap.data() as UserProfile };
             }),
           );

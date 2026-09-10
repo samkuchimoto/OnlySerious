@@ -52,7 +52,17 @@ export default function LikedMe() {
     setLoadError(false);
     try {
       const idToken = await nextUser.getIdToken();
-      const res = await fetch("/api/liked-me", { headers: { Authorization: `Bearer ${idToken}` } });
+      // A request that never settles leaves this page on "Loading…"
+      // forever, with no error and no retry — the one failure mode a
+      // user cannot tell from a slow network or a broken app. Fifteen
+      // seconds is well past any healthy response, and aborting turns
+      // the hang into the error state that already exists below.
+      const abort = new AbortController();
+      const timeout = setTimeout(() => abort.abort(), 15_000);
+      const res = await fetch("/api/liked-me", {
+        headers: { Authorization: `Bearer ${idToken}` },
+        signal: abort.signal,
+      }).finally(() => clearTimeout(timeout));
       if (!res.ok) {
         setLoadError(true);
         return;
