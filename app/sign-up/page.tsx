@@ -7,6 +7,7 @@ import { RecaptchaVerifier, linkWithPhoneNumber, type ConfirmationResult, type U
 import { FirebaseError } from "firebase/app";
 import { auth, db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
+import { Mascot } from "@/components/Mascot";
 import {
   MAX_BIO_LENGTH,
   MAX_HEADLINE_LENGTH,
@@ -735,9 +736,33 @@ export default function SignUp() {
 
         {stage === "pending-review" && user && (
           <div className="flex flex-col items-start gap-6 pt-8">
+            {/* Amara, at the one moment in the whole product that is
+                unambiguously good news. A screen that says "your profile
+                is live" and then immediately asks for notifications reads
+                as a system talking; a welcome reads as a house. She is
+                also useful on the review state, where the honest message
+                is "wait", and waiting is easier with a face on it. */}
+            <div className="flex items-center gap-4">
+              <Mascot
+                pose={existingProfile?.status === "active" ? "heart" : "sitting"}
+                size="md"
+                className="shrink-0"
+              />
+              <div>
+                <p className="label text-[var(--madder,var(--gold))]">
+                  {existingProfile?.status === "active" ? "Welcome in" : "Almost there"}
+                </p>
+                <p className="mt-1 max-w-xs text-sm leading-relaxed text-[var(--muted)]">
+                  {existingProfile?.status === "active"
+                    ? "You're one of the verified members people are actually looking for."
+                    : "Every photo is checked by hand before it goes live. It's why the grid can be trusted."}
+                </p>
+              </div>
+            </div>
+
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-medium tracking-tight">
+                <h1 className="display text-3xl">
                   {existingProfile?.status === "active" ? "Your profile is live" : "Your profile is under review"}
                 </h1>
                 <button

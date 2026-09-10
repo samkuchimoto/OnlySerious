@@ -65,9 +65,16 @@ export function AppNav({ meta }: AppNavProps) {
     // the likes counter cannot fit 360px, and letting them wrap produced
     // a ragged break mid-list ("...My profile" / "Settings [Upgrade]")
     // that read as broken rather than designed. Most traffic is phones.
-    <header className="mx-auto w-full max-w-2xl px-6 py-6 sm:py-8">
+    // Translucent teak, per the design spec, and sticky. Photographs
+    // scroll under it instead of being cut off by an opaque bar, and on a
+    // browse page that is mostly photographs that is the difference
+    // between a chrome and a frame. The solid fallback in globals.css
+    // matters: without backdrop-filter this renders near-transparent teak
+    // with white type on it, which is unreadable rather than merely plain.
+    <header className="nav-teak sticky top-0 z-30 w-full">
+      <div className="mx-auto w-full max-w-2xl px-6 py-4 sm:py-5">
       <div className="flex items-center justify-between gap-4">
-        <Link href="/browse" className="text-lg font-semibold tracking-tight">
+        <Link href="/browse" className="display text-xl text-white">
           {BRAND_CONFIG.appTitle}
         </Link>
         {/* Pinned to the top row on every width, so the one commercial
@@ -87,17 +94,18 @@ export function AppNav({ meta }: AppNavProps) {
           a single tidy line beats a second ragged one. The scrollbar is
           hidden because the row is short enough that it reads as a row,
           not as a scroller. */}
-      <div className="mt-3 flex items-center gap-x-4 overflow-x-auto whitespace-nowrap text-sm text-[var(--muted)] [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {meta && <span className="shrink-0">{meta}</span>}
+      <div className="mt-2.5 flex items-center gap-x-4 overflow-x-auto whitespace-nowrap text-sm text-white/60 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {meta && <span className="shrink-0 text-[var(--glow)]">{meta}</span>}
         {LINKS.filter((link) => link.href !== pathname).map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className="shrink-0 transition-colors hover:text-[var(--foreground)]"
+            className="shrink-0 transition-colors hover:text-white"
           >
             {link.label}
           </Link>
         ))}
+      </div>
       </div>
     </header>
   );
