@@ -34,7 +34,7 @@ export function NotificationSettings({ user }: { user: User }) {
       <button
         onClick={handleEnable}
         disabled={status === "enabling"}
-        className="w-fit rounded-full border border-[var(--foreground)] px-5 py-2 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-white disabled:opacity-50"
+        className="w-fit rounded-full border border-[var(--foreground)] px-5 py-2 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-[var(--cream)] disabled:opacity-50"
       >
         {status === "enabling" ? "…" : "Turn on notifications"}
       </button>

@@ -262,7 +262,7 @@ export default function MatchChat() {
               return (
                 <span className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
                   {activity.isOnline && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-green-500" aria-hidden />
+                    <span className="dot-online dot-online-pulse h-1.5 w-1.5" aria-hidden />
                   )}
                   {activity.label}
                 </span>
@@ -417,7 +417,7 @@ export default function MatchChat() {
               <button
                 type="submit"
                 disabled={sending || !draft.trim() || onCooldown}
-                className="rounded-full bg-[var(--foreground)] px-6 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+                className="rounded-full bg-[var(--foreground)] px-6 py-2.5 text-sm font-medium text-[var(--cream)] disabled:opacity-50"
               >
                 {onCooldown ? formatCountdown(cooldownRemaining) : "Send"}
               </button>

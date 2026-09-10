@@ -275,7 +275,7 @@ export function PhotoUploader({
                 onClick={() => handleDelete(submission.id)}
                 disabled={deletingId === submission.id}
                 aria-label="Remove photo"
-                className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--foreground)] text-xs text-white shadow disabled:opacity-50"
+                className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--foreground)] text-xs text-[var(--cream)] shadow disabled:opacity-50"
               >
                 {deletingId === submission.id ? "…" : "✕"}
               </button>

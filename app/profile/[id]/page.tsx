@@ -145,7 +145,7 @@ export default function ProfileDetail() {
               •••
             </button>
             {menuOpen && (
-              <div className="absolute right-0 z-10 mt-1 w-40 rounded-lg border border-[var(--rule)] bg-white py-1 shadow-lg">
+              <div className="absolute right-0 z-10 mt-1 w-40 rounded-lg border border-[var(--rule)] bg-[var(--surface-solid)] py-1 shadow-lg">
                 <button onClick={handleHide} className="block w-full px-4 py-2 text-left text-sm hover:bg-[color-mix(in_srgb,var(--gold)_7%,var(--background))]">
                   Not interested
                 </button>
@@ -283,10 +283,10 @@ export default function ProfileDetail() {
                 disabled={likeStatus === "sending" || likeStatus === "liked" || likeStatus === "matched"}
                 className={`w-fit rounded-full border px-8 py-3.5 text-sm font-medium transition-colors disabled:cursor-default ${
                   likeStatus === "matched"
-                    ? "border-[var(--foreground)] bg-[var(--foreground)] text-white"
+                    ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--cream)]"
                     : likeStatus === "liked"
                       ? "border-[var(--rule)] text-[var(--muted)]"
-                      : "border-[var(--foreground)] text-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white"
+                      : "border-[var(--foreground)] text-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--cream)]"
                 }`}
               >
                 {likeStatus === "matched"

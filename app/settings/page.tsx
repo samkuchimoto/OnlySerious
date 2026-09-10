@@ -153,7 +153,7 @@ export default function Settings() {
                 <button
                   onClick={togglePause}
                   disabled={pausing}
-                  className="w-fit rounded-full border border-[var(--foreground)] px-5 py-2 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-white disabled:opacity-50"
+                  className="w-fit rounded-full border border-[var(--foreground)] px-5 py-2 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-[var(--cream)] disabled:opacity-50"
                 >
                   {pausing ? "…" : profile.paused ? "Unpause profile" : "Pause profile"}
                 </button>
@@ -178,7 +178,7 @@ export default function Settings() {
                 <button
                   onClick={profile.stripeCustomerId ? openBillingPortal : startCheckout}
                   disabled={billingLoading}
-                  className="w-fit rounded-full border border-[var(--foreground)] px-5 py-2 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-white disabled:opacity-50"
+                  className="w-fit rounded-full border border-[var(--foreground)] px-5 py-2 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-[var(--cream)] disabled:opacity-50"
                 >
                   {billingLoading
                     ? "…"
@@ -238,7 +238,7 @@ export default function Settings() {
               {!confirmingDelete ? (
                 <button
                   onClick={() => setConfirmingDelete(true)}
-                  className="w-fit rounded-full border border-red-600 px-5 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-600 hover:text-white"
+                  className="w-fit rounded-full border border-red-600 px-5 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-600 hover:text-[var(--cream)]"
                 >
                   Delete my account
                 </button>
@@ -247,7 +247,7 @@ export default function Settings() {
                   <button
                     onClick={deleteAccount}
                     disabled={deleting}
-                    className="w-fit rounded-full bg-red-600 px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
+                    className="w-fit rounded-full bg-red-600 px-5 py-2 text-sm font-medium text-[var(--cream)] disabled:opacity-50"
                   >
                     {deleting ? "Deleting…" : "Yes, permanently delete"}
                   </button>

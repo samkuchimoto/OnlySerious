@@ -28,7 +28,7 @@ export function ApkDownloadLink() {
       <a
         href={apkUrl}
         onClick={() => capture("apk_downloaded")}
-        className="mt-3 inline-block rounded-full border border-[var(--foreground)] px-6 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-white"
+        className="mt-3 inline-block rounded-full border border-[var(--foreground)] px-6 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-[var(--cream)]"
       >
         Download {BRAND_CONFIG.appTitle} for Android
       </a>

@@ -92,7 +92,7 @@ export function SelfieVerification({ user, alreadyVerified }: { user: User; alre
           <div className="flex gap-3">
             <button
               onClick={captureAndSubmit}
-              className="rounded-full bg-[var(--foreground)] px-5 py-2 text-sm font-medium text-white"
+              className="rounded-full bg-[var(--foreground)] px-5 py-2 text-sm font-medium text-[var(--cream)]"
             >
               Capture
             </button>
@@ -112,7 +112,7 @@ export function SelfieVerification({ user, alreadyVerified }: { user: User; alre
       {(stage === "idle" || stage === "failed") && (
         <button
           onClick={startCamera}
-          className="w-fit rounded-full border border-[var(--foreground)] px-5 py-2 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-white"
+          className="w-fit rounded-full border border-[var(--foreground)] px-5 py-2 text-sm font-medium transition-colors hover:bg-[var(--foreground)] hover:text-[var(--cream)]"
         >
           {stage === "failed" ? "Try again" : "Get Verified"}
         </button>

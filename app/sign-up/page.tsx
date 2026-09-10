@@ -456,7 +456,7 @@ export default function SignUp() {
                         onClick={() => setGender(option)}
                         className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                           gender === option
-                            ? "border-[var(--foreground)] bg-[var(--foreground)] text-white"
+                            ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--cream)]"
                             : "border-[var(--rule)] text-[var(--muted)]"
                         }`}
                       >
@@ -599,7 +599,7 @@ export default function SignUp() {
                     onClick={() => selectInterestedIn(option)}
                     className={`rounded-full border px-4 py-2 text-sm transition-colors ${
                       interestedIn.includes(option)
-                        ? "border-[var(--foreground)] bg-[var(--foreground)] text-white"
+                        ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--cream)]"
                         : "border-[var(--rule)] text-[var(--muted)]"
                     }`}
                   >

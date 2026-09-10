@@ -242,8 +242,8 @@ export default function LikedMe() {
                       disabled={status === "sending" || status === "matched"}
                       className={`w-fit rounded-full border px-5 py-2 text-sm font-medium transition-colors disabled:cursor-default ${
                         status === "matched"
-                          ? "border-[var(--foreground)] bg-[var(--foreground)] text-white"
-                          : "border-[var(--foreground)] text-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-white"
+                          ? "border-[var(--foreground)] bg-[var(--foreground)] text-[var(--cream)]"
+                          : "border-[var(--foreground)] text-[var(--foreground)] hover:bg-[var(--foreground)] hover:text-[var(--cream)]"
                       }`}
                     >
                       {status === "matched"

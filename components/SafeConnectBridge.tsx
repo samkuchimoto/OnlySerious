@@ -220,7 +220,7 @@ export function SafeConnectBridge({
             onClick={() => setChannel(c.value)}
             className={`label rounded-full px-3 py-1.5 transition-colors ${
               channel === c.value
-                ? "bg-[var(--foreground)] text-white"
+                ? "bg-[var(--foreground)] text-[var(--cream)]"
                 : "border border-[var(--rule)] text-[var(--muted)]"
             }`}
           >
