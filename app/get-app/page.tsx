@@ -35,7 +35,7 @@ export default function GetApp() {
 
   return (
     <main className="flex min-h-screen flex-col text-[var(--foreground)]">
-      <header className="mx-auto flex w-full max-w-2xl items-center justify-between px-6 py-8">
+      <header className="canvas flex items-center justify-between py-8">
         <Link href="/" className="text-lg font-semibold tracking-tight">
           {BRAND_CONFIG.appTitle}
         </Link>
@@ -44,7 +44,7 @@ export default function GetApp() {
         </Link>
       </header>
 
-      <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
+      <section className="canvas measure flex-1 pb-20">
         {/* This page is reached mostly from links pasted into WhatsApp
             and LINE, and an in-app browser can't install a PWA at all —
             beforeinstallprompt never fires there. Without this the

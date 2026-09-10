@@ -118,7 +118,7 @@ export default function Settings() {
     <main className="flex min-h-screen flex-col text-[var(--foreground)]">
       <AppNav />
 
-      <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
+      <section className="canvas measure flex-1 pb-20">
         <h1 className="pt-8 text-3xl font-medium tracking-tight">Settings</h1>
         {!loading && !profile && error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 

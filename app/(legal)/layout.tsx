@@ -4,7 +4,7 @@ import { BRAND_CONFIG } from "@/config/brand";
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
   return (
     <main className="flex min-h-screen flex-col text-[var(--foreground)]">
-      <header className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-y-2 px-6 py-8">
+      <header className="canvas flex flex-wrap items-center justify-between gap-y-2 py-8">
         <Link href="/" className="text-lg font-semibold tracking-tight">
           {BRAND_CONFIG.appTitle}
         </Link>
@@ -23,7 +23,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
           </Link>
         </div>
       </header>
-      <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
+      <section className="canvas measure flex-1 pb-20">
         <div className="flex flex-col gap-4 pt-4 text-sm leading-relaxed text-[var(--foreground)] [&_h1]:text-2xl [&_h1]:font-medium [&_h1]:tracking-tight [&_h1]:text-[var(--foreground)] [&_h1]:mb-2 [&_h2]:mt-6 [&_h2]:text-base [&_h2]:font-medium [&_h2]:text-[var(--foreground)]">
           {children}
         </div>

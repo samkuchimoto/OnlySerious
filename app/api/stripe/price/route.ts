@@ -11,6 +11,29 @@
 
 import { NextResponse } from "next/server";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
+import { TIERS } from "@/lib/tiers";
+
+/**
+ * Which tier/interval pairs actually have a Stripe price id configured.
+ *
+ * The upgrade page needs this because the ladder moved to USD while
+ * Stripe still holds the old EUR prices: without it, every Choose
+ * button renders live and then fails with a 503 on click, which reads
+ * as a broken checkout rather than as a plan that isn't switched on.
+ *
+ * Only booleans leave the server. The price ids themselves stay in
+ * server env — they are not secret, but there is no reason to publish
+ * the catalogue's shape either.
+ */
+function configuredPlans(): Record<string, boolean> {
+  const out: Record<string, boolean> = {};
+  for (const tier of TIERS) {
+    for (const price of tier.prices) {
+      out[`${tier.id}:${price.interval}`] = Boolean(process.env[price.priceEnv]);
+    }
+  }
+  return out;
+}
 
 export async function GET(request: Request) {
   if (!isStripeConfigured()) {
@@ -69,6 +92,7 @@ export async function GET(request: Request) {
       amount: price.unit_amount === null ? null : price.unit_amount / divisor,
       currency: price.currency.toUpperCase(),
       interval: price.recurring?.interval ?? null,
+      plans: configuredPlans(),
     });
   } catch (err) {
     // Almost always a STRIPE_PRICE_ID that isn't a real price id — the

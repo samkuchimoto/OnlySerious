@@ -130,7 +130,7 @@ export default function ProfileDetail() {
 
   return (
     <main className="flex min-h-screen flex-col text-[var(--foreground)]">
-      <header className="mx-auto flex w-full max-w-2xl items-center justify-between px-6 py-8">
+      <header className="canvas flex items-center justify-between py-8">
         <Link href="/browse" className="text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]">
           ← {BRAND_CONFIG.appTitle}
         </Link>
@@ -166,7 +166,7 @@ export default function ProfileDetail() {
         )}
       </header>
 
-      <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
+      <section className="canvas measure flex-1 pb-20">
         {loading && <p className="text-sm text-[var(--muted)]">Loading…</p>}
         {!loading && !profile && <p className="text-sm text-[var(--muted)]">This profile isn&apos;t available.</p>}
 

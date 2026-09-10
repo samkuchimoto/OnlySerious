@@ -11,8 +11,10 @@
 import { NextResponse } from "next/server";
 import { verifyRequestUser, adminDb, adminAuth } from "@/lib/firebaseAdmin";
 import { getStripe, isStripeConfigured } from "@/lib/stripe";
-import { priceIdFor, tierById } from "@/lib/tiers";
+import { priceIdFor, tierById, type Interval } from "@/lib/tiers";
 import type { UserProfile } from "@/lib/types";
+
+const INTERVALS: Interval[] = ["month", "quarter", "year", "sixmonth"];
 
 export async function POST(request: Request) {
   if (!isStripeConfigured()) {
@@ -24,18 +26,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  // Which tier. Defaults to standard so an older client that posts no
-  // body keeps working exactly as before — this route shipped without a
-  // body and there may be a cached bundle out there still calling it.
+  // Which tier, and on which billing period. Both default to the
+  // featured monthly plan so an older cached bundle that posts no body
+  // — or only a tier — still reaches a working checkout rather than a
+  // 400.
   const body = await request.json().catch(() => ({}));
-  const tier = tierById(typeof body?.tier === "string" ? body.tier : "standard");
+  const tier = tierById(typeof body?.tier === "string" ? body.tier : "gold");
+  const interval: Interval = INTERVALS.includes(body?.interval) ? body.interval : "month";
   // A hidden tier is not purchasable, and the check is here rather than
   // only in the UI: `visible: false` is a product decision about what may
-  // be sold, so a crafted request must not be able to buy VIP either.
-  if (!tier || !tier.visible || !tier.priceEnv) {
+  // be sold, so a crafted request must not be able to buy the concierge
+  // pass either.
+  if (!tier || !tier.visible || tier.prices.length === 0) {
     return NextResponse.json({ error: "unknown tier" }, { status: 400 });
   }
-  const priceId = priceIdFor(tier);
+  const priceId = priceIdFor(tier, interval);
   if (!priceId) {
     // Unconfigured, not broken — 503 says "not available yet" rather
     // than implying the request was malformed.
@@ -95,7 +100,7 @@ export async function POST(request: Request) {
     // arrive as subscription events that never reference the session.
     // Tier travels on the subscription so the webhook and any later
     // lifecycle event know which plan this is without re-reading prices.
-    subscription_data: { metadata: { firebaseUid: uid, tier: tier.id } },
+    subscription_data: { metadata: { firebaseUid: uid, tier: tier.id, interval } },
     allow_promotion_codes: true,
   });
 

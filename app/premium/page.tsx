@@ -15,11 +15,17 @@ import type { User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { db, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
-import { TIERS, type TierId } from "@/lib/tiers";
+import { INTERVAL_LABEL, TIERS, type Interval, type TierId } from "@/lib/tiers";
 import { FREE_DAILY_LIKE_LIMIT, PAID_DAILY_LIKE_LIMIT, type UserProfile } from "@/lib/types";
 import { capture } from "@/lib/analytics";
 
-type PriceInfo = { amount: number | null; currency: string; interval: string | null };
+type PriceInfo = {
+  amount: number | null;
+  currency: string;
+  interval: string | null;
+  /** "gold:month" -> whether a Stripe price id is configured for it. */
+  plans?: Record<string, boolean>;
+};
 
 export default function Premium() {
   const [user, setUser] = useState<User | null>(null);
@@ -30,6 +36,11 @@ export default function Premium() {
   const [priceState, setPriceState] = useState<"loading" | "ready" | "unavailable">("loading");
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Which tier/interval pairs Stripe can actually sell right now. Empty
+  // until the price route answers; see the note in lib/tiers.ts about
+  // the USD ladder needing new Stripe prices before any of these
+  // become true.
+  const [plans, setPlans] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     return watchAuthState(async (nextUser) => {
@@ -58,24 +69,26 @@ export default function Premium() {
         if (data?.amount == null) throw new Error("price has no amount");
         // The amount itself is no longer rendered — each tier card shows
         // its own figure. What is still needed is the signal: this route
-        // and Checkout share a key and a price id, so a price that can't
-        // be read guarantees a click that fails.
+        // and Checkout share a key, so a price that can't be read
+        // guarantees a click that fails. `plans` then narrows that from
+        // "billing works" to "this specific plan is sellable".
+        setPlans(data.plans ?? {});
         setPriceState("ready");
       })
       .catch(() => setPriceState("unavailable"));
   }, []);
 
-  async function startCheckout(tier: TierId = "standard") {
+  async function startCheckout(tier: TierId, interval: Interval) {
     if (!user) return;
     setError(null);
     setStarting(true);
-    capture("upgrade_clicked", { source: "premium_page", tier });
+    capture("upgrade_clicked", { source: "premium_page", tier, interval });
     try {
       const idToken = await user.getIdToken();
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { Authorization: `Bearer ${idToken}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ tier }),
+        body: JSON.stringify({ tier, interval }),
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok || !body.url) {
@@ -99,7 +112,7 @@ export default function Premium() {
 
   return (
     <main className="flex min-h-screen flex-col text-[var(--foreground)]">
-      <header className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-y-2 px-6 py-8">
+      <header className="canvas flex flex-wrap items-center justify-between gap-y-2 py-8">
         <Link href="/" className="text-lg font-semibold tracking-tight">
           {BRAND_CONFIG.appTitle}
         </Link>
@@ -108,7 +121,7 @@ export default function Premium() {
         </Link>
       </header>
 
-      <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
+      <section className="canvas flex-1 pb-20">
         {loading && <p className="text-sm text-[var(--muted)]">Loading…</p>}
 
         {!loading && !user && (
@@ -199,21 +212,24 @@ export default function Premium() {
                 product whose whole pitch is that it is the honest one. */}
             <div className="grid w-full gap-4 sm:grid-cols-3">
               {TIERS.filter((t) => t.visible).map((t) => {
-                const paid = Boolean(t.priceEnv);
+                const [primary, ...alternates] = t.prices;
                 return (
                   <div
                     key={t.id}
-                    className={`flex flex-col p-5 ${t.id === "gold" ? "card-gold" : "card"}`}
+                    className={`flex flex-col p-5 ${t.featured ? "card-gold" : "card"}`}
                   >
-                    {t.id === "gold" && (
-                      <span className="label mb-2 w-fit rounded-full bg-[color-mix(in_srgb,var(--gold)_25%,transparent)] px-2.5 py-1">
-                        Most complete
+                    {t.featured && (
+                      <span className="label mb-2 w-fit rounded-full bg-[color-mix(in_srgb,var(--gold)_25%,transparent)] px-2.5 py-1 text-[var(--gold-deep)]">
+                        Most chosen
                       </span>
                     )}
                     <p className="display text-xl">{t.name}</p>
                     <p className="display mt-1 text-2xl">
-                      {t.displayPrice}
-                      {paid && <span className="text-sm text-[var(--muted)]"> / month</span>}
+                      {primary ? primary.display : "$0"}
+                      <span className="text-sm text-[var(--muted)]">
+                        {" "}
+                        {primary ? INTERVAL_LABEL[primary.interval] : "to join"}
+                      </span>
                     </p>
                     <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">{t.tagline}</p>
                     <ul className="mt-4 flex flex-1 flex-col gap-2">
@@ -224,16 +240,51 @@ export default function Premium() {
                         </li>
                       ))}
                     </ul>
-                    {paid && (
-                      <button
-                        onClick={() => startCheckout(t.id)}
-                        disabled={starting || priceState === "unavailable"}
-                        className={`mt-5 w-full px-4 py-2.5 text-sm disabled:opacity-50 ${
-                          t.id === "gold" ? "btn-gold" : "btn-quiet"
-                        }`}
-                      >
-                        {starting ? "Starting…" : `Choose ${t.name}`}
-                      </button>
+                    {primary && (
+                      <div className="mt-5 flex flex-col gap-2">
+                        <button
+                          onClick={() => startCheckout(t.id, primary.interval)}
+                          disabled={
+                            starting ||
+                            priceState !== "ready" ||
+                            !plans[`${t.id}:${primary.interval}`]
+                          }
+                          className={`w-full px-4 py-2.5 text-sm disabled:opacity-50 ${
+                            t.featured ? "btn-gold" : "btn-quiet"
+                          }`}
+                        >
+                          {starting
+                            ? "Starting…"
+                            : priceState === "ready" && !plans[`${t.id}:${primary.interval}`]
+                              ? "Opening soon"
+                              : `Choose ${t.name}`}
+                        </button>
+                        {/* The discounted longer term, offered upfront
+                            rather than as a save-offer at cancellation.
+                            The audit's reasoning: this audience churns
+                            in 30–45 days once they meet someone or fly
+                            home, so the quarterly and annual passes are
+                            where the cash actually is — and roughly 40%
+                            of payers take one when it is visible at the
+                            moment of decision. */}
+                        {alternates.map((alt) => (
+                          <button
+                            key={alt.interval}
+                            onClick={() => startCheckout(t.id, alt.interval)}
+                            disabled={
+                              starting ||
+                              priceState !== "ready" ||
+                              !plans[`${t.id}:${alt.interval}`]
+                            }
+                            className="w-full text-xs text-[var(--muted)] underline underline-offset-4 transition-colors hover:text-[var(--foreground)] disabled:no-underline disabled:opacity-50"
+                          >
+                            or {alt.display} {INTERVAL_LABEL[alt.interval]}
+                            {alt.note && (
+                              <span className="text-[var(--gold-deep)]"> · {alt.note}</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </div>
                 );

@@ -7,6 +7,7 @@ import { RecaptchaVerifier, linkWithPhoneNumber, type ConfirmationResult, type U
 import { FirebaseError } from "firebase/app";
 import { auth, db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
+import { COUNTRY_OPTIONS } from "@/lib/markets";
 import { Mali } from "@/components/Mali";
 import {
   MAX_BIO_LENGTH,
@@ -362,7 +363,7 @@ export default function SignUp() {
 
   return (
     <main className="flex min-h-screen flex-col text-[var(--foreground)]">
-      <header className="mx-auto flex w-full max-w-2xl flex-wrap items-center justify-between gap-y-2 px-6 py-8">
+      <header className="canvas flex flex-wrap items-center justify-between gap-y-2 py-8">
         <Link href="/" className="text-lg font-semibold tracking-tight">
           {BRAND_CONFIG.appTitle}
         </Link>
@@ -413,7 +414,7 @@ export default function SignUp() {
 
       <OnboardingProgressBar stage={stage} />
 
-      <section className="mx-auto w-full max-w-2xl flex-1 px-6 pb-20">
+      <section className="canvas measure flex-1 pb-20">
         {stage === "loading" && <p className="text-sm text-[var(--muted)]">Loading…</p>}
 
         {stage === "signed-out" && (
@@ -617,14 +618,39 @@ export default function SignUp() {
                   className="rounded-lg border border-[var(--rule)] px-4 py-2.5 focus:border-[var(--foreground)] focus:outline-none"
                 />
               </label>
+              {/* A select, not free text. Country is now a primary
+                  navigational control (the Country Hubs on Browse), and
+                  a hub cannot filter on a field where "Thailand", "TH"
+                  and "Bangkok, Thailand" are three different countries.
+                  lib/markets still matches the old free-text spellings
+                  so existing members are not stranded — this just stops
+                  the problem growing. "Other" is offered because
+                  refusing to let someone say where they actually live
+                  is worse than a row the hubs cannot place. */}
               <label className="flex flex-1 flex-col gap-1.5 text-sm">
                 Country
-                <input
+                <select
                   required
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="rounded-lg border border-[var(--rule)] px-4 py-2.5 focus:border-[var(--foreground)] focus:outline-none"
-                />
+                  className="rounded-lg border border-[var(--rule)] bg-[var(--surface-solid)] px-4 py-2.5 focus:border-[var(--foreground)] focus:outline-none"
+                >
+                  <option value="" disabled>
+                    Select…
+                  </option>
+                  {/* An existing profile may hold a spelling that is not
+                      in the list; without this the select would silently
+                      blank it and the next save would wipe their
+                      country. */}
+                  {country && !COUNTRY_OPTIONS.includes(country) && (
+                    <option value={country}>{country}</option>
+                  )}
+                  {COUNTRY_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
               </label>
             </div>
 

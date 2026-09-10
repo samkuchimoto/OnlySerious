@@ -151,7 +151,7 @@ export default function MatchChat() {
 
   return (
     <main className="flex min-h-screen flex-col text-[var(--foreground)]">
-      <header className="mx-auto flex w-full max-w-2xl items-center gap-4 px-6 py-6">
+      <header className="canvas flex items-center gap-4 py-6">
         <Link href="/matches" className="text-sm text-[var(--muted)] transition-colors hover:text-[var(--foreground)]">
           ← {BRAND_CONFIG.appTitle}
         </Link>
@@ -181,7 +181,7 @@ export default function MatchChat() {
         )}
       </header>
 
-      <section className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 pb-6">
+      <section className="canvas measure flex flex-1 flex-col pb-6">
         {loading && <p className="text-sm text-[var(--muted)]">Loading…</p>}
         {!loading && !user && (
           <Link href="/sign-up" className="text-sm underline underline-offset-2">
