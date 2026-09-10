@@ -61,34 +61,37 @@ export default function Home() {
       </div>
 
       {/* -----------------------------------------------------------------
-          Asymmetrical hero. Copy occupies the left, the couple the right,
+          Asymmetrical hero. The couple hold the left, the copy the right,
           and the two never overlap.
 
-          The earlier version centred the headline over the photograph,
-          which put text across both faces — hiding the expressions that
-          are the entire emotional argument, and making the type harder
-          to read at the same time.
+          The layout follows the photograph rather than the other way
+          round. This frame puts the couple in its left third and Wat
+          Arun across the remaining two, so a copy column on the left —
+          the conventional side — would sit directly on their faces, and
+          object-position would have to crop toward the temple to avoid
+          it, losing the people who are the entire emotional argument.
+          Reversing the columns keeps both intact.
           ----------------------------------------------------------------- */}
       <section className="relative flex min-h-[86vh] flex-col overflow-hidden">
-        {/* object-[72%] holds the couple in the right portion at every
-            width. On a phone the frame crops toward them, which is the
-            correct thing to lose the river for; on desktop the temple
-            and the balustrade become the quiet ground the copy sits on. */}
+        {/* object-[22%] anchors the crop on the couple at every aspect
+            ratio. On a phone, where the frame narrows to roughly a third
+            of the image, that is the difference between a photograph of
+            two people and a photograph of a river. */}
         <Image
           src="/images/hero-terrace.webp"
           alt=""
           fill
           priority
           sizes="100vw"
-          className="object-cover object-[72%_center]"
+          className="object-cover object-[22%_center]"
         />
 
-        {/* Directional scrim. Left-to-right on desktop so the copy side
-            darkens and the faces stay untouched; bottom-up on a phone,
-            where the layout stacks and there is no left column. Teak-
+        {/* Directional scrim: right-to-left on desktop so the copy side
+            darkens and the faces stay untouched, bottom-up on a phone
+            where the layout stacks and there is no side column. Teak-
             tinted rather than neutral black — grey over a golden-hour
             photograph drains it. */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[var(--teak)]/85 via-[var(--teak)]/25 to-transparent sm:bg-gradient-to-r sm:from-[var(--teak)]/88 sm:via-[var(--teak)]/40 sm:to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--teak)]/88 via-[var(--teak)]/25 to-transparent sm:bg-gradient-to-l sm:from-[var(--teak)]/90 sm:via-[var(--teak)]/45 sm:to-transparent" />
 
         {/* The lantern drift. Sits above the scrim so the points read as
             light in the air rather than as dust on the lens. */}
@@ -105,7 +108,10 @@ export default function Home() {
         </header>
 
         <div className="canvas relative z-10 flex flex-1 flex-col justify-end pb-16 sm:pb-24">
-          <div className="max-w-xl text-center sm:text-left">
+          {/* Right column from sm up; full width and centred on a phone,
+              where the scrim runs bottom-up and there is no left half to
+              stay clear of. */}
+          <div className="text-center sm:ml-auto sm:max-w-lg sm:text-left lg:max-w-xl">
             <h1 className="display text-5xl leading-[1.03] text-[var(--cream)] sm:text-6xl lg:text-7xl">
               {BRAND_CONFIG.heroHeadline}
             </h1>

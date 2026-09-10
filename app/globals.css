@@ -353,9 +353,16 @@ body {
   }
 }
 
-/* The Golden Glimmer. Wraps an avatar whose owner is verified or online
-   so the glow tracks the photograph's own rounding. Applied to the
-   frame, never to the image, so it can never dim a face. */
+/* The Golden Glimmer. Wraps the portrait of someone verified or online
+   so the glow tracks the photograph's own frame. Applied to the frame,
+   never to the image, so it can never dim a face.
+
+   The shadow is inset rather than outset. An outer glow is the obvious
+   reading of "a soft golden glow pulses around the avatar border", and
+   it is invisible here: the grid tile clips its contents, so an outward
+   spread is cut off at exactly the edge it is meant to trace. Drawn
+   inward it sits just inside the photograph, which is also the only
+   version that survives being packed four-across. */
 .glimmer {
   position: relative;
 }
@@ -366,17 +373,17 @@ body {
   border-radius: inherit;
   pointer-events: none;
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--gold) 70%, transparent),
-    0 0 16px 0 color-mix(in srgb, var(--glow) 55%, transparent);
+    inset 0 0 0 2px color-mix(in srgb, var(--gold) 80%, transparent),
+    inset 0 0 20px 0 color-mix(in srgb, var(--glow) 40%, transparent);
   animation: glimmer 3.6s ease-in-out infinite;
 }
 @keyframes glimmer {
   0%,
   100% {
-    opacity: 0.55;
+    opacity: 0.45;
   }
   50% {
-    opacity: 1;
+    opacity: 0.95;
   }
 }
 

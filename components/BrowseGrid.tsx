@@ -136,9 +136,15 @@ export function BrowseGrid({
                 {/* Intent badge on the card face. This is the single
                     fact that separates this directory from the one it
                     competes with, so it sits on the tile rather than
-                    two taps away on a profile page. */}
+                    two taps away on a profile page.
+
+                    Sentence case, not the uppercase `.label` treatment
+                    used elsewhere: at two columns on a phone the tile is
+                    about 160px wide, and "MARRIAGE ORIENTED" at 0.14em
+                    tracking truncated to "MARRIAGE ORIENT…" — which
+                    turns the product's key claim into an ellipsis. */}
                 {badge && (
-                  <span className="label absolute bottom-2 left-2 max-w-[calc(100%-1rem)] truncate rounded-full bg-[color-mix(in_srgb,var(--teak)_82%,transparent)] px-2 py-1 text-[0.5rem] text-[var(--gold)] backdrop-blur-sm">
+                  <span className="absolute bottom-2 left-2 max-w-[calc(100%-1rem)] truncate rounded-full bg-[color-mix(in_srgb,var(--teak)_82%,transparent)] px-2 py-1 text-[0.625rem] font-semibold text-[var(--gold)] backdrop-blur-sm">
                     {badge}
                   </span>
                 )}
@@ -154,6 +160,7 @@ export function BrowseGrid({
                       {profile.displayName}, {calculateAge(profile.birthdate)}
                     </span>
                     <VerifiedBadge
+                      compact
                       approvedPhotoCount={profile.photos.length}
                       selfieVerified={profile.selfieVerified}
                     />

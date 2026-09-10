@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Plus_Jakarta_Sans, Noto_Sans_Thai } from "next/font/google";
 import { BRAND_CONFIG } from "@/config/brand";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { InlineScript } from "@/components/InlineScript";
 import "./globals.css";
 
 // Editorial serif for headings — the register the whole category avoids,
@@ -89,7 +90,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${display.variable} ${body.variable} ${thai.variable} h-full antialiased`}
     >
       <head>
-        <script dangerouslySetInnerHTML={{ __html: AMBIENT_SCRIPT }} />
+        <InlineScript html={AMBIENT_SCRIPT} />
       </head>
       <body className="min-h-full flex flex-col">
         <ServiceWorkerRegistrar />
