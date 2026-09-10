@@ -10,6 +10,7 @@ import { AppNav } from "@/components/AppNav";
 import { SelfieVerification } from "@/components/SelfieVerification";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { BlockedHiddenList } from "@/components/BlockedHiddenList";
+import { PublicShowcaseConsent } from "@/components/PublicShowcaseConsent";
 import { withRetry } from "@/lib/retry";
 import { FREE_DAILY_LIKE_LIMIT, PAID_DAILY_LIKE_LIMIT, type UserProfile } from "@/lib/types";
 
@@ -158,6 +159,19 @@ export default function Settings() {
                   {pausing ? "…" : profile.paused ? "Unpause profile" : "Pause profile"}
                 </button>
               </div>
+            )}
+
+            {/* Public homepage consent sits immediately after profile
+                visibility, because it is the same question asked about a
+                much larger audience — and putting it anywhere else
+                invites someone to read "visible" once and assume it
+                covered both. */}
+            {profile && (
+              <PublicShowcaseConsent
+                user={user}
+                profile={profile}
+                onChange={(next) => setProfile({ ...profile, publicShowcase: next })}
+              />
             )}
 
             {/* Both entry points live here: start a subscription, or open

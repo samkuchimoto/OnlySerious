@@ -25,6 +25,17 @@ export default function Privacy() {
         one.
       </p>
 
+      <p>
+        There is one exception, and it only happens if you switch it on yourself. In Settings you can
+        choose to appear on our public homepage. If you do, your <strong>first name</strong>, age,
+        city, occupation, first approved photo, verification status, and the length of your voice
+        intro become visible to anyone on the internet, including people without an account and
+        search engines. Your bio, your other photos, the voice recording itself, and your contact
+        details are never published. This is off unless you turn it on, we ask for it separately
+        rather than bundling it into sign-up, and you can switch it off at any time — your card comes
+        down within a minute.
+      </p>
+
       <h2>What we don&apos;t do</h2>
       <p>
         We don&apos;t sell your data. We don&apos;t use your nationality, or anyone else&apos;s, as an input
