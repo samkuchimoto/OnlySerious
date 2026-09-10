@@ -74,7 +74,11 @@ export function AppNav({ meta }: AppNavProps) {
     <header className="nav-teak sticky top-0 z-30 w-full">
       <div className="mx-auto w-full max-w-2xl px-6 py-4 sm:py-5">
       <div className="flex items-center justify-between gap-4">
-        <Link href="/browse" className="display text-xl text-white">
+        {/* The wordmark goes home, not to Browse. It pointed at /browse,
+            which meant that on the Browse page — where most signed-in
+            time is spent — clicking the logo did nothing at all. A
+            wordmark that does nothing reads as a broken page. */}
+        <Link href="/" className="display text-xl text-white">
           {BRAND_CONFIG.appTitle}
         </Link>
         {/* Pinned to the top row on every width, so the one commercial
