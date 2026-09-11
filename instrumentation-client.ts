@@ -18,11 +18,22 @@ if (key) {
       // Regional host — PostHog Cloud EU and US are separate deployments
       // and a key from one does not work against the other.
       api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com",
-      // Manual, because PostHog's automatic pageview capture only fires
-      // on a real document load. App Router navigations are client-side,
-      // so every page after the first would be missing — they're sent
-      // from onRouterTransitionStart below instead.
-      capture_pageview: false,
+      // Automatic capture handles the initial document load; the
+      // onRouterTransitionStart hook below handles every client-side
+      // navigation after it. Both are needed and neither duplicates the
+      // other, because the hook fires on transitions and not on first
+      // render.
+      //
+      // This was false, on the reasoning that automatic capture only
+      // fires on a real document load and would therefore miss App
+      // Router navigations. The first half is true; the conclusion
+      // threw away the landing pageview of every session. Verified
+      // against production: a visitor who arrived and did not click
+      // produced no events whatsoever, so the entry URL — and with it
+      // the UTM parameters that say which ad paid for that visit —
+      // was never recorded. That is the one measurement the acquisition
+      // push actually depends on.
+      capture_pageview: true,
       // UTM parameters ride along on the first pageview of a session and
       // are what let a signup be attributed back to the link that
       // produced it — i.e. which of the VA's platforms actually worked.
