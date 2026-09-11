@@ -1,44 +1,20 @@
 // /components/DiscoveryGrid.tsx
 //
-// The guest teaser browse — the hook.
+// The guest teaser browse: real members who have opted in to being
+// shown publicly, and nothing else.
 //
-// ---------------------------------------------------------------------
-// Why the faces come first now.
+// The illustrative AI profiles that used to fill this grid are gone,
+// along with the mascot. Thirty women were asked to register against
+// that version and none did; three had registered against the plainer
+// one that preceded it. A sample that small proves little on its own,
+// but it is the only real evidence either way and it points one
+// direction — so the illustrations went.
 //
-// The previous version opened with a three-line serif headline, a
-// paragraph, and a mascot before a single person appeared. Direct
-// feedback, and correct: "when we look for a dating app, we should see
-// women". A visitor evaluating a matchmaking platform is answering one
-// question in the first two seconds — is anybody here, and are they
-// worth my time — and prose cannot answer it. So the headline is one
-// compact line, Mali moved to a single inline row, and the grid begins
-// above the fold.
-//
-// ---------------------------------------------------------------------
-// What these cards are, and the one sentence that keeps them honest.
-//
-// The per-card "EXAMPLE" chip is gone. That critique was right: stamping
-// EXAMPLE across every face reads as an unfinished demo, which is worse
-// for trust than the thing it was guarding against.
-//
-// What replaces it is a section-level statement — the same pattern a
-// product tour or an app-store gallery uses. The claim is made once,
-// clearly, above the grid it describes, instead of eight times in a way
-// that makes the product look fake.
-//
-// What is NOT here, and will not be: "Active Today", "Founding Member"
-// or "Verified Intent" chips on these cards. Those were suggested as the
-// replacement, and each is a statement of fact about a specific person —
-// that she exists, that she was here today, that a check was performed.
-// None is true of an AI-generated illustration, and putting a trust
-// signal on a person who does not exist is the precise practice this
-// platform sells itself as being free of. The chips are implemented on
-// the real-member path below, where they are true.
-//
-// The real answer to a thin grid is a thicker registry, not a thicker
-// claim — 30–50 verified women is a weekend of ad spend, and the day
-// they opt in this component renders them instead, with every badge
-// earned.
+// With nobody opted in the whole section collapses to its two calls to
+// action. That is deliberate: a pulsing live-presence header over an
+// empty box is a worse signal than no directory at all, and there is
+// now no filler to reach for. The only way this grid fills is real
+// members granting consent in Settings.
 // ---------------------------------------------------------------------
 
 "use client";
@@ -46,7 +22,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { EXAMPLE_PROFILES } from "@/lib/exampleProfiles";
 
 interface ShowcaseMember {
   id: string;
@@ -172,66 +147,58 @@ export function DiscoveryGrid({ onGate }: { onGate: () => void }) {
 
   const showMembers = members.length > 0;
 
+  // With nobody opted in there is no directory, and the section's own
+  // calls to action are the same two buttons the hero already carries a
+  // few hundred pixels above. Rendering it anyway produced the same
+  // pair twice with an empty band between them, which reads as a
+  // half-loaded page. The section returns the moment a member consents.
+  if (!showMembers) return null;
+
   return (
     <section id="directory" className="canvas scroll-mt-20 pb-14">
-      {/* Live status header. The pulse is the ThaiFriendly tell — a
-          man decides in two seconds whether a directory is inhabited,
-          and a green dot does that work faster than any sentence.
-
-          The "AI imagery" line that used to sit here is gone. Directly
-          above eight faces it read as a catfishing warning, which is
-          the opposite of what a disclosure is for. It now lives in the
-          footer, where it is still plainly stated and no longer the
-          first thing a visitor reads about the people on the page. */}
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
-        <div className="flex items-center gap-2.5">
-          <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--celadon)] opacity-70" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--celadon)]" />
-          </span>
-          <p className="label text-[var(--gold-deep)]">
-            {showMembers
-              ? "Verified Founding Members · Bangkok, Cebu & Da Nang"
-              : "Inside AmoraAsia · Bangkok, Cebu & Da Nang"}
-          </p>
+      {/* The live-presence header belongs to a populated directory. With
+          nobody showing it would be a pulsing green dot over an empty
+          box, which is a worse signal than no directory at all. */}
+      {showMembers && (
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--celadon)] opacity-70" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--celadon)]" />
+            </span>
+            <p className="label text-[var(--gold-deep)]">
+              Verified Founding Members · Bangkok, Cebu &amp; Da Nang
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Denser than before: two columns on a phone, four on desktop.
           A dating app is a wall of faces, not a row of three. */}
-      <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
-        {showMembers
-          ? members.map((member, i) => (
-              <li key={member.id}>
-                <ProfileCard
-                  name={member.displayName}
-                  age={member.age}
-                  city={member.city}
-                  occupation={member.occupation}
-                  photo={member.photoUrl ?? "/examples/example-01.webp"}
-                  voiceSeconds={member.voiceIntroSeconds}
-                  verified={member.verified}
-                  eager={i < 4}
-                  onGate={onGate}
-                />
-              </li>
-            ))
-          : EXAMPLE_PROFILES.map((example, i) => (
-              <li key={example.id}>
-                <ProfileCard
-                  name={example.name}
-                  age={example.age}
-                  city={example.city}
-                  occupation={example.occupation}
-                  photo={example.photo}
-                  voiceSeconds={example.voiceSeconds}
-                  // Never on an illustration. See the header note.
-                  verified={false}
-                  eager={i < 4}
-                  onGate={onGate}
-                />
-              </li>
-            ))}
+      <ul
+        className={`grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 ${
+          showMembers ? "mt-4" : "hidden"
+        }`}
+      >
+        {members.map((member, i) => (
+          <li key={member.id}>
+            <ProfileCard
+              name={member.displayName}
+              age={member.age}
+              city={member.city}
+              occupation={member.occupation}
+              // A member without a photo never reaches this list —
+              // /api/showcase requires an approved one — so there is
+              // nothing to fall back to, and nothing that could
+              // accidentally put a stock image under a real name.
+              photo={member.photoUrl as string}
+              voiceSeconds={member.voiceIntroSeconds}
+              verified={member.verified}
+              eager={i < 4}
+              onGate={onGate}
+            />
+          </li>
+        ))}
       </ul>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">

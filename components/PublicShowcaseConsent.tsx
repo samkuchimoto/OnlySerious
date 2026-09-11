@@ -33,7 +33,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { doc, updateDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { db } from "@/lib/firebase";
@@ -224,23 +223,11 @@ export function PublicShowcaseConsent({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      {/* Mali as the guardian of a privacy decision, which is the one
-          onboarding role the audit actually reserves for her. */}
       {eligible && !on && expanded && (
-        <div className="flex items-start gap-3">
-          <Image
-            src="/mascots/mali-seal-cut.webp"
-            alt=""
-            aria-hidden
-            width={48}
-            height={72}
-            className="h-auto w-10 shrink-0"
-          />
-          <p className="text-xs italic leading-relaxed text-[var(--muted)]">
-            &ldquo;Take your time with this one. The women who join our founding cohort choose it
-            themselves — and you can change your mind whenever you like.&rdquo;
-          </p>
-        </div>
+        <p className="text-xs leading-relaxed text-[var(--muted)]">
+          Take your time with this one. Members of the founding cohort choose it themselves, and you
+          can change your mind whenever you like.
+        </p>
       )}
     </div>
   );

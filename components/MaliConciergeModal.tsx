@@ -15,7 +15,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { capture } from "@/lib/analytics";
 
@@ -112,21 +111,11 @@ export function MaliConciergeModal({ open, onClose }: { open: boolean; onClose: 
         {submitted ? (
           // ----- Success state -----
           <div className="flex flex-col items-center px-6 pb-10 pt-6 text-center sm:px-10">
-            {/* Mali with the sky lantern — the Lantern Matchmaker pose,
-                lit for the good outcome. */}
-            <Image
-              src="/mascots/mali-lantern.webp"
-              alt=""
-              aria-hidden
-              width={180}
-              height={270}
-              className="h-auto w-40"
-            />
-            <h2 id="concierge-heading" className="display mt-5 text-2xl sm:text-3xl">
+            <h2 id="concierge-heading" className="display text-2xl sm:text-3xl">
               Application Received.
             </h2>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-[var(--muted)]">
-              Mali and our curation team review applications in weekly cohorts to preserve genuine
+              Our curation team reviews applications in weekly cohorts to preserve genuine
               intent. Your access token will be sent shortly.
             </p>
             <button type="button" onClick={onClose} className="btn-quiet mt-7 px-6 py-2.5 text-sm">
@@ -136,18 +125,7 @@ export function MaliConciergeModal({ open, onClose }: { open: boolean; onClose: 
         ) : (
           // ----- Application form -----
           <div className="px-6 pb-8 pt-6 sm:px-10">
-            <div className="flex items-start gap-4">
-              {/* Mali with the brass wax seal — the Safety Guardian
-                  pose, which is the right register for a page about
-                  vetting rather than romance. */}
-              <Image
-                src="/mascots/mali-seal-cut.webp"
-                alt=""
-                aria-hidden
-                width={96}
-                height={144}
-                className="hidden h-auto w-24 shrink-0 sm:block"
-              />
+            <div>
               <div className="min-w-0">
                 <h2 id="concierge-heading" className="display text-2xl">
                   Join our verified members.

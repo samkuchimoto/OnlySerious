@@ -8,7 +8,6 @@ import { FirebaseError } from "firebase/app";
 import { auth, db, signInWithGoogle, signOutUser, watchAuthState } from "@/lib/firebase";
 import { BRAND_CONFIG } from "@/config/brand";
 import { COUNTRY_OPTIONS } from "@/lib/markets";
-import { Mali } from "@/components/Mali";
 import {
   MAX_BIO_LENGTH,
   MAX_HEADLINE_LENGTH,
@@ -764,24 +763,14 @@ export default function SignUp() {
 
         {stage === "pending-review" && user && (
           <div className="flex flex-col items-start gap-6 pt-8">
-            {/* Mali, at the one moment in the whole product that is
-                unambiguously good news — and squarely inside the
-                onboarding flow, which is the one habitat the audit
-                reserves for her. A screen that says "your profile is
-                live" and then immediately asks for notifications reads as
-                a system talking; a welcome reads as a house. She is also
-                useful on the review state, where the honest message is
-                "wait", and waiting is easier with a face on it.
-
-                The lantern is the brief's Lantern Matchmaker, lit for the
-                good outcome. The wai is a greeting, which is the right
-                register for "we are still checking". */}
+            {/* The mascot that stood beside this message is gone; the
+                words do the work on their own. A screen that says "your
+                profile is live" and then immediately asks for
+                notifications reads as a system talking, so it says
+                something human first — and on the review state, where
+                the honest message is "wait", it says why the wait
+                exists. */}
             <div className="flex items-center gap-4">
-              <Mali
-                pose={existingProfile?.status === "active" ? "lantern" : "wai"}
-                size="md"
-                className="shrink-0"
-              />
               <div>
                 <p className="label text-[var(--gold-deep)]">
                   {existingProfile?.status === "active" ? "Welcome in" : "Almost there"}

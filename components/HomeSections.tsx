@@ -112,21 +112,11 @@ export function FinalInvitation() {
   return (
     <section className="canvas py-16 sm:py-24">
       <div className="card-gold relative overflow-hidden">
-        <div className="grid items-center gap-8 p-8 sm:grid-cols-5 sm:p-12">
-          {/* Mali with the Khom Loi lantern — the Lantern Matchmaker
-              pose, which the brief reserves for exactly this moment. */}
-          <div className="sm:col-span-2">
-            <Image
-              src="/mascots/mali-lantern.webp"
-              alt=""
-              aria-hidden
-              width={360}
-              height={540}
-              className="mx-auto h-auto w-44 rounded-[var(--radius)] sm:w-full sm:max-w-[240px]"
-            />
-          </div>
-
-          <div className="sm:col-span-3">
+        <div className="p-8 text-center sm:p-14">
+          {/* The mascot that stood here is gone, and the section is
+              centred on its own now rather than sharing a five-column
+              split with an illustration. */}
+          <div className="mx-auto max-w-2xl">
             <h2 className="display text-3xl leading-tight sm:text-4xl">
               Someone intentional is waiting for you.
             </h2>
@@ -135,7 +125,7 @@ export function FinalInvitation() {
               photos clear the automated check — there is no queue and no invitation to wait for.
             </p>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
               <Link href="/sign-up" className="btn-gold px-7 py-3.5 text-center text-base">
                 Join Free as a Lady
               </Link>
@@ -205,21 +195,12 @@ export function SiteFooter() {
           </div>
         </div>
 
-        {/* The disclosure stays, and it stays here.
-            It was removed from directly above the grid — as a line of
-            small print immediately over eight faces it read as a
-            catfishing warning, which is the opposite of its purpose.
-            Deleting it outright is a different matter: illustrative
-            portraits presented with no statement anywhere are simply
-            undeclared, and "we never said they were real" is not a
-            position worth defending. It disappears on its own the day
-            real members fill the grid. */}
+        {/* The AI-imagery disclosure that stood here is gone because the
+            thing it disclosed is gone. Every face on this page is now a
+            real member who chose to appear; there is nothing left to
+            declare. Put it back the moment any illustration returns. */}
         <div className="mt-12 border-t border-[var(--cream)]/15 pt-6 text-xs leading-relaxed text-[var(--cream)]/50">
-          <p>
-            Sample profiles shown on this page are illustrative and use AI-generated imagery. Real
-            member profiles are visible to signed-in members.
-          </p>
-          <p className="mt-2">© 2026 AmoraAsia.</p>
+          <p>© 2026 AmoraAsia.</p>
         </div>
       </div>
     </footer>

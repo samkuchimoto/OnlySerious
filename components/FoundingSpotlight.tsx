@@ -36,7 +36,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { doc, updateDoc } from "firebase/firestore";
 import type { User } from "firebase/auth";
@@ -79,15 +78,7 @@ export function FoundingSpotlight({
 
   if (on) {
     return (
-      <div className="card-gold flex items-start gap-4 p-5">
-        <Image
-          src="/mascots/mali-avatar.webp"
-          alt=""
-          aria-hidden
-          width={96}
-          height={96}
-          className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-[color-mix(in_srgb,var(--gold)_60%,transparent)]"
-        />
+      <div className="card-gold p-5">
         <div className="min-w-0">
           <p className="label text-[var(--gold-deep)]">Founding Spotlight · on</p>
           <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
@@ -104,15 +95,7 @@ export function FoundingSpotlight({
 
   return (
     <div className="card-gold p-6">
-      <div className="flex items-start gap-4">
-        <Image
-          src="/mascots/mali-avatar.webp"
-          alt=""
-          aria-hidden
-          width={112}
-          height={112}
-          className="h-14 w-14 shrink-0 rounded-full object-cover ring-2 ring-[color-mix(in_srgb,var(--gold)_60%,transparent)]"
-        />
+      <div>
         <div className="min-w-0">
           <p className="label text-[var(--gold-deep)]">Founding Spotlight · optional</p>
           <h3 className="display mt-1 text-xl">Be seen by people who haven&apos;t joined yet.</h3>

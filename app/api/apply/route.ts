@@ -1,6 +1,6 @@
 // /app/api/apply/route.ts
 //
-// The Velvet Rope application. Stores the entry and sends Mali's
+// The Velvet Rope application. Stores the entry and sends the
 // confirmation.
 //
 // ---------------------------------------------------------------------
@@ -57,7 +57,7 @@ Thank you for applying for private membership to AmoraAsia.
 
 To ensure our community remains free from bots, commercial solicitations, and superficial swiping, our team personally reviews applications in weekly batches.
 
-Your profile is currently in our queue. As soon as your city cohort opens, Mali will deliver your private access token directly to this address.
+Your profile is currently in our queue. As soon as your city cohort opens, we will send your private access token directly to this address.
 
 With warmth,
 
@@ -80,7 +80,7 @@ async function sendConfirmation(to: string): Promise<"sent" | "skipped" | "faile
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        from: process.env.RESEND_FROM ?? "Mali from AmoraAsia <invitations@amoraasia.com>",
+        from: process.env.RESEND_FROM ?? "AmoraAsia <invitations@amoraasia.com>",
         to,
         subject: "Your AmoraAsia Invitation Application is Received",
         text: CONFIRMATION_TEXT,

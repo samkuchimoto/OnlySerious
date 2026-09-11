@@ -2,14 +2,13 @@
 //
 // The empty state for discovery surfaces — Browse, Matches, Likes.
 //
-// These used to be Mascot empty states. The audit bars the 3D character
-// from browse feeds specifically (see components/Mali.tsx for the full
-// reasoning), and an empty grid is the single worst place to argue with
-// that: it is the moment a prospective subscriber is already deciding
-// the platform is dead, and a cartoon is not the thing that convinces
-// him otherwise.
+// These used to be mascot empty states. The illustrated character has
+// since been removed from the product entirely, and an empty grid was
+// the worst place for one anyway: it is the moment a visitor is already
+// deciding the platform is dead, and a cartoon is not what convinces
+// them otherwise.
 //
-// What replaces her is typographic and quiet — a gold rule, a serif
+// What replaces it is typographic and quiet — a gold rule, a serif
 // heading, and a reason. The reason is the load-bearing part. "No
 // results" reads as a broken app; "no one matching *your preferences*
 // is active right now, widening your range usually helps" reads as a

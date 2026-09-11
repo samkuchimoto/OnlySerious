@@ -57,7 +57,7 @@ export default function GetApp() {
 
         {/* No mascot here. An install page is a conversion funnel, which
             the audit groups with the marketing surfaces the 3D character
-            is barred from — see components/Mali.tsx. */}
+            is barred from. */}
         <h1 className="display mt-2 text-3xl sm:text-4xl">
           Get {BRAND_CONFIG.appTitle} on your phone
         </h1>
