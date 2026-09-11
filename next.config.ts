@@ -9,6 +9,18 @@ const nextConfig: NextConfig = {
   // firebase-admin in Next.js.
   serverExternalPackages: ["firebase-admin"],
 
+  // Member photographs live in Vercel Blob, and next/image refuses any
+  // remote host that is not listed here — it answers 400 and the card
+  // renders a broken-image icon, which is exactly what the homepage did
+  // the first time a real profile appeared on it. Every other surface in
+  // the app uses a plain <img>, so this only ever bit the one place that
+  // uses next/image with a member photo.
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+    ],
+  },
+
   async rewrites() {
     return [
       // Android looks for Digital Asset Links at this exact path and
