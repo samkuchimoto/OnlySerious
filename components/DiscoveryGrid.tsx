@@ -167,7 +167,7 @@ export function DiscoveryGrid({ onGate }: { onGate: () => void }) {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--celadon)]" />
             </span>
             <p className="label text-[var(--gold-deep)]">
-              Verified Founding Members · Bangkok, Cebu &amp; Da Nang
+              Verified Founding Members
             </p>
           </div>
         </div>

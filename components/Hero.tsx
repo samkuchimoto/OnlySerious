@@ -1,12 +1,8 @@
 // /components/Hero.tsx
 //
-// Section 1. Pitch left, photograph right.
-//
-// No mascot. Thirty women were asked to register against the version
-// with Mali on it and none did; three had registered against the
-// version without her. That is a small sample and it is still the only
-// real evidence either way, and it points one direction. The
-// illustrated concierge went with her.
+// Full-bleed photograph with the copy over it, which is how the version
+// that actually converted was built. The two-column card layout that
+// replaced it shrank the couple into a thumbnail beside a wall of text.
 
 "use client";
 
@@ -15,50 +11,42 @@ import Link from "next/link";
 
 export function Hero() {
   return (
-    <section className="canvas grid grid-cols-1 items-center gap-10 py-10 lg:grid-cols-12 lg:gap-14 lg:py-16">
-      {/* ---------- Left: the pitch ---------- */}
-      <div className="lg:col-span-6">
-        <h1 className="display text-4xl leading-[1.06] lg:text-6xl">
+    <section className="relative flex min-h-[88vh] flex-col overflow-hidden">
+      <Image
+        src="/images/hero-fountain.webp"
+        alt=""
+        fill
+        priority
+        sizes="100vw"
+        className="object-cover object-center"
+      />
+      {/* Bottom-up scrim with explicit stops rather than Tailwind's
+          even thirds. The foot of this frame is bright — sunlit water
+          and a pale dress — and an evenly spread gradient left the
+          outlined button washed out against it. Solid teak at the base,
+          clear by 68%, so both faces stay untouched. */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_top,var(--teak)_0%,color-mix(in_srgb,var(--teak)_82%,transparent)_28%,color-mix(in_srgb,var(--teak)_40%,transparent)_50%,transparent_68%)]" />
+
+      <div className="canvas relative z-10 mt-auto pb-16 sm:pb-24">
+        <h1 className="display max-w-3xl text-5xl leading-[1.04] text-[var(--cream)] sm:text-6xl lg:text-7xl">
           Done wasting time on dating apps?
         </h1>
-
-        <p className="measure mt-5 text-lg leading-relaxed text-[var(--muted)]">
-          Meet verified, marriage-minded people across Southeast Asia. Real intent, real
-          verification, and no casual option — for anyone.
-        </p>
-
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Link href="/sign-up" className="btn-gold px-7 py-3.5 text-center text-base">
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Link href="/sign-up" className="btn-gold px-8 py-4 text-center text-base">
             Join Free (Ladies)
           </Link>
-          {/* Both doors, and neither is an anchor. "Explore the
-              Community" pointed at the directory, which no longer
-              renders while nobody has opted into the public showcase —
-              a button that scrolls nowhere is worse than one that does
-              something. Restore the anchor when the grid comes back. */}
-          <Link href="/sign-up" className="btn-quiet px-7 py-3.5 text-center text-base">
+          {/* Deliberately not .btn-quiet. That class is defined after
+              Tailwind's utilities in globals.css, so its own `color` and
+              `border` beat any text-/border- utility added here — the
+              button rendered teak-on-teak and vanished into the
+              photograph. Styled explicitly so nothing overrides it, with
+              its own backing so it stays legible over a sunlit frame. */}
+          <Link
+            href="/sign-up"
+            className="rounded-full border border-[var(--cream)]/70 bg-[color-mix(in_srgb,var(--teak)_55%,transparent)] px-8 py-4 text-center text-base font-semibold text-[var(--cream)] backdrop-blur-sm transition-colors hover:bg-[color-mix(in_srgb,var(--teak)_78%,transparent)]"
+          >
             Create Gentleman Profile
           </Link>
-        </div>
-
-        <p className="mt-4 text-sm text-[var(--muted)]">
-          Free for everyone to join · Your profile goes live as soon as your photos clear.
-        </p>
-      </div>
-
-      {/* ---------- Right: the photograph ---------- */}
-      <div className="lg:col-span-6">
-        <div className="frame-teak relative overflow-hidden rounded-[var(--radius)] shadow-[var(--shadow-lift)]">
-          <div className="relative aspect-[4/3] w-full">
-            <Image
-              src="/images/hero-fountain.webp"
-              alt=""
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover object-center"
-            />
-          </div>
         </div>
       </div>
     </section>
