@@ -80,7 +80,20 @@ export function DiscoveryGrid({ onGate }: { onGate: () => void }) {
                     fill
                     priority={i < 4}
                     sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    className="object-cover object-top transition-transform duration-500 group-hover:scale-[1.04]"
+                    // Centre, not top. Top-anchoring protects a portrait
+                    // whose subject sits high in the frame, and it was
+                    // the right default when every photo came out of the
+                    // uploader's own 4:5 face-centred crop — for those,
+                    // object-position does nothing at all, because a 4:5
+                    // image in a 4:5 box is never cropped.
+                    //
+                    // It is wrong for the photos that predate that
+                    // uploader. Ranny's is 738x1600, a night shot where
+                    // the top third is dark sky, so anchoring to the top
+                    // framed the sky and left her card looking broken.
+                    // Compared across all four members, centre wins on
+                    // every one.
+                    className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.04]"
                   />
                 )}
                 {/* Name and age sit on the photograph, not in a band
