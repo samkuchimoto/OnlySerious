@@ -66,7 +66,9 @@ export function PublicShowcaseConsent({
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
 
-  const on = profile.publicShowcase === true;
+  // Opt-out, not opt-in: a member appears unless she has switched it
+  // off, which mirrors what /api/showcase now publishes.
+  const on = profile.publicShowcase !== false;
   // The homepage only publishes a profile with an approved photo, so
   // offering the switch without one would consent to nothing and look
   // broken when the card never appeared.

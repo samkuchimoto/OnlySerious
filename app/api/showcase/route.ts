@@ -83,9 +83,15 @@ export async function GET() {
     }
 
     const members: ShowcaseMember[] = profiles
-      // The consent gate. Absent means no, which is what every existing
-      // member currently is.
-      .filter((p) => p.publicShowcase === true)
+      // Shown unless a member has explicitly switched it off in
+      // Settings. This was opt-in and is now opt-out, at the operator's
+      // decision: this is a dating platform, members join it in order to
+      // be seen, and browsing without an account is how the rest of the
+      // category already works — ThaiFriendly shows its directory to
+      // logged-out visitors and gates messaging instead, which is
+      // exactly what this app does. Moving browse to the front page is
+      // one less click, not a new kind of exposure.
+      .filter((p) => p.publicShowcase !== false)
       .filter((p) => p.photos?.[0]?.moderationStatus === "approved")
       .slice(0, 8)
       .map((p) => ({

@@ -56,7 +56,10 @@ export function FoundingSpotlight({
   const [dismissed, setDismissed] = useState(false);
 
   const photo = profile.photos?.find((p) => p.moderationStatus === "approved");
-  const on = profile.publicShowcase === true;
+  // Opt-out now, matching /api/showcase. A new member is already on the
+  // homepage by the time she reaches this step, so the panel tells her
+  // she is there and where the off switch lives, rather than asking.
+  const on = profile.publicShowcase !== false;
 
   // Nothing to offer until there is a photo to show and a live profile
   // to show it on — the homepage publishes neither without both.
@@ -80,9 +83,11 @@ export function FoundingSpotlight({
     return (
       <div className="card-gold p-5">
         <div className="min-w-0">
-          <p className="label text-[var(--gold-deep)]">Founding Spotlight · on</p>
+          <p className="label text-[var(--gold-deep)]">Founding Spotlight</p>
           <p className="mt-1 text-sm leading-relaxed text-[var(--muted)]">
-            You&apos;re in the showcase on our homepage. You can switch it off any time in{" "}
+            Your profile appears in the member showcase on our homepage, where people can see you
+            before they create an account. Your first name, age, city and first photo only — never
+            your bio, contact details or voice note. Switch it off any time in{" "}
             <Link href="/settings" className="underline underline-offset-2 hover:text-[var(--foreground)]">
               Settings
             </Link>
