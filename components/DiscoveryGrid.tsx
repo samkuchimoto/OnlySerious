@@ -41,22 +41,29 @@ export function DiscoveryGrid({ onGate }: { onGate: () => void }) {
     };
   }, []);
 
-  // No members, no section. The calls to action below it are the same
-  // two the hero already carries, so an empty directory would render the
-  // pair twice with a dead band between them.
-  if (members.length === 0) return null;
+  const hasMembers = members.length > 0;
 
   return (
-    <section id="directory" className="canvas scroll-mt-20 pb-14 pt-10">
-      <div className="flex items-center gap-2.5">
-        <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--celadon)] opacity-70" />
-          <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--celadon)]" />
-        </span>
-        <p className="label text-[var(--gold-deep)]">Verified Founding Members</p>
-      </div>
+    <section id="directory" className="canvas scroll-mt-20 pb-14 pt-8">
+      {/* Header and grid only when there are faces to show. The calls to
+          action below always render: with the hero gone there is nothing
+          else above the fold, so a failed fetch must not leave the page
+          with no way into it. */}
+      {hasMembers && (
+        <div className="flex items-center gap-2.5">
+          <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--celadon)] opacity-70" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--celadon)]" />
+          </span>
+          <p className="label text-[var(--gold-deep)]">Verified Founding Members</p>
+        </div>
+      )}
 
-      <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+      <ul
+        className={`grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 ${
+          hasMembers ? "mt-4" : "hidden"
+        }`}
+      >
         {members.map((member, i) => (
           <li key={member.id}>
             <button

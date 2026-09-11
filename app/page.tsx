@@ -3,26 +3,25 @@
 import { useState } from "react";
 import { InAppBrowserWarning } from "@/components/InAppBrowserWarning";
 import { LiveHeader } from "@/components/LiveHeader";
-import { Hero } from "@/components/Hero";
 import { DiscoveryGrid } from "@/components/DiscoveryGrid";
 import { MaliConciergeModal } from "@/components/MaliConciergeModal";
 import { SiteFooter, TrustSection } from "@/components/HomeSections";
 
-// Header, photograph, the members, three short lines, footer.
+// The members are the front page. There is no hero.
 //
-// The courtship and invitation sections that used to sit in between are
-// gone — direct feedback was that the page carried far too much text,
-// and almost none of it was doing work a visitor actually reads before
-// deciding whether to sign up.
+// A full-bleed photograph of a stock couple above the fold was pushing
+// the only thing that proves this platform is real — actual members —
+// below it. Landing straight on the directory is how ThaiFriendly works
+// and it is what the app is actually selling: real people are here, and
+// talking to them is what needs an account.
 export default function Home() {
   const [conciergeOpen, setConciergeOpen] = useState(false);
 
   return (
     <main className="flex-1">
       <LiveHeader />
-      <Hero />
 
-      <div className="canvas pt-6">
+      <div className="canvas pt-4">
         <InAppBrowserWarning />
       </div>
 
