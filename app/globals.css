@@ -293,6 +293,29 @@ body {
   box-shadow: none;
 }
 
+/* A slow breathing glow on the one button that matters, rather than a
+   hard on/off blink. A true blink on a gold CTA reads as a banner ad
+   from 2003 and people's eyes learn to skip it; a pulse pulls the eye
+   back without ever looking cheap. Dropped entirely under
+   prefers-reduced-motion by the block at the foot of this file. */
+.btn-pulse {
+  animation: btn-pulse 2.2s ease-in-out infinite;
+}
+@keyframes btn-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.3) inset,
+      0 6px 18px color-mix(in srgb, var(--glow) 45%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.4) inset,
+      0 8px 30px color-mix(in srgb, var(--glow) 95%, transparent),
+      0 0 0 6px color-mix(in srgb, var(--gold) 18%, transparent);
+  }
+}
+
 /* The border is teak at 30%, not the 14% hairline `--rule` carries.
    At hairline weight the secondary button read as a disabled input on
    brighter monitors — legible, but without the clear clickable intent

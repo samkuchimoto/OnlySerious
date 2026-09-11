@@ -5,7 +5,7 @@ import { InAppBrowserWarning } from "@/components/InAppBrowserWarning";
 import { LiveHeader } from "@/components/LiveHeader";
 import { DiscoveryGrid } from "@/components/DiscoveryGrid";
 import { MaliConciergeModal } from "@/components/MaliConciergeModal";
-import { SiteFooter, TrustSection } from "@/components/HomeSections";
+import { PageTitle, SiteFooter, TrustSection } from "@/components/HomeSections";
 
 // The members are the front page. There is no hero.
 //
@@ -25,6 +25,7 @@ export default function Home() {
         <InAppBrowserWarning />
       </div>
 
+      <PageTitle />
       <DiscoveryGrid onGate={() => setConciergeOpen(true)} />
       <TrustSection />
       <SiteFooter />

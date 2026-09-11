@@ -10,6 +10,37 @@
 
 import Link from "next/link";
 
+/**
+ * The title card. Sits above the member grid and does the job a hero
+ * used to: say what this is, in one line, before anything else.
+ *
+ * It does not say "#1" or "top" anything. Those are ranking claims, and
+ * a platform with four members making one is a misleading commercial
+ * practice — the same exposure as an invented member count, and the
+ * easiest kind of claim for a competitor or a regulator to test. What
+ * it says instead is what the product actually is and what it refuses
+ * to be, which is the real differentiator against the hookup apps this
+ * audience is tired of.
+ */
+export function PageTitle() {
+  return (
+    <section className="canvas pb-6 pt-10 text-center sm:pt-14">
+      <h1 className="display mx-auto max-w-4xl text-4xl leading-[1.04] sm:text-6xl lg:text-7xl">
+        Serious dating in Asia.
+      </h1>
+      <p className="mx-auto mt-4 max-w-xl text-lg text-[var(--muted)]">
+        No hookups. No games. Verified people who want a real relationship.
+      </p>
+      <Link
+        href="/sign-up"
+        className="btn-gold btn-pulse mt-7 inline-block px-10 py-4 text-base"
+      >
+        Join Free
+      </Link>
+    </section>
+  );
+}
+
 const TRUST = [
   ["Verified intent", "Marriage or long-term only. There is no casual option to pick."],
   ["Strict photos", "No shirtless, swimwear or underwear. Every upload is checked."],
