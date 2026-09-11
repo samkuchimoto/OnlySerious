@@ -293,10 +293,15 @@ body {
   box-shadow: none;
 }
 
+/* The border is teak at 30%, not the 14% hairline `--rule` carries.
+   At hairline weight the secondary button read as a disabled input on
+   brighter monitors — legible, but without the clear clickable intent
+   a paired CTA needs. This is the lightest border that still says
+   "button" next to a solid gold one. */
 .btn-quiet {
   background: transparent;
   color: var(--foreground);
-  border: 1px solid var(--rule);
+  border: 1px solid color-mix(in srgb, var(--teak) 30%, transparent);
   border-radius: 999px;
   font-weight: 600;
   transition:
@@ -304,8 +309,8 @@ body {
     border-color 0.2s ease;
 }
 .btn-quiet:hover {
-  background: color-mix(in srgb, var(--gold) 10%, transparent);
-  border-color: color-mix(in srgb, var(--gold) 40%, var(--rule));
+  background: color-mix(in srgb, var(--teak) 5%, transparent);
+  border-color: color-mix(in srgb, var(--teak) 55%, transparent);
 }
 
 /* ---------------------------------------------------------------------

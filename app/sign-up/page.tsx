@@ -20,6 +20,7 @@ import {
 } from "@/lib/types";
 import { PhotoUploader, type PhotoSubmission } from "@/components/PhotoUploader";
 import { VoiceIntroRecorder } from "@/components/VoiceIntro";
+import { FoundingSpotlight } from "@/components/FoundingSpotlight";
 import { WaitlistForm } from "@/components/WaitlistForm";
 import { PushPrimer } from "@/components/PushPrimer";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
@@ -877,6 +878,21 @@ export default function SignUp() {
               </p>
               <PhotoUploader user={user} onSubmissionsChange={setPhotoSubmissions} />
             </div>
+
+            {/* Founding Spotlight — the public-homepage invitation.
+                Placed after photos because it needs an approved one to
+                preview, and before the voice recorder because it is the
+                one step that decides whether she is ever seen by
+                someone who has not joined yet. */}
+            {existingProfile && (
+              <FoundingSpotlight
+                user={user}
+                profile={existingProfile}
+                onChange={(next) =>
+                  setExistingProfile((prev) => (prev ? { ...prev, publicShowcase: next } : prev))
+                }
+              />
+            )}
 
             {/* The voice introduction, after photos rather than before.
                 It is the strongest single trust signal on a cross-border
