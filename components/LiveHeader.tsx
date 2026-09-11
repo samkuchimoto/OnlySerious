@@ -58,6 +58,16 @@ export function LiveHeader() {
             />
             <span className="display text-xl">{BRAND_CONFIG.appTitle}</span>
           </Link>
+
+          {/* Centre pill. Carries the cohort framing that used to be a
+              full-width ribbon — same message, a third of the vertical
+              space, and it no longer competes with the hero. Hidden on
+              phones, where the wordmark and two actions already fill
+              the row. */}
+          <span className="label hidden items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--gold)_45%,transparent)] bg-[color-mix(in_srgb,var(--gold)_12%,transparent)] px-3.5 py-1.5 text-[0.6rem] text-[var(--gold-deep)] lg:inline-flex">
+            <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--celadon)]" />
+            Founding Cohort Now Open
+          </span>
           {/* Two actions, and they answer different questions.
               "Create your profile" next to "Private Access" made the
               site ambiguous — open platform, login portal, or closed
@@ -72,7 +82,7 @@ export function LiveHeader() {
               Sign in
             </Link>
             <Link href="/sign-up" className="btn-gold px-5 py-2 text-sm">
-              Get Started Free
+              Join Free
             </Link>
           </div>
         </div>

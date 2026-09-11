@@ -174,19 +174,27 @@ export function DiscoveryGrid({ onGate }: { onGate: () => void }) {
 
   return (
     <section id="directory" className="canvas scroll-mt-20 pb-14">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <p className="label text-[var(--gold-deep)]">
-          {showMembers ? "Verified Founding Members" : "Inside AmoraAsia"}
-        </p>
-        {/* The single honest sentence, stated once where it belongs.
-            No member count: printing "4" tells a prospective subscriber
-            the room is empty, and the fix for that is more members, not
-            a bigger number. */}
-        {!showMembers && (
-          <p className="text-xs text-[var(--muted)]">
-            Illustrative profiles · AI imagery · real members unlock when you join
+      {/* Live status header. The pulse is the ThaiFriendly tell — a
+          man decides in two seconds whether a directory is inhabited,
+          and a green dot does that work faster than any sentence.
+
+          The "AI imagery" line that used to sit here is gone. Directly
+          above eight faces it read as a catfishing warning, which is
+          the opposite of what a disclosure is for. It now lives in the
+          footer, where it is still plainly stated and no longer the
+          first thing a visitor reads about the people on the page. */}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+        <div className="flex items-center gap-2.5">
+          <span className="relative flex h-2 w-2 shrink-0" aria-hidden>
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--celadon)] opacity-70" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--celadon)]" />
+          </span>
+          <p className="label text-[var(--gold-deep)]">
+            {showMembers
+              ? "Verified Founding Members · Bangkok, Cebu & Da Nang"
+              : "Inside AmoraAsia · Bangkok, Cebu & Da Nang"}
           </p>
-        )}
+        </div>
       </div>
 
       {/* Denser than before: two columns on a phone, four on desktop.
@@ -227,13 +235,17 @@ export function DiscoveryGrid({ onGate }: { onGate: () => void }) {
       </ul>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Link href="/sign-up" className="btn-gold px-8 py-3.5 text-center text-base">
-          Create Your Profile
+        <Link href="/sign-up" className="btn-gold px-7 py-3.5 text-center text-base">
+          Join Free (Ladies)
         </Link>
-        <p className="text-sm text-[var(--muted)]">
-          Free, 60 seconds, and you can browse everyone the moment you&apos;re in.
-        </p>
+        <Link href="/sign-up" className="btn-quiet px-7 py-3.5 text-center text-base">
+          Create Gentleman Profile
+        </Link>
       </div>
+      <p className="mt-3 text-sm text-[var(--muted)]">
+        Free to join. Your profile goes live as soon as your photos clear — no queue, no invitation
+        to wait for.
+      </p>
     </section>
   );
 }
