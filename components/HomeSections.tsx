@@ -23,18 +23,16 @@ import Link from "next/link";
  * audience is tired of.
  */
 export function PageTitle() {
+  // Sized and spaced to keep the member photographs above the fold on a
+  // laptop. The subtitle that sat here cost three or four lines and
+  // pushed the only thing that proves the platform is real below the
+  // screen — the grid earns that space more than a sentence does.
   return (
-    <section className="canvas pb-6 pt-10 text-center sm:pt-14">
-      <h1 className="display mx-auto max-w-4xl text-4xl leading-[1.04] sm:text-6xl lg:text-7xl">
+    <section className="canvas pb-5 pt-10 text-center">
+      <h1 className="display mx-auto mb-5 max-w-3xl text-[2.25rem] leading-[1.06] sm:text-[2.5rem]">
         Serious dating in Asia.
       </h1>
-      <p className="mx-auto mt-4 max-w-xl text-lg text-[var(--muted)]">
-        No hookups. No games. Verified people who want a real relationship.
-      </p>
-      <Link
-        href="/sign-up"
-        className="btn-gold btn-pulse mt-7 inline-block px-10 py-4 text-base"
-      >
+      <Link href="/sign-up" className="btn-gold btn-pulse inline-block px-10 py-3.5 text-base">
         Join Free
       </Link>
     </section>

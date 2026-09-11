@@ -44,7 +44,7 @@ export function DiscoveryGrid({ onGate }: { onGate: () => void }) {
   const hasMembers = members.length > 0;
 
   return (
-    <section id="directory" className="canvas scroll-mt-20 pb-14 pt-8">
+    <section id="directory" className="canvas scroll-mt-20 pb-10 pt-2">
       {/* Header and grid only when there are faces to show. The calls to
           action below always render: with the hero gone there is nothing
           else above the fold, so a failed fetch must not leave the page
