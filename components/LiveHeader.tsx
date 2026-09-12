@@ -43,20 +43,21 @@ export function LiveHeader() {
           scrolls under it instead of being cut off by an opaque bar. */}
       <div className="nav-sanctuary">
         <div className="canvas flex items-center justify-between py-3">
-          <Link href="/" className="flex items-center gap-2.5">
-            {/* The Golden Amber Lotus. This is the gold lotus plate from
-                the brand set — the same asset the gift token uses, which
-                is deliberate: the mark and the courtesy are one symbol. */}
+          {/* The Golden Amber Lotus alone — the wordmark beside it is
+              gone. The mark carries the name on its own now, so the
+              alt text does the work the visible text used to: without
+              it this link would announce itself as nothing at all to a
+              screen reader. */}
+          <Link href="/" className="flex items-center" aria-label={`${BRAND_CONFIG.appTitle} home`}>
             <Image
               src="/gifts/amber-lotus.webp"
               alt=""
               aria-hidden
-              width={32}
-              height={32}
+              width={40}
+              height={40}
               priority
-              className="h-8 w-8 object-contain"
+              className="h-9 w-9 object-contain"
             />
-            <span className="display text-xl">{BRAND_CONFIG.appTitle}</span>
           </Link>
 
           {/* Centre pill. Carries the cohort framing that used to be a
